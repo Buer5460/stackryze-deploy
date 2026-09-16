@@ -3,39 +3,100 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>AI Action Mini</title>
+<title>AI Action Mini · Console</title>
 <style>
-:root{color-scheme:dark}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#08101d;color:#f5f7ff;margin:0}.wrap{max-width:760px;margin:auto;padding:24px 18px 56px}.card{background:#101a2e;border:1px solid #263551;border-radius:22px;padding:22px;margin:14px 0;box-shadow:0 18px 60px #0005}h1{font-size:34px;margin:4px 0 6px}.sub{color:#a9b9d7;line-height:1.6}.ok{color:#75efae;font-weight:700}.btn{display:block;text-decoration:none;background:#f4f7ff;color:#08101d;padding:15px 17px;border-radius:14px;font-weight:800;text-align:center;margin:10px 0}.btn.alt{background:#1d2b47;color:#e8efff}.step{display:flex;gap:12px;margin:18px 0}.n{flex:0 0 30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#eaf0ff;color:#10182a;font-weight:900}.t{line-height:1.6}.code{background:#070d18;border:1px solid #23314a;padding:12px;border-radius:12px;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#cfe0ff}.small{font-size:13px;color:#8fa3c7}.tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#182643;color:#bdd0f3;font-size:12px;margin:4px 4px 4px 0}</style>
+:root{color-scheme:dark;--bg:#07101d;--panel:#101a2e;--panel2:#14213a;--line:#273956;--text:#f5f7ff;--muted:#9fb0cf;--ok:#70efad;--accent:#7ca7ff;--warn:#ffd36a}
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#07101d,#0a1322);color:var(--text);margin:0}.shell{max-width:1180px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand h1{margin:0;font-size:32px}.brand p{margin:6px 0 0;color:var(--muted)}.badge{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#101a2e;color:#dce6ff}.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 12px var(--ok)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:rgba(16,26,46,.95);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 18px 60px #0004}.kpi{grid-column:span 3}.wide{grid-column:span 8}.side{grid-column:span 4}.full{grid-column:1/-1}.label{font-size:13px;color:var(--muted)}.value{font-size:30px;font-weight:800;margin-top:8px}.ok{color:var(--ok)}h2{margin:0 0 14px;font-size:20px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 18px}.tab{border:1px solid var(--line);background:#13213a;color:#dce6ff;padding:9px 13px;border-radius:10px;cursor:pointer}.tab.active{background:#eef4ff;color:#0b1323}.pane{display:none}.pane.active{display:block}.row{display:flex;gap:10px;flex-wrap:wrap}.input,textarea,select{width:100%;background:#08111f;border:1px solid #314767;color:#fff;border-radius:12px;padding:13px;font:inherit}.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer;background:#eef4ff;color:#09111f}.btn.alt{background:#1b2a47;color:#eaf1ff;border:1px solid #314767}.btn.warn{background:#3a2f16;color:#ffe59a;border:1px solid #6a5524}.out{white-space:pre-wrap;background:#08111f;border:1px solid #243652;border-radius:14px;padding:15px;min-height:120px;line-height:1.65;color:#eaf0ff}.mini{font-size:12px;color:var(--muted)}.step{display:grid;grid-template-columns:34px 1fr;gap:10px;margin:12px 0}.n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#eaf0ff;color:#0b1424;font-weight:900}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#07101d;border:1px solid #263957;border-radius:10px;padding:10px;overflow-wrap:anywhere;color:#cfe0ff}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px;border-bottom:1px solid #253650;text-align:left;font-size:14px}.table th{color:#aebedf}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#1a2945;color:#cfe0ff;font-size:12px}.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.node{padding:10px 12px;background:#0a1424;border:1px solid #2b4061;border-radius:10px}.arrow{color:#7188ad}.notice{padding:12px;border-radius:12px;background:#13233d;border:1px solid #2b466f;color:#cfe0ff;margin-bottom:14px}@media(max-width:800px){.kpi,.wide,.side{grid-column:1/-1}.top{align-items:flex-start;flex-direction:column}.value{font-size:26px}}
+</style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <div class="tag">iPhone 13</div><div class="tag">Siri</div><div class="tag">快捷指令</div>
-    <h1>AI Action Mini</h1>
-    <p class="sub">已经部署到公网。iPhone 只需要建立一个很短的快捷指令，就可以用语音访问 AI Action Mini。</p>
-    <p id="health">正在检查服务...</p>
-    <a class="btn" href="/shortcut?text=%E6%89%BE%E5%87%BA%E6%9C%80%E8%BF%91%E4%B8%80%E4%B8%AA%E6%9C%88%E6%B5%81%E6%B0%B4%E4%B8%8B%E9%99%8D30%25%E4%BB%A5%E4%B8%8A%E7%9A%84%E5%95%86%E6%88%B7&conversationId=iphone13">先测试：商户经营查询</a>
-    <a class="btn alt" href="shortcuts://create-shortcut">打开 iPhone 快捷指令</a>
+<div class="shell">
+  <div class="top">
+    <div class="brand"><h1>AI Action Mini</h1><p>iPhone 13 · Siri/快捷指令 · Universal Action MVP</p></div>
+    <div class="badge"><span class="dot"></span><span id="statusText">检查服务中</span></div>
   </div>
 
-  <div class="card">
-    <h2>iPhone 只做 4 个动作</h2>
-    <div class="step"><div class="n">1</div><div class="t">添加 <b>“听写文本”</b>，语言选中文普通话。</div></div>
-    <div class="step"><div class="n">2</div><div class="t">添加 <b>“文本”</b>，内容粘贴下面地址；把中间的“听写文本”四个字删除后，插入上一步的蓝色变量“听写文本”。<div class="code">https://ai-action-mini-buer5460.onrender.com/shortcut?text=听写文本&amp;conversationId=iphone13</div></div></div>
-    <div class="step"><div class="n">3</div><div class="t">添加 <b>“获取 URL 内容”</b>，输入选择上一步的“文本”。不用改 GET，不用 Token，不用设置 JSON。</div></div>
-    <div class="step"><div class="n">4</div><div class="t">添加 <b>“显示结果”</b>（也可以用“朗读文本”），输入选择“获取 URL 内容”。</div></div>
-    <p class="small">快捷指令名称请改成：<b>AI Action Mini</b>。保存后即可对 Siri 说：“AI Action Mini”。</p>
-  </div>
+  <div class="grid">
+    <div class="card kpi"><div class="label">服务状态</div><div class="value ok" id="kpiStatus">--</div></div>
+    <div class="card kpi"><div class="label">当前版本</div><div class="value" id="kpiVersion">--</div></div>
+    <div class="card kpi"><div class="label">iPhone 通道</div><div class="value">已接通</div></div>
+    <div class="card kpi"><div class="label">当前能力</div><div class="value">6</div><div class="mini">查询 / 跟进 / 提醒 / 日历 / 备忘 / URL</div></div>
 
-  <div class="card">
-    <h2>第一轮测试</h2>
-    <p class="sub">对 Siri 运行快捷指令后说：</p>
-    <div class="code">找出最近一个月流水下降30%以上的商户</div>
-    <p class="sub">正常情况下，手机会直接显示商户列表。这个版本先验证“语音 → iPhone → 公网 Action 服务 → 业务结果”的核心链路。下一版再把提醒事项、日历和确认执行接到 iPhone 原生动作里。</p>
+    <div class="card full">
+      <div class="tabs">
+        <button class="tab active" data-pane="console">控制台</button>
+        <button class="tab" data-pane="followups">跟进任务</button>
+        <button class="tab" data-pane="iphone">iPhone 设置</button>
+        <button class="tab" data-pane="arch">架构</button>
+      </div>
+
+      <div class="pane active" id="console">
+        <div class="grid">
+          <div class="wide">
+            <h2>自然语言测试</h2>
+            <div class="notice">这里直接测试与 iPhone 相同的 /shortcut 通道。无需 Token。</div>
+            <textarea id="cmd" rows="3">找出最近一个月流水下降30%以上的商户</textarea>
+            <div class="row" style="margin-top:10px">
+              <button class="btn" onclick="runCmd()">运行测试</button>
+              <button class="btn alt" onclick="preset('给前三家建立跟进任务')">跟进前三家</button>
+              <button class="btn alt" onclick="preset('确认执行')">确认执行</button>
+              <button class="btn alt" onclick="preset('明天下午3点提醒我联系张总')">提醒测试</button>
+            </div>
+            <div id="out" class="out" style="margin-top:14px">等待测试…</div>
+          </div>
+          <div class="side">
+            <h2>当前状态</h2>
+            <table class="table">
+              <tr><th>公网地址</th><td><span class="pill">onrender.com</span></td></tr>
+              <tr><th>区域</th><td>Singapore</td></tr>
+              <tr><th>部署</th><td>GitHub 自动部署</td></tr>
+              <tr><th>入口</th><td>/shortcut</td></tr>
+              <tr><th>会话</th><td>iphone13</td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane" id="followups">
+        <h2>已创建跟进任务</h2>
+        <div class="notice">通过“给前三家建立跟进任务” → “确认执行”产生的任务会显示在这里。</div>
+        <button class="btn alt" onclick="loadFollowups()">刷新任务</button>
+        <div id="followupBox" style="margin-top:14px" class="out">尚未加载。</div>
+      </div>
+
+      <div class="pane" id="iphone">
+        <h2>iPhone 13 快捷指令</h2>
+        <div class="notice">你当前已经跑通语音 → URL 编码 → 公网服务 → 返回结果。下面保留的是最终正确配置。</div>
+        <div class="step"><div class="n">1</div><div>听写文本</div></div>
+        <div class="step"><div class="n">2</div><div>URL 编码（输入：听写的文本）</div></div>
+        <div class="step"><div class="n">3</div><div>文本：<div class="code">https://ai-action-mini-buer5460.onrender.com/shortcut?text=[URL编码后的文本]</div></div></div>
+        <div class="step"><div class="n">4</div><div>获取“文本”内容（GET）</div></div>
+        <div class="step"><div class="n">5</div><div>显示“URL 的内容”</div></div>
+        <p class="mini">下一阶段会把“显示内容”升级成原生菜单式确认：[确认执行] / [取消]，并接入 iPhone 提醒事项、日历和备忘录真实写入。</p>
+      </div>
+
+      <div class="pane" id="arch">
+        <h2>MVP 架构</h2>
+        <div class="flow">
+          <div class="node">iPhone 13</div><span class="arrow">→</span>
+          <div class="node">Siri / 快捷指令</div><span class="arrow">→</span>
+          <div class="node">/shortcut</div><span class="arrow">→</span>
+          <div class="node">Action Router</div><span class="arrow">→</span>
+          <div class="node">Business Skill</div>
+        </div>
+        <p class="mini" style="margin-top:14px">后续直接扩展企业微信、钉钉、飞书、MCP、Apple App Intents / Android AppFunctions，不推翻当前核心。</p>
+      </div>
+    </div>
   </div>
 </div>
 <script>
-fetch('/api/health').then(r=>r.json()).then(x=>document.getElementById('health').innerHTML='<span class="ok">● 服务在线</span> · v'+x.version).catch(()=>document.getElementById('health').textContent='服务暂时异常，请稍后刷新');
+const $=id=>document.getElementById(id);
+async function health(){try{const r=await fetch('/api/health');const x=await r.json();$('statusText').textContent='服务在线';$('kpiStatus').textContent='Live';$('kpiVersion').textContent='v'+x.version}catch(e){$('statusText').textContent='服务异常';$('kpiStatus').textContent='Error'}}
+function preset(t){$('cmd').value=t}
+async function runCmd(){const t=$('cmd').value.trim();if(!t)return;$('out').textContent='执行中…';try{const r=await fetch('/shortcut?text='+encodeURIComponent(t)+'&conversationId=web-console');$('out').textContent=await r.text()}catch(e){$('out').textContent='请求失败：'+e.message}}
+async function loadFollowups(){const box=$('followupBox');box.textContent='加载中…';try{const r=await fetch('/api/v1/followups');const x=await r.json();if(!x.followups?.length){box.textContent='暂无已创建任务。';return}box.textContent=x.followups.map((f,i)=>`${i+1}. ${f.merchantName} · ${f.manager}\n状态：${f.status} · ${f.createdAt}`).join('\n\n')}catch(e){box.textContent='加载失败：'+e.message}}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.pane').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.pane).classList.add('active')});
+health();
 </script>
 </body>
 </html>
