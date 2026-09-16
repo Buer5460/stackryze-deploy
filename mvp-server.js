@@ -59,7 +59,6 @@ function money(n) {
 
 function formatMerchants(ds, threshold = 30) {
   if (!ds.length) return `📊 商户经营分析\n\n没有发现流水下降 ${threshold}% 以上的商户。`;
-
   const show = ds.slice(0, 8);
   const avg = Math.abs(ds.reduce((s, m) => s + m.changeRate, 0) / ds.length).toFixed(1);
   const top = ds[0];
@@ -68,7 +67,6 @@ function formatMerchants(ds, threshold = 30) {
     `   ${m.region} · ${m.manager}`,
     `   本月 ${money(m.currentMonthVolume)}  ｜  上月 ${money(m.previousMonthVolume)}`
   ].join('\n'));
-
   const more = ds.length > show.length ? `\n\n…另有 ${ds.length - show.length} 家未展开` : '';
   return [
     '📊 商户经营分析',
@@ -96,7 +94,7 @@ function isoLocal(base, dayOffset, hour, minute = 0) {
   const a = Math.abs(TZ);
   const oh = String(Math.floor(a / 60)).padStart(2, '0');
   const om = String(a % 60).padStart(2, '0');
-  return `${y}-${mo}-${d}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00${sign}${oh}:${om}`;
+  return `${y}-${mo}-${d}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00${sign}${oh}:${om}`;
 }
 
 function parseTime(text) {
@@ -114,20 +112,51 @@ function titleAfter(text, marker) {
   return t.replace(/[。！!]+$/, '').replace(/^我/, '').trim();
 }
 
+function createFollowups(ids) {
+  const ms = merchants.filter(x => ids.includes(x.merchantId));
+  const created = [];
+  for (const m of ms) {
+    const row = { id: 'fu_' + crypto.randomUUID().slice(0, 8), merchantId: m.merchantId, merchantName: m.merchantName, manager: m.manager, status: 'todo', createdAt: new Date().toISOString() };
+    followups.push(row);
+    created.push(row);
+  }
+  return { ms, created };
+}
+
 function plan(text, sid) {
+  const session = sessions.get(sid) || {};
+
+  if (/^(确认|确认执行|执行|确定|同意|可以执行)[。！!]?$/i.test(text) && session.pendingFollowupIds?.length) {
+    const { ms } = createFollowups(session.pendingFollowupIds);
+    sessions.set(sid, { ...session, pendingFollowupIds: [] });
+    return {
+      message: `✅ 已执行\n\n已创建 ${ms.length} 条商户跟进任务：\n\n${ms.map((x,i)=>`${i+1}. ${x.merchantName} · ${x.manager}`).join('\n')}\n\n任务状态：待跟进`,
+      action: { type: 'followup.executed', payload: { merchantIds: ms.map(x=>x.merchantId) }, requiresConfirmation: false, executionTarget: 'server' }
+    };
+  }
+
+  if (/^(取消|取消执行|不用了|不执行)[。！!]?$/i.test(text) && session.pendingFollowupIds?.length) {
+    sessions.set(sid, { ...session, pendingFollowupIds: [] });
+    return { message: '已取消本次跟进任务创建。', action: { type: 'followup.cancelled', payload: {}, requiresConfirmation: false, executionTarget: 'server' } };
+  }
+
   if (/流水|交易额|商户/.test(text) && /下降|降低|下滑/.test(text)) {
     const n = Number((text.match(/(\d+)\s*%/) || [])[1] || 30);
     const ds = merchants.filter(m => m.changeRate <= -n).sort((a, b) => a.changeRate - b.changeRate).slice(0, 20);
-    sessions.set(sid, { ids: ds.map(x => x.merchantId) });
+    sessions.set(sid, { ...session, ids: ds.map(x => x.merchantId), pendingFollowupIds: [] });
     return { message: formatMerchants(ds, n), action: { type: 'business.query', payload: { thresholdPct: n, merchants: ds }, requiresConfirmation: false, executionTarget: 'server' } };
   }
 
   if (/跟进任务|建立跟进|创建跟进|安排.*跟进/.test(text)) {
     const count = Number((text.match(/前\s*(\d+)\s*家?/) || [])[1] || 3);
-    const ids = (sessions.get(sid)?.ids || []).slice(0, count);
+    const ids = (session.ids || []).slice(0, count);
     if (!ids.length) return { message: '请先查询目标商户，例如：找出最近一个月流水下降30%以上的商户。', action: { type: 'ai.answer', payload: {}, requiresConfirmation: false, executionTarget: 'display' } };
     const ms = merchants.filter(x => ids.includes(x.merchantId));
-    return { message: `📌 跟进任务\n\n即将为 ${ms.length} 家商户创建跟进任务：\n\n${ms.map((x,i)=>`${i+1}. ${x.merchantName} · ${x.manager}`).join('\n')}\n\n请确认后执行。`, action: { type: 'followup.create', payload: { merchantIds: ids, merchants: ms }, requiresConfirmation: true, executionTarget: 'server' } };
+    sessions.set(sid, { ...session, pendingFollowupIds: ids });
+    return {
+      message: `📌 准备创建跟进任务\n\n共 ${ms.length} 家：\n\n${ms.map((x,i)=>`${i+1}. ${x.merchantName}\n   ${x.region} · ${x.manager}`).join('\n\n')}\n\n⚠️ 这是写入操作，尚未执行。\n\n💬 请再说：确认执行\n或说：取消`,
+      action: { type: 'followup.create', payload: { merchantIds: ids, merchants: ms }, requiresConfirmation: true, executionTarget: 'server' }
+    };
   }
 
   if (/提醒/.test(text)) {
@@ -156,7 +185,7 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', 'http://localhost');
 
     if (req.method === 'GET' && url.pathname === '/api/health') {
-      return send(res, 200, { ok: true, name: 'AI Action Mini', version: '0.3.1', mode: 'iphone-mvp', time: new Date().toISOString() });
+      return send(res, 200, { ok: true, name: 'AI Action Mini', version: '0.3.2', mode: 'iphone-mvp', time: new Date().toISOString() });
     }
 
     if (req.method === 'GET' && url.pathname === '/shortcut') {
@@ -190,9 +219,8 @@ const server = http.createServer(async (req, res) => {
       if (!a) throw new Error('pending request not found');
       pending.delete(b.requestId);
       if (a.type === 'followup.create') {
-        const ms = merchants.filter(x => a.payload.merchantIds.includes(x.merchantId));
-        for (const m of ms) followups.push({ id: 'fu_' + crypto.randomUUID().slice(0, 8), merchantId: m.merchantId, merchantName: m.merchantName, manager: m.manager, status: 'todo', createdAt: new Date().toISOString() });
-        return send(res, 200, { status: 'executed', message: `已创建 ${ms.length} 条商户跟进任务。`, result: { followups: followups.slice(-ms.length) } });
+        const { ms, created } = createFollowups(a.payload.merchantIds);
+        return send(res, 200, { status: 'executed', message: `已创建 ${ms.length} 条商户跟进任务。`, result: { followups: created } });
       }
       throw new Error('unsupported action');
     }
@@ -210,4 +238,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`AI Action Mini v0.3.1 listening on ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`AI Action Mini v0.3.2 listening on ${PORT}`));
