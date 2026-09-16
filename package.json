@@ -1,10 +1,10 @@
 {
   "name": "ai-action-mini",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node mvp-server.js"
+    "start": "node mvp-server-v2.js"
   },
   "engines": {
     "node": ">=20"
