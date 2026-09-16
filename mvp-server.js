@@ -53,10 +53,37 @@ function reqId() {
   return 'req_' + crypto.randomUUID().replaceAll('-', '').slice(0, 16);
 }
 
-function formatMerchants(ds) {
-  return `共发现 ${ds.length} 家：\n` + ds.map((m, i) =>
-    `${i + 1}. ${m.merchantName}｜${m.region}｜${m.manager}｜本月 ${m.currentMonthVolume.toLocaleString()}｜上月 ${m.previousMonthVolume.toLocaleString()}｜${m.changeRate}%`
-  ).join('\n');
+function money(n) {
+  return `¥${Number(n).toLocaleString('zh-CN')}`;
+}
+
+function formatMerchants(ds, threshold = 30) {
+  if (!ds.length) return `📊 商户经营分析\n\n没有发现流水下降 ${threshold}% 以上的商户。`;
+
+  const show = ds.slice(0, 8);
+  const avg = Math.abs(ds.reduce((s, m) => s + m.changeRate, 0) / ds.length).toFixed(1);
+  const top = ds[0];
+  const lines = show.map((m, i) => [
+    `${i + 1}. ${m.merchantName}  ↓ ${Math.abs(m.changeRate)}%`,
+    `   ${m.region} · ${m.manager}`,
+    `   本月 ${money(m.currentMonthVolume)}  ｜  上月 ${money(m.previousMonthVolume)}`
+  ].join('\n'));
+
+  const more = ds.length > show.length ? `\n\n…另有 ${ds.length - show.length} 家未展开` : '';
+  return [
+    '📊 商户经营分析',
+    '',
+    `⚠️ 流水下降 ≥ ${threshold}%：${ds.length} 家`,
+    `📉 平均降幅：${avg}%`,
+    `🔻 最大降幅：${top.merchantName} ${Math.abs(top.changeRate)}%`,
+    '',
+    '重点商户',
+    '────────────',
+    lines.join('\n\n'),
+    more,
+    '',
+    '💬 下一步可说：给前三家建立跟进任务'
+  ].join('\n');
 }
 
 function isoLocal(base, dayOffset, hour, minute = 0) {
@@ -92,7 +119,7 @@ function plan(text, sid) {
     const n = Number((text.match(/(\d+)\s*%/) || [])[1] || 30);
     const ds = merchants.filter(m => m.changeRate <= -n).sort((a, b) => a.changeRate - b.changeRate).slice(0, 20);
     sessions.set(sid, { ids: ds.map(x => x.merchantId) });
-    return { message: formatMerchants(ds), action: { type: 'business.query', payload: { thresholdPct: n, merchants: ds }, requiresConfirmation: false, executionTarget: 'server' } };
+    return { message: formatMerchants(ds, n), action: { type: 'business.query', payload: { thresholdPct: n, merchants: ds }, requiresConfirmation: false, executionTarget: 'server' } };
   }
 
   if (/跟进任务|建立跟进|创建跟进|安排.*跟进/.test(text)) {
@@ -100,28 +127,28 @@ function plan(text, sid) {
     const ids = (sessions.get(sid)?.ids || []).slice(0, count);
     if (!ids.length) return { message: '请先查询目标商户，例如：找出最近一个月流水下降30%以上的商户。', action: { type: 'ai.answer', payload: {}, requiresConfirmation: false, executionTarget: 'display' } };
     const ms = merchants.filter(x => ids.includes(x.merchantId));
-    return { message: `即将为 ${ms.length} 家商户创建跟进任务：${ms.map(x => x.merchantName).join('、')}。请确认后执行。`, action: { type: 'followup.create', payload: { merchantIds: ids, merchants: ms }, requiresConfirmation: true, executionTarget: 'server' } };
+    return { message: `📌 跟进任务\n\n即将为 ${ms.length} 家商户创建跟进任务：\n\n${ms.map((x,i)=>`${i+1}. ${x.merchantName} · ${x.manager}`).join('\n')}\n\n请确认后执行。`, action: { type: 'followup.create', payload: { merchantIds: ids, merchants: ms }, requiresConfirmation: true, executionTarget: 'server' } };
   }
 
   if (/提醒/.test(text)) {
     const title = titleAfter(text, '提醒我');
-    return { message: `准备创建提醒：${title}（${parseTime(text)}）`, action: { type: 'reminder.create', payload: { title, datetime: parseTime(text) }, requiresConfirmation: true, executionTarget: 'iphone' } };
+    return { message: `⏰ 准备创建提醒\n\n${title}\n${parseTime(text)}`, action: { type: 'reminder.create', payload: { title, datetime: parseTime(text) }, requiresConfirmation: true, executionTarget: 'iphone' } };
   }
 
   if (/日历|会议|安排.*会/.test(text)) {
     const title = (text.match(/安排(.+?)(?:会议|$)/)?.[1] || '客户').trim() + '会议';
-    return { message: `准备创建日历：${title}`, action: { type: 'calendar.create', payload: { title, start: parseTime(text), durationMinutes: 60 }, requiresConfirmation: true, executionTarget: 'iphone' } };
+    return { message: `📅 准备创建日历\n\n${title}\n${parseTime(text)}`, action: { type: 'calendar.create', payload: { title, start: parseTime(text), durationMinutes: 60 }, requiresConfirmation: true, executionTarget: 'iphone' } };
   }
 
   if (/记一下|备忘|记住/.test(text)) {
     const content = text.replace(/^.*?(记一下|备忘|记住)[:：]?/, '').trim();
-    return { message: `备忘内容：${content}`, action: { type: 'note.create', payload: { content }, requiresConfirmation: true, executionTarget: 'iphone' } };
+    return { message: `📝 备忘\n\n${content}`, action: { type: 'note.create', payload: { content }, requiresConfirmation: true, executionTarget: 'iphone' } };
   }
 
   const u = text.match(/https?:\/\/\S+/);
-  if (u) return { message: `准备打开网址：${u[0]}`, action: { type: 'url.open', payload: { url: u[0] }, requiresConfirmation: false, executionTarget: 'iphone' } };
+  if (u) return { message: `🔗 准备打开网址\n${u[0]}`, action: { type: 'url.open', payload: { url: u[0] }, requiresConfirmation: false, executionTarget: 'iphone' } };
 
-  return { message: 'AI Action Mini 已收到。当前 MVP 支持：商户经营查询、跟进任务、提醒、日历、备忘和网址识别。', action: { type: 'ai.answer', payload: { answer: text }, requiresConfirmation: false, executionTarget: 'display' } };
+  return { message: 'AI Action Mini 已收到。\n\n当前 MVP 支持：\n• 商户经营查询\n• 跟进任务\n• 提醒\n• 日历\n• 备忘\n• 网址识别', action: { type: 'ai.answer', payload: { answer: text }, requiresConfirmation: false, executionTarget: 'display' } };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -129,11 +156,9 @@ const server = http.createServer(async (req, res) => {
     const url = new URL(req.url || '/', 'http://localhost');
 
     if (req.method === 'GET' && url.pathname === '/api/health') {
-      return send(res, 200, { ok: true, name: 'AI Action Mini', version: '0.3.0', mode: 'iphone-mvp', time: new Date().toISOString() });
+      return send(res, 200, { ok: true, name: 'AI Action Mini', version: '0.3.1', mode: 'iphone-mvp', time: new Date().toISOString() });
     }
 
-    // iPhone MVP endpoint: intentionally public and read-oriented for easy Shortcut setup.
-    // It returns plain text so the Shortcut only needs Dictate Text -> Get URL -> Show/Speak Result.
     if (req.method === 'GET' && url.pathname === '/shortcut') {
       const text = String(url.searchParams.get('text') || '').trim();
       if (!text) return send(res, 400, '请提供 text 参数。', 'text/plain; charset=utf-8');
@@ -185,4 +210,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, '0.0.0.0', () => console.log(`AI Action Mini v0.3 listening on ${PORT}`));
+server.listen(PORT, '0.0.0.0', () => console.log(`AI Action Mini v0.3.1 listening on ${PORT}`));
