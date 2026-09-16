@@ -1,1 +1,41 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AI Action Mini</title><style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0b1020;color:#edf2ff;margin:0}main{max-width:760px;margin:48px auto;padding:24px}.card{background:#121a31;border:1px solid #263250;border-radius:20px;padding:24px;box-shadow:0 16px 60px #0005}h1{font-size:34px;margin:0 0 8px}.muted{color:#9fb0d5}input,textarea,button{font:inherit}input,textarea{width:100%;box-sizing:border-box;background:#0d1428;border:1px solid #304061;color:white;padding:14px;border-radius:12px;margin:8px 0}button{background:#fff;color:#0b1020;border:0;padding:12px 18px;border-radius:12px;font-weight:700;cursor:pointer}.row{display:flex;gap:10px;flex-wrap:wrap}.chip{background:#1a2442;color:#cfe0ff}.out{white-space:pre-wrap;background:#09101f;padding:16px;border-radius:12px;margin-top:16px;min-height:100px}.good{color:#74f0b1}</style></head><body><main><div class="card"><h1>AI Action Mini</h1><p class="muted">iPhone 13 + Siri/快捷指令 + Universal Action MVP</p><p id="health">正在检查服务…</p><label>APP_TOKEN</label><input id="token" placeholder="部署后填写 APP_TOKEN"><label>测试命令</label><textarea id="text" rows="3">找出最近一个月流水下降30%以上的商户</textarea><div class="row"><button onclick="run()">运行</button><button class="chip" onclick="setText('明天下午3点提醒我联系张总')">提醒测试</button><button class="chip" onclick="setText('给前三家建立跟进任务')">跟进测试</button></div><div id="out" class="out">等待测试…</div></div></main><script>const $=id=>document.getElementById(id); function setText(t){$('text').value=t} fetch('/api/health').then(r=>r.json()).then(x=>$('health').innerHTML='<span class="good">● 服务在线</span> · v'+x.version).catch(()=>$('health').textContent='服务异常'); async function run(){const r=await fetch('/api/v1/command',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+$('token').value},body:JSON.stringify({text:$('text').value,channel:'web',user:'owner',conversationId:'demo'})}); const x=await r.json(); $('out').textContent=JSON.stringify(x,null,2)}</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>AI Action Mini</title>
+<style>
+:root{color-scheme:dark}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#08101d;color:#f5f7ff;margin:0}.wrap{max-width:760px;margin:auto;padding:24px 18px 56px}.card{background:#101a2e;border:1px solid #263551;border-radius:22px;padding:22px;margin:14px 0;box-shadow:0 18px 60px #0005}h1{font-size:34px;margin:4px 0 6px}.sub{color:#a9b9d7;line-height:1.6}.ok{color:#75efae;font-weight:700}.btn{display:block;text-decoration:none;background:#f4f7ff;color:#08101d;padding:15px 17px;border-radius:14px;font-weight:800;text-align:center;margin:10px 0}.btn.alt{background:#1d2b47;color:#e8efff}.step{display:flex;gap:12px;margin:18px 0}.n{flex:0 0 30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#eaf0ff;color:#10182a;font-weight:900}.t{line-height:1.6}.code{background:#070d18;border:1px solid #23314a;padding:12px;border-radius:12px;overflow-wrap:anywhere;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#cfe0ff}.small{font-size:13px;color:#8fa3c7}.tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#182643;color:#bdd0f3;font-size:12px;margin:4px 4px 4px 0}</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <div class="tag">iPhone 13</div><div class="tag">Siri</div><div class="tag">快捷指令</div>
+    <h1>AI Action Mini</h1>
+    <p class="sub">已经部署到公网。iPhone 只需要建立一个很短的快捷指令，就可以用语音访问 AI Action Mini。</p>
+    <p id="health">正在检查服务...</p>
+    <a class="btn" href="/shortcut?text=%E6%89%BE%E5%87%BA%E6%9C%80%E8%BF%91%E4%B8%80%E4%B8%AA%E6%9C%88%E6%B5%81%E6%B0%B4%E4%B8%8B%E9%99%8D30%25%E4%BB%A5%E4%B8%8A%E7%9A%84%E5%95%86%E6%88%B7&conversationId=iphone13">先测试：商户经营查询</a>
+    <a class="btn alt" href="shortcuts://create-shortcut">打开 iPhone 快捷指令</a>
+  </div>
+
+  <div class="card">
+    <h2>iPhone 只做 4 个动作</h2>
+    <div class="step"><div class="n">1</div><div class="t">添加 <b>“听写文本”</b>，语言选中文普通话。</div></div>
+    <div class="step"><div class="n">2</div><div class="t">添加 <b>“文本”</b>，内容粘贴下面地址；把中间的“听写文本”四个字删除后，插入上一步的蓝色变量“听写文本”。<div class="code">https://ai-action-mini-buer5460.onrender.com/shortcut?text=听写文本&amp;conversationId=iphone13</div></div></div>
+    <div class="step"><div class="n">3</div><div class="t">添加 <b>“获取 URL 内容”</b>，输入选择上一步的“文本”。不用改 GET，不用 Token，不用设置 JSON。</div></div>
+    <div class="step"><div class="n">4</div><div class="t">添加 <b>“显示结果”</b>（也可以用“朗读文本”），输入选择“获取 URL 内容”。</div></div>
+    <p class="small">快捷指令名称请改成：<b>AI Action Mini</b>。保存后即可对 Siri 说：“AI Action Mini”。</p>
+  </div>
+
+  <div class="card">
+    <h2>第一轮测试</h2>
+    <p class="sub">对 Siri 运行快捷指令后说：</p>
+    <div class="code">找出最近一个月流水下降30%以上的商户</div>
+    <p class="sub">正常情况下，手机会直接显示商户列表。这个版本先验证“语音 → iPhone → 公网 Action 服务 → 业务结果”的核心链路。下一版再把提醒事项、日历和确认执行接到 iPhone 原生动作里。</p>
+  </div>
+</div>
+<script>
+fetch('/api/health').then(r=>r.json()).then(x=>document.getElementById('health').innerHTML='<span class="ok">● 服务在线</span> · v'+x.version).catch(()=>document.getElementById('health').textContent='服务暂时异常，请稍后刷新');
+</script>
+</body>
+</html>
