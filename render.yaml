@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ai-action-mini
+    runtime: node
+    plan: free
+    buildCommand: echo "No dependencies"
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: DEFAULT_TIMEZONE_OFFSET_MINUTES
+        value: 480
+      - key: APP_TOKEN
+        sync: false
