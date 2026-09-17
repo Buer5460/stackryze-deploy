@@ -1,109 +1,16 @@
-import http from 'node:http';
-import fs from 'node:fs';
-import path from 'node:path';
-import crypto from 'node:crypto';
-
-const PORT = Number(process.env.PORT || 10000);
-const APP_TOKEN = (process.env.APP_TOKEN || '').trim();
-const TZ = Number(process.env.DEFAULT_TIMEZONE_OFFSET_MINUTES || 480);
-const pending = new Map();
-const sessions = new Map();
-const followups = [];
-
-const merchants = Array.from({length:50}, (_,i)=>{
-  const prev = 60000 + ((i*7919)%260000);
-  const decline = i % 3 === 0 ? 0.31 + ((i%7)*0.035) : 0.04 + ((i%6)*0.03);
-  const cur = Math.round(prev * (1-decline));
-  return {
-    merchantId:`M${String(i+1).padStart(4,'0')}`,
-    merchantName:['鑫源超市','鸿运便利店','万佳商行','新世纪餐饮','金海百货','青禾茶馆','星光酒店','天天生鲜','山城便利','宏达商贸'][i%10] + (Math.floor(i/10)+1),
-    manager:['王经理','李经理','张经理','陈经理','刘经理'][i%5],
-    region:['重庆','成都','深圳','广州','佛山'][i%5],
-    currentMonthVolume:cur,
-    previousMonthVolume:prev,
-    changeRate:Number((((cur-prev)/prev)*100).toFixed(1))
-  };
-});
-
-function send(res,status,obj,contentType='application/json; charset=utf-8'){
-  const body = contentType.startsWith('application/json') ? JSON.stringify(obj) : obj;
-  res.writeHead(status,{'content-type':contentType,'cache-control':'no-store','content-length':Buffer.byteLength(body)});
-  res.end(body);
-}
-async function body(req){let s=''; for await(const c of req){s+=c; if(s.length>262144) throw new Error('body too large');} return s?JSON.parse(s):{};}
-function auth(req){return !APP_TOKEN || req.headers.authorization===`Bearer ${APP_TOKEN}`;}
-function reqId(){return 'req_'+crypto.randomUUID().replaceAll('-','').slice(0,16);}
-function fmt(ds){return `共发现 ${ds.length} 家：\n`+ds.map((m,i)=>`${i+1}. ${m.merchantName}｜${m.region}｜${m.manager}｜本月 ${m.currentMonthVolume.toLocaleString()}｜上月 ${m.previousMonthVolume.toLocaleString()}｜${m.changeRate}%`).join('\n');}
-function isoLocal(base, dayOffset, hour, minute=0){
-  const ms = base.getTime() + (dayOffset*24*60*60*1000);
-  const local = new Date(ms + TZ*60000);
-  const y=local.getUTCFullYear(), mo=String(local.getUTCMonth()+1).padStart(2,'0'), d=String(local.getUTCDate()).padStart(2,'0');
-  const sign=TZ>=0?'+':'-'; const a=Math.abs(TZ); const oh=String(Math.floor(a/60)).padStart(2,'0'), om=String(a%60).padStart(2,'0');
-  return `${y}-${mo}-${d}T${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}:00${sign}${oh}:${om}`;
-}
-function parseTime(text){
-  const now=new Date(); let day=0;
-  if(/明天/.test(text)) day=1; else if(/后天/.test(text)) day=2;
-  let h=9,m=0; const mm=text.match(/(\d{1,2})\s*点(?:\s*(\d{1,2})\s*分)?/); if(mm){h=Number(mm[1]);m=Number(mm[2]||0);}
-  if(/下午|晚上/.test(text) && h<12) h+=12;
-  return isoLocal(now,day,h,m);
-}
-function titleAfter(text, marker){const t=text.split(marker).pop()?.trim()||text; return t.replace(/[。！!]+$/,'').replace(/^我/,'').trim();}
-function plan(text, sid){
-  if(/流水|交易额|商户/.test(text) && /下降|降低|下滑/.test(text)){
-    const n=Number((text.match(/(\d+)\s*%/)||[])[1]||30);
-    const ds=merchants.filter(m=>m.changeRate<=-n).sort((a,b)=>a.changeRate-b.changeRate).slice(0,20);
-    sessions.set(sid,{ids:ds.map(x=>x.merchantId)});
-    return {message:fmt(ds),action:{type:'business.query',payload:{thresholdPct:n,merchants:ds},requiresConfirmation:false,executionTarget:'server'}};
-  }
-  if(/跟进任务|建立跟进|创建跟进|安排.*跟进/.test(text)){
-    const count=Number((text.match(/前\s*(\d+)\s*家?/)||[])[1]||3); const ids=(sessions.get(sid)?.ids||[]).slice(0,count);
-    if(!ids.length) return {message:'请先查询目标商户，例如：找出最近一个月流水下降30%以上的商户。',action:{type:'ai.answer',payload:{},requiresConfirmation:false,executionTarget:'display'}};
-    const ms=merchants.filter(x=>ids.includes(x.merchantId));
-    return {message:`即将为 ${ms.length} 家商户创建跟进任务：${ms.map(x=>x.merchantName).join('、')}。请确认后执行。`,action:{type:'followup.create',payload:{merchantIds:ids,merchants:ms},requiresConfirmation:true,executionTarget:'server'}};
-  }
-  if(/提醒/.test(text)){
-    const title=titleAfter(text,'提醒我');
-    return {message:`准备创建提醒：${title}`,action:{type:'reminder.create',payload:{title,datetime:parseTime(text)},requiresConfirmation:true,executionTarget:'iphone'}};
-  }
-  if(/日历|会议|安排.*会/.test(text)){
-    const title=(text.match(/安排(.+?)(?:会议|$)/)?.[1]||'客户会议').trim()+'会议';
-    return {message:`准备创建日历：${title}`,action:{type:'calendar.create',payload:{title,start:parseTime(text),durationMinutes:60},requiresConfirmation:true,executionTarget:'iphone'}};
-  }
-  if(/记一下|备忘|记住/.test(text)){
-    const content=text.replace(/^.*?(记一下|备忘|记住)[:：]?/,'').trim();
-    return {message:'已整理为备忘内容。',action:{type:'note.create',payload:{content},requiresConfirmation:true,executionTarget:'iphone'}};
-  }
-  const u=text.match(/https?:\/\/\S+/); if(u) return {message:'准备打开网址。',action:{type:'url.open',payload:{url:u[0]},requiresConfirmation:false,executionTarget:'iphone'}};
-  return {message:'AI Action Mini MVP 已收到。当前可用：提醒、日历、备忘、网址、商户经营查询、跟进任务。',action:{type:'ai.answer',payload:{answer:text},requiresConfirmation:false,executionTarget:'display'}};
-}
-
-const server=http.createServer(async(req,res)=>{
-  try{
-    const url=new URL(req.url||'/','http://localhost');
-    if(req.method==='GET' && url.pathname==='/api/health') return send(res,200,{ok:true,name:'AI Action Mini',version:'0.2.0',mode:'mvp',time:new Date().toISOString()});
-    if(url.pathname.startsWith('/api/v1/') && !auth(req)) return send(res,401,{error:'unauthorized'});
-    if(req.method==='POST' && url.pathname==='/api/v1/command'){
-      const b=await body(req); const text=String(b.text||'').trim(); if(!text) throw new Error('text is required');
-      const id=reqId(), sid=`${b.user||'owner'}:${b.conversationId||'iphone13'}`; const p=plan(text,sid);
-      if(p.action.requiresConfirmation && p.action.executionTarget==='server') pending.set(id,p.action);
-      return send(res,200,{requestId:id,...p});
-    }
-    if(req.method==='POST' && url.pathname==='/api/v1/execute'){
-      const b=await body(req); if(!b.approved){pending.delete(b.requestId);return send(res,200,{status:'cancelled',message:'已取消。'});}
-      const a=pending.get(b.requestId); if(!a) throw new Error('pending request not found'); pending.delete(b.requestId);
-      if(a.type==='followup.create'){
-        const ms=merchants.filter(x=>a.payload.merchantIds.includes(x.merchantId));
-        for(const m of ms) followups.push({id:'fu_'+crypto.randomUUID().slice(0,8),merchantId:m.merchantId,merchantName:m.merchantName,manager:m.manager,status:'todo',createdAt:new Date().toISOString()});
-        return send(res,200,{status:'executed',message:`已创建 ${ms.length} 条商户跟进任务。`,result:{followups:followups.slice(-ms.length)}});
-      }
-      throw new Error('unsupported action');
-    }
-    if(req.method==='GET' && url.pathname==='/api/v1/followups') return send(res,200,{followups});
-    if(req.method==='GET'){
-      const html=fs.readFileSync(path.resolve('public/index.html'),'utf8'); return send(res,200,html,'text/html; charset=utf-8');
-    }
-    return send(res,404,{error:'not found'});
-  }catch(e){return send(res,400,{error:e?.message||'unknown error'});}
-});
-server.listen(PORT,'0.0.0.0',()=>console.log(`AI Action Mini listening on ${PORT}`));
+const express=require('express');
+const path=require('path');
+const app=express();
+app.use(express.json());
+const seed={profile:{name:'陈小雨',education:'本科大三',gpa:'3.5/4.0',english:'IELTS 6.5',budget:'25万/年',country:'新加坡 / 英国',completion:72},programs:[{id:1,school:'南洋国际学院（演示）',country:'新加坡',program:'数据科学硕士',degree:'硕士',lang:'IELTS 6.5',fee:188000,scholarship:30000,deadline:'2026-11-30',fit:'符合已知条件'},{id:2,school:'海峡商学院（演示）',country:'新加坡',program:'国际商务本科',degree:'本科',lang:'IELTS 6.0',fee:128000,scholarship:20000,deadline:'2026-12-15',fit:'资料不足'},{id:3,school:'英伦创新大学（演示）',country:'英国',program:'金融科技硕士',degree:'硕士',lang:'IELTS 6.5',fee:236000,scholarship:25000,deadline:'2027-01-20',fit:'符合已知条件'}],clients:[{id:101,name:'陈小雨',source:'机构专属二维码',owner:'王老师',stage:'材料准备',completion:82},{id:102,name:'李晨',source:'自然注册后授权',owner:'周老师',stage:'院校受理',completion:91}],applications:[{id:'APP-260901',student:'陈小雨',programId:1,agency:'环球学桥（演示）',school:'南洋国际学院（演示）',status:'材料准备',progress:42,commission:9800},{id:'APP-260823',student:'李晨',programId:3,agency:'环球学桥（演示）',school:'英伦创新大学（演示）',status:'院校受理',progress:68,commission:12500}],audits:[{id:1,type:'奖学金',name:'2027春季优秀新生减免',org:'海峡商学院（演示）',status:'待审核'},{id:2,type:'机构认证',name:'新加坡启航教育（演示）',org:'B端机构',status:'待审核'}]};
+let db=JSON.parse(JSON.stringify(seed));
+const ok=data=>({ok:true,data});
+app.get('/api/health',(req,res)=>res.json(ok({status:'ok',service:'global-study-mobile-mvp'})));
+app.get('/api/bootstrap',(req,res)=>res.json(ok(db)));
+app.post('/api/applications',(req,res)=>{const p=db.programs.find(x=>x.id===Number(req.body.programId));if(!p)return res.status(400).json({ok:false,error:'项目不存在'});if(db.applications.some(a=>a.student===req.body.student&&a.programId===p.id))return res.status(409).json({ok:false,error:'该项目已申请'});const x={id:'APP-'+Date.now().toString().slice(-6),student:req.body.student,programId:p.id,agency:req.body.agency||'待授权机构',school:p.school,status:'材料准备',progress:18,commission:Math.round(p.fee*.05)};db.applications.unshift(x);res.status(201).json(ok(x))});
+app.patch('/api/applications/:id',(req,res)=>{const x=db.applications.find(a=>a.id===req.params.id);if(!x)return res.status(404).json({ok:false,error:'申请不存在'});Object.assign(x,req.body);res.json(ok(x))});
+app.post('/api/clients',(req,res)=>{if(!req.body.name)return res.status(400).json({ok:false,error:'姓名必填'});const x={id:Date.now(),name:req.body.name,source:'机构专属邀请',owner:req.body.owner||'王老师',stage:'待建档',completion:10};db.clients.unshift(x);res.status(201).json(ok(x))});
+app.patch('/api/audits/:id',(req,res)=>{const x=db.audits.find(a=>a.id===Number(req.params.id));if(!x)return res.status(404).json({ok:false,error:'审核事项不存在'});x.status=req.body.status||x.status;res.json(ok(x))});
+app.use(express.static(path.join(__dirname,'public')));
+app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'public','index.html')));
+app.listen(process.env.PORT||3000,()=>console.log('GlobalStudy MVP running'));
