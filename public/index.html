@@ -5,14 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>AI Action Mini · Console</title>
 <style>
-:root{color-scheme:dark;--bg:#07101d;--panel:#101a2e;--panel2:#14213a;--line:#273956;--text:#f5f7ff;--muted:#9fb0cf;--ok:#70efad;--accent:#7ca7ff;--warn:#ffd36a}
-*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#07101d,#0a1322);color:var(--text);margin:0}.shell{max-width:1180px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand h1{margin:0;font-size:32px}.brand p{margin:6px 0 0;color:var(--muted)}.badge{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#101a2e;color:#dce6ff}.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 12px var(--ok)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:rgba(16,26,46,.95);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 18px 60px #0004}.kpi{grid-column:span 3}.wide{grid-column:span 8}.side{grid-column:span 4}.full{grid-column:1/-1}.label{font-size:13px;color:var(--muted)}.value{font-size:30px;font-weight:800;margin-top:8px}.ok{color:var(--ok)}h2{margin:0 0 14px;font-size:20px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 18px}.tab{border:1px solid var(--line);background:#13213a;color:#dce6ff;padding:9px 13px;border-radius:10px;cursor:pointer}.tab.active{background:#eef4ff;color:#0b1323}.pane{display:none}.pane.active{display:block}.row{display:flex;gap:10px;flex-wrap:wrap}.input,textarea,select{width:100%;background:#08111f;border:1px solid #314767;color:#fff;border-radius:12px;padding:13px;font:inherit}.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer;background:#eef4ff;color:#09111f}.btn.alt{background:#1b2a47;color:#eaf1ff;border:1px solid #314767}.btn.warn{background:#3a2f16;color:#ffe59a;border:1px solid #6a5524}.out{white-space:pre-wrap;background:#08111f;border:1px solid #243652;border-radius:14px;padding:15px;min-height:120px;line-height:1.65;color:#eaf0ff}.mini{font-size:12px;color:var(--muted)}.step{display:grid;grid-template-columns:34px 1fr;gap:10px;margin:12px 0}.n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#eaf0ff;color:#0b1424;font-weight:900}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#07101d;border:1px solid #263957;border-radius:10px;padding:10px;overflow-wrap:anywhere;color:#cfe0ff}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px;border-bottom:1px solid #253650;text-align:left;font-size:14px}.table th{color:#aebedf}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#1a2945;color:#cfe0ff;font-size:12px}.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.node{padding:10px 12px;background:#0a1424;border:1px solid #2b4061;border-radius:10px}.arrow{color:#7188ad}.notice{padding:12px;border-radius:12px;background:#13233d;border:1px solid #2b466f;color:#cfe0ff;margin-bottom:14px}@media(max-width:800px){.kpi,.wide,.side{grid-column:1/-1}.top{align-items:flex-start;flex-direction:column}.value{font-size:26px}}
+:root{color-scheme:dark;--bg:#07101d;--panel:#101a2e;--panel2:#14213a;--line:#273956;--text:#f5f7ff;--muted:#9fb0cf;--ok:#70efad;--accent:#7ca7ff;--warn:#ffd36a;--danger:#ff8b8b}
+*{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:linear-gradient(180deg,#07101d,#0a1322);color:var(--text);margin:0}.shell{max-width:1180px;margin:auto;padding:22px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand h1{margin:0;font-size:32px}.brand p{margin:6px 0 0;color:var(--muted)}.badge{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;background:#101a2e;color:#dce6ff}.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 12px var(--ok)}.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}.card{background:rgba(16,26,46,.95);border:1px solid var(--line);border-radius:20px;padding:20px;box-shadow:0 18px 60px #0004}.kpi{grid-column:span 3}.wide{grid-column:span 8}.side{grid-column:span 4}.full{grid-column:1/-1}.label{font-size:13px;color:var(--muted)}.value{font-size:30px;font-weight:800;margin-top:8px}.ok{color:var(--ok)}h2{margin:0 0 14px;font-size:20px}h3{margin:0 0 10px;font-size:17px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 18px}.tab{border:1px solid var(--line);background:#13213a;color:#dce6ff;padding:9px 13px;border-radius:10px;cursor:pointer}.tab.active{background:#eef4ff;color:#0b1323}.pane{display:none}.pane.active{display:block}.row{display:flex;gap:10px;flex-wrap:wrap}.input,textarea,select{width:100%;background:#08111f;border:1px solid #314767;color:#fff;border-radius:12px;padding:13px;font:inherit}.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:800;cursor:pointer;background:#eef4ff;color:#09111f}.btn.alt{background:#1b2a47;color:#eaf1ff;border:1px solid #314767}.out{white-space:pre-wrap;background:#08111f;border:1px solid #243652;border-radius:14px;padding:15px;min-height:120px;line-height:1.65;color:#eaf0ff}.mini{font-size:12px;color:var(--muted)}.step{display:grid;grid-template-columns:34px 1fr;gap:10px;margin:12px 0}.n{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#eaf0ff;color:#0b1424;font-weight:900}.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;background:#07101d;border:1px solid #263957;border-radius:10px;padding:10px;overflow-wrap:anywhere;color:#cfe0ff}.table{width:100%;border-collapse:collapse}.table th,.table td{padding:10px;border-bottom:1px solid #253650;text-align:left;font-size:14px}.table th{color:#aebedf}.pill{display:inline-block;padding:4px 8px;border-radius:999px;background:#1a2945;color:#cfe0ff;font-size:12px}.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.node{padding:10px 12px;background:#0a1424;border:1px solid #2b4061;border-radius:10px}.arrow{color:#7188ad}.notice{padding:12px;border-radius:12px;background:#13233d;border:1px solid #2b466f;color:#cfe0ff;margin-bottom:14px}.optionGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0 18px}.option{background:#0b1526;border:1px solid #2a3d5b;border-radius:16px;padding:16px}.option.reco{border-color:#4f7fd0;box-shadow:0 0 0 1px #4f7fd055}.option .tag2{display:inline-block;padding:4px 8px;border-radius:999px;background:#17345f;color:#b9d4ff;font-size:12px;margin-bottom:8px}.check{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;padding:11px 0;border-bottom:1px solid #20324c}.check:last-child{border-bottom:0}.ck{width:22px;height:22px;border-radius:6px;display:grid;place-items:center;background:#17304d;color:#7cc4ff;font-weight:900}.red{color:var(--danger)}.green{color:var(--ok)}.section{background:#0a1424;border:1px solid #263957;border-radius:14px;padding:15px;margin-top:12px}.fieldlist{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 18px}.field{padding:8px 0;color:#dce6ff}.field b{color:#fff}.copybox{background:#07101d;border:1px dashed #385074;border-radius:12px;padding:14px;white-space:pre-wrap;color:#d7e5ff;line-height:1.6}@media(max-width:800px){.kpi,.wide,.side{grid-column:1/-1}.top{align-items:flex-start;flex-direction:column}.value{font-size:26px}.optionGrid,.fieldlist{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <div class="shell">
   <div class="top">
-    <div class="brand"><h1>AI Action Mini</h1><p>iPhone 13 · Siri/快捷指令 · Universal Action MVP</p></div>
+    <div class="brand"><h1>AI Action Mini</h1><p>支付老板驾驶舱 · iPhone / Android · Universal Action MVP</p></div>
     <div class="badge"><span class="dot"></span><span id="statusText">检查服务中</span></div>
   </div>
 
@@ -25,6 +25,7 @@
     <div class="card full">
       <div class="tabs">
         <button class="tab active" data-pane="console">控制台</button>
+        <button class="tab" data-pane="data">数据接入</button>
         <button class="tab" data-pane="followups">跟进任务</button>
         <button class="tab" data-pane="iphone">iPhone 设置</button>
         <button class="tab" data-pane="arch">架构</button>
@@ -40,52 +41,75 @@
               <button class="btn" onclick="runCmd()">运行测试</button>
               <button class="btn alt" onclick="preset('给前三家建立跟进任务')">跟进前三家</button>
               <button class="btn alt" onclick="preset('确认执行')">确认执行</button>
-              <button class="btn alt" onclick="preset('明天下午3点提醒我联系张总')">提醒测试</button>
             </div>
             <div id="out" class="out" style="margin-top:14px">等待测试…</div>
           </div>
           <div class="side">
             <h2>当前状态</h2>
-            <table class="table">
-              <tr><th>公网地址</th><td><span class="pill">onrender.com</span></td></tr>
-              <tr><th>区域</th><td>Singapore</td></tr>
-              <tr><th>部署</th><td>GitHub 自动部署</td></tr>
-              <tr><th>入口</th><td>/shortcut</td></tr>
-              <tr><th>会话</th><td>iphone13</td></tr>
-            </table>
+            <table class="table"><tr><th>公网地址</th><td><span class="pill">onrender.com</span></td></tr><tr><th>区域</th><td>Singapore</td></tr><tr><th>部署</th><td>GitHub 自动部署</td></tr><tr><th>入口</th><td>/shortcut</td></tr><tr><th>会话</th><td>iphone13</td></tr></table>
           </div>
         </div>
       </div>
 
-      <div class="pane" id="followups">
-        <h2>已创建跟进任务</h2>
-        <div class="notice">通过“给前三家建立跟进任务” → “确认执行”产生的任务会显示在这里。</div>
-        <button class="btn alt" onclick="loadFollowups()">刷新任务</button>
-        <div id="followupBox" style="margin-top:14px" class="out">尚未加载。</div>
-      </div>
+      <div class="pane" id="data">
+        <h2>支付数据接入</h2>
+        <div class="notice"><b>目标：</b>不改现有支付系统，不让 AI 直接操作生产库。技术只需要提供一个安全的只读数据源。</div>
 
-      <div class="pane" id="iphone">
-        <h2>iPhone 13 快捷指令</h2>
-        <div class="notice">你当前已经跑通语音 → URL 编码 → 公网服务 → 返回结果。下面保留的是最终正确配置。</div>
-        <div class="step"><div class="n">1</div><div>听写文本</div></div>
-        <div class="step"><div class="n">2</div><div>URL 编码（输入：听写的文本）</div></div>
-        <div class="step"><div class="n">3</div><div>文本：<div class="code">https://ai-action-mini-buer5460.onrender.com/shortcut?text=[URL编码后的文本]</div></div></div>
-        <div class="step"><div class="n">4</div><div>获取“文本”内容（GET）</div></div>
-        <div class="step"><div class="n">5</div><div>显示“URL 的内容”</div></div>
-        <p class="mini">下一阶段会把“显示内容”升级成原生菜单式确认：[确认执行] / [取消]，并接入 iPhone 提醒事项、日历和备忘录真实写入。</p>
-      </div>
-
-      <div class="pane" id="arch">
-        <h2>MVP 架构</h2>
-        <div class="flow">
-          <div class="node">iPhone 13</div><span class="arrow">→</span>
-          <div class="node">Siri / 快捷指令</div><span class="arrow">→</span>
-          <div class="node">/shortcut</div><span class="arrow">→</span>
-          <div class="node">Action Router</div><span class="arrow">→</span>
-          <div class="node">Business Skill</div>
+        <div class="optionGrid">
+          <div class="option reco"><div class="tag2">推荐 · 工作量最低</div><h3>① 只读副库 / 报表库</h3><div class="mini">只允许 SELECT；最好不是生产主库；可限制 IP 和指定表。</div></div>
+          <div class="option"><div class="tag2">已有就用</div><h3>② 现有查询 API</h3><div class="mini">如果系统已经有交易、商户、代理、分润查询接口，直接给文档和只读 Token。</div></div>
+          <div class="option"><div class="tag2">最保守</div><h3>③ Excel / CSV</h3><div class="mini">第一版也可以每天导出 4～5 张表，先把指标和老板驾驶舱跑起来。</div></div>
         </div>
-        <p class="mini" style="margin-top:14px">后续直接扩展企业微信、钉钉、飞书、MCP、Apple App Intents / Android AppFunctions，不推翻当前核心。</p>
+
+        <div class="grid">
+          <div class="wide">
+            <div class="section">
+              <h3>技术只需要给这些</h3>
+              <div class="check"><div class="ck">1</div><div><b>交易数据</b><div class="mini">交易时间、金额、商户ID、交易状态、手续费/服务费（如果有）</div></div></div>
+              <div class="check"><div class="ck">2</div><div><b>商户数据</b><div class="mini">商户ID、商户名称、代理ID、状态、最近交易时间</div></div></div>
+              <div class="check"><div class="ck">3</div><div><b>代理数据</b><div class="mini">代理ID、代理名称、上级代理（如果有）</div></div></div>
+              <div class="check"><div class="ck">4</div><div><b>分润数据</b><div class="mini">代理ID、分润金额、对应交易/结算日期；或者告诉我们分润计算规则</div></div></div>
+              <div class="check"><div class="ck">5</div><div><b>成本 / 费率</b><div class="mini">通道成本、成本费率、商户费率；如果系统已有利润字段，直接提供即可</div></div></div>
+              <div class="check"><div class="ck">6</div><div><b>关联关系</b><div class="mini">商户、代理、交易、分润之间分别用哪个 ID 关联</div></div></div>
+            </div>
+
+            <div class="section">
+              <h3>第一阶段我们要算出来的结果</h3>
+              <div class="fieldlist">
+                <div class="field">• 今日交易流水</div><div class="field">• 今日手续费收入</div>
+                <div class="field">• 今日通道成本</div><div class="field">• 今日代理分润</div>
+                <div class="field">• 今日公司利润</div><div class="field">• 代理分润排行</div>
+                <div class="field">• 商户交易下滑</div><div class="field">• 今日 / 连续多日无交易商户</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="side">
+            <div class="section">
+              <h3>安全红线</h3>
+              <div class="check"><div class="ck">✓</div><div>只读账号 / 只读 Token</div></div>
+              <div class="check"><div class="ck">✓</div><div>只允许 SELECT</div></div>
+              <div class="check"><div class="ck">✓</div><div>优先副库 / 报表库</div></div>
+              <div class="check"><div class="ck">✓</div><div>可限制固定 IP</div></div>
+              <div class="check"><div class="ck">✓</div><div>可限制指定表</div></div>
+              <div class="check"><div class="ck red">×</div><div class="red">不要给写权限</div></div>
+              <div class="check"><div class="ck red">×</div><div class="red">不要给生产管理账号</div></div>
+              <div class="check"><div class="ck red">×</div><div class="red">不要让 AI 直接生成 SQL 操作生产库</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>直接发给技术</h3>
+          <div class="copybox">给我一个支付系统的只读数据源，优先副库/报表库，只允许 SELECT，禁止写入；如果不方便开库，就给现有查询 API。\n\n先给这几类数据：交易、商户、代理、分润、成本/费率；同时说明商户、代理、交易、分润之间用什么 ID 关联，以及利润和分润怎么算。\n\n不要改现有系统，不用专门开发新模块，按最省事、最安全的方式给我。</div>
+        </div>
       </div>
+
+      <div class="pane" id="followups"><h2>已创建跟进任务</h2><div class="notice">通过“给前三家建立跟进任务” → “确认执行”产生的任务会显示在这里。</div><button class="btn alt" onclick="loadFollowups()">刷新任务</button><div id="followupBox" style="margin-top:14px" class="out">尚未加载。</div></div>
+
+      <div class="pane" id="iphone"><h2>iPhone 13 快捷指令</h2><div class="notice">当前已跑通语音查询和原生确认 / 取消执行。</div><div class="step"><div class="n">1</div><div>听写文本</div></div><div class="step"><div class="n">2</div><div>URL 编码</div></div><div class="step"><div class="n">3</div><div>调用 AI Action Mini</div></div><div class="step"><div class="n">4</div><div>显示结果 / 确认执行</div></div></div>
+
+      <div class="pane" id="arch"><h2>MVP 架构</h2><div class="flow"><div class="node">iPhone / Android</div><span class="arrow">→</span><div class="node">AI Action</div><span class="arrow">→</span><div class="node">Payment Actions</div><span class="arrow">→</span><div class="node">只读数据源</div></div><p class="mini" style="margin-top:14px">支付生产系统保持不变；先读数据，再做指标和异常分析。</p></div>
     </div>
   </div>
 </div>
