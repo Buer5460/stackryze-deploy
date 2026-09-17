@@ -1,12 +1,10 @@
 {
-  "name": "ai-action-mini",
-  "version": "0.4.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "start": "node mvp-server-v2.js"
-  },
-  "engines": {
-    "node": ">=20"
-  }
+  "name":"global-study-mobile-fullstack",
+  "version":"1.0.0",
+  "private":true,
+  "description":"Mobile-first S2B2C study abroad MVP",
+  "main":"server.js",
+  "scripts":{"start":"node server.js"},
+  "engines":{"node":">=18"},
+  "dependencies":{"express":"^4.21.2"}
 }
