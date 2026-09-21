@@ -1,0 +1,574 @@
+[
+  {
+    "id": "SG-DEMO-001",
+    "name": "新加坡国际学校 Demo 01",
+    "country": "Singapore",
+    "city": "Singapore",
+    "district": "Bukit Timah",
+    "institutionType": "International School",
+    "stages": [
+      "primary",
+      "lower-secondary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "IB PYP",
+      "IB MYP",
+      "IB DP"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 28000,
+    "tuitionMax": 42000,
+    "currency": "SGD",
+    "boarding": true,
+    "scholarship": true,
+    "nearestTransit": "Sixth Avenue MRT",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SG-DEMO-002",
+    "name": "新加坡双语学院 Demo 02",
+    "country": "Singapore",
+    "city": "Singapore",
+    "district": "Bishan",
+    "institutionType": "International School",
+    "stages": [
+      "kindergarten",
+      "primary"
+    ],
+    "curricula": [
+      "Cambridge Primary"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 18000,
+    "tuitionMax": 30000,
+    "currency": "SGD",
+    "boarding": false,
+    "scholarship": false,
+    "nearestTransit": "Bishan MRT",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SG-DEMO-003",
+    "name": "滨海学习中心 Demo 03",
+    "country": "Singapore",
+    "city": "Singapore",
+    "district": "Downtown Core",
+    "institutionType": "Private School",
+    "stages": [
+      "upper-secondary",
+      "college"
+    ],
+    "curricula": [
+      "Cambridge IGCSE",
+      "Cambridge AS & A Level"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 22000,
+    "tuitionMax": 36000,
+    "currency": "SGD",
+    "boarding": false,
+    "scholarship": true,
+    "nearestTransit": "Downtown MRT",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SG-DEMO-004",
+    "name": "东区国际学校 Demo 04",
+    "country": "Singapore",
+    "city": "Singapore",
+    "district": "Tampines",
+    "institutionType": "International School",
+    "stages": [
+      "primary",
+      "lower-secondary"
+    ],
+    "curricula": [
+      "IPC",
+      "IMYC"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 20000,
+    "tuitionMax": 34000,
+    "currency": "SGD",
+    "boarding": false,
+    "scholarship": true,
+    "nearestTransit": "Tampines MRT",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SG-DEMO-005",
+    "name": "西区国际学院 Demo 05",
+    "country": "Singapore",
+    "city": "Singapore",
+    "district": "Clementi",
+    "institutionType": "International School",
+    "stages": [
+      "lower-secondary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "American Curriculum",
+      "AP"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 25000,
+    "tuitionMax": 39000,
+    "currency": "SGD",
+    "boarding": true,
+    "scholarship": true,
+    "nearestTransit": "Clementi MRT",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SG-DEMO-006",
+    "name": "北部教育中心 Demo 06",
+    "country": "Singapore",
+    "city": "Singapore",
+    "district": "Woodlands",
+    "institutionType": "Private School",
+    "stages": [
+      "kindergarten",
+      "primary"
+    ],
+    "curricula": [
+      "Montessori",
+      "Cambridge Primary"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 16000,
+    "tuitionMax": 26000,
+    "currency": "SGD",
+    "boarding": false,
+    "scholarship": false,
+    "nearestTransit": "Woodlands MRT",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SG-DEMO-007",
+    "name": "诺维娜国际学校 Demo 07",
+    "country": "Singapore",
+    "city": "Singapore",
+    "district": "Novena",
+    "institutionType": "International School",
+    "stages": [
+      "primary",
+      "lower-secondary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "British / UK-based",
+      "A Level"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 26000,
+    "tuitionMax": 41000,
+    "currency": "SGD",
+    "boarding": true,
+    "scholarship": true,
+    "nearestTransit": "Novena MRT",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SG-DEMO-008",
+    "name": "榜鹅未来学校 Demo 08",
+    "country": "Singapore",
+    "city": "Singapore",
+    "district": "Punggol",
+    "institutionType": "International School",
+    "stages": [
+      "kindergarten",
+      "primary",
+      "lower-secondary"
+    ],
+    "curricula": [
+      "IB PYP",
+      "IB MYP"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 19000,
+    "tuitionMax": 33000,
+    "currency": "SGD",
+    "boarding": false,
+    "scholarship": true,
+    "nearestTransit": "Punggol MRT",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SH-DEMO-001",
+    "name": "上海国际学校 Demo 01",
+    "country": "China",
+    "city": "Shanghai",
+    "district": "Pudong",
+    "institutionType": "International School",
+    "stages": [
+      "primary",
+      "lower-secondary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "IB PYP",
+      "IB MYP",
+      "IB DP"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 180000,
+    "tuitionMax": 320000,
+    "currency": "CNY",
+    "boarding": true,
+    "scholarship": true,
+    "nearestTransit": "Longyang Road",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SH-DEMO-002",
+    "name": "上海双语学校 Demo 02",
+    "country": "China",
+    "city": "Shanghai",
+    "district": "Minhang",
+    "institutionType": "Bilingual School",
+    "stages": [
+      "primary",
+      "lower-secondary"
+    ],
+    "curricula": [
+      "Chinese National Curriculum",
+      "Cambridge IGCSE"
+    ],
+    "mainLanguage": "Chinese / English",
+    "tuitionMin": 120000,
+    "tuitionMax": 220000,
+    "currency": "CNY",
+    "boarding": false,
+    "scholarship": true,
+    "nearestTransit": "Hongqiao Railway Station",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SH-DEMO-003",
+    "name": "上海英式学校 Demo 03",
+    "country": "China",
+    "city": "Shanghai",
+    "district": "Changning",
+    "institutionType": "International School",
+    "stages": [
+      "kindergarten",
+      "primary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "EYFS",
+      "Cambridge Primary",
+      "A Level"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 170000,
+    "tuitionMax": 300000,
+    "currency": "CNY",
+    "boarding": false,
+    "scholarship": false,
+    "nearestTransit": "Zhongshan Park",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SH-DEMO-004",
+    "name": "上海美式学院 Demo 04",
+    "country": "China",
+    "city": "Shanghai",
+    "district": "Xuhui",
+    "institutionType": "International School",
+    "stages": [
+      "lower-secondary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "American Curriculum",
+      "AP"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 190000,
+    "tuitionMax": 310000,
+    "currency": "CNY",
+    "boarding": true,
+    "scholarship": true,
+    "nearestTransit": "Xujiahui",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SH-DEMO-005",
+    "name": "上海创新教育中心 Demo 05",
+    "country": "China",
+    "city": "Shanghai",
+    "district": "Yangpu",
+    "institutionType": "Private School",
+    "stages": [
+      "primary",
+      "lower-secondary"
+    ],
+    "curricula": [
+      "IPC",
+      "IMYC"
+    ],
+    "mainLanguage": "Chinese / English",
+    "tuitionMin": 110000,
+    "tuitionMax": 190000,
+    "currency": "CNY",
+    "boarding": false,
+    "scholarship": false,
+    "nearestTransit": "Tongji University",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "SH-DEMO-006",
+    "name": "上海蒙氏学校 Demo 06",
+    "country": "China",
+    "city": "Shanghai",
+    "district": "Qingpu",
+    "institutionType": "International School",
+    "stages": [
+      "preschool",
+      "kindergarten",
+      "primary"
+    ],
+    "curricula": [
+      "Montessori"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 90000,
+    "tuitionMax": 180000,
+    "currency": "CNY",
+    "boarding": false,
+    "scholarship": false,
+    "nearestTransit": "Zhujiajiao",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "BJ-DEMO-001",
+    "name": "北京国际学校 Demo 01",
+    "country": "China",
+    "city": "Beijing",
+    "district": "Chaoyang",
+    "institutionType": "International School",
+    "stages": [
+      "primary",
+      "lower-secondary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "IB PYP",
+      "IB MYP",
+      "IB DP"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 180000,
+    "tuitionMax": 330000,
+    "currency": "CNY",
+    "boarding": true,
+    "scholarship": true,
+    "nearestTransit": "Sanyuanqiao",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "BJ-DEMO-002",
+    "name": "北京双语学校 Demo 02",
+    "country": "China",
+    "city": "Beijing",
+    "district": "Haidian",
+    "institutionType": "Bilingual School",
+    "stages": [
+      "primary",
+      "lower-secondary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "Chinese National Curriculum",
+      "A Level"
+    ],
+    "mainLanguage": "Chinese / English",
+    "tuitionMin": 130000,
+    "tuitionMax": 240000,
+    "currency": "CNY",
+    "boarding": false,
+    "scholarship": true,
+    "nearestTransit": "Haidian Huangzhuang",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "BJ-DEMO-003",
+    "name": "北京剑桥学校 Demo 03",
+    "country": "China",
+    "city": "Beijing",
+    "district": "Shunyi",
+    "institutionType": "International School",
+    "stages": [
+      "kindergarten",
+      "primary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "Cambridge Primary",
+      "Cambridge IGCSE",
+      "Cambridge AS & A Level"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 160000,
+    "tuitionMax": 290000,
+    "currency": "CNY",
+    "boarding": true,
+    "scholarship": true,
+    "nearestTransit": "Capital Airport Area",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "BJ-DEMO-004",
+    "name": "北京美式学院 Demo 04",
+    "country": "China",
+    "city": "Beijing",
+    "district": "Daxing",
+    "institutionType": "International School",
+    "stages": [
+      "lower-secondary",
+      "upper-secondary"
+    ],
+    "curricula": [
+      "American Curriculum",
+      "AP"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 150000,
+    "tuitionMax": 260000,
+    "currency": "CNY",
+    "boarding": false,
+    "scholarship": true,
+    "nearestTransit": "Daxing New City",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "BJ-DEMO-005",
+    "name": "北京创新学校 Demo 05",
+    "country": "China",
+    "city": "Beijing",
+    "district": "Tongzhou",
+    "institutionType": "Private School",
+    "stages": [
+      "primary",
+      "lower-secondary"
+    ],
+    "curricula": [
+      "IPC",
+      "IMYC"
+    ],
+    "mainLanguage": "Chinese / English",
+    "tuitionMin": 100000,
+    "tuitionMax": 180000,
+    "currency": "CNY",
+    "boarding": false,
+    "scholarship": false,
+    "nearestTransit": "Tongzhou Beiguan",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  },
+  {
+    "id": "BJ-DEMO-006",
+    "name": "北京蒙氏教育中心 Demo 06",
+    "country": "China",
+    "city": "Beijing",
+    "district": "Changping",
+    "institutionType": "International School",
+    "stages": [
+      "preschool",
+      "kindergarten",
+      "primary"
+    ],
+    "curricula": [
+      "Montessori"
+    ],
+    "mainLanguage": "English",
+    "tuitionMin": 85000,
+    "tuitionMax": 170000,
+    "currency": "CNY",
+    "boarding": false,
+    "scholarship": false,
+    "nearestTransit": "Changping",
+    "sourceUrl": null,
+    "verifiedStatus": "demo",
+    "verifiedAt": null,
+    "isDemo": true,
+    "updatedAt": "2026-09-21"
+  }
+]
