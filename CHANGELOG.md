@@ -3,9 +3,9 @@
 ## V0.5.0 — 全球学校搜索数据底座（2026-09-22）
 ### Added
 - 项目结构按规格拆分：`data/reference/`（locations、curricula、languages、education-stages）+ `data/demo/`（schools、programs、scholarships）。
-- 参考字典：3 国家、3 城市、上海 16 + 北京 16 + 新加坡 5 区域 45 规划区；地铁线路/站点与机场/火车站结构位；10 教育阶段；50+ 课程条目；15 语言；学校类型字典。
+- 参考字典：2 国家（SG/CN）、3 城市、上海 16 + 北京 16 + 新加坡 5 区域 45 规划区；28 条地铁/轻轨/机场线路、118 个站点/机场/火车站（部分种子，验证结构用）；10 教育阶段；12 课程族 50 课程；15 语言；8 类学校类型。
 - 20 条演示学校（Institution + Campus），全 `is_demo` + `verified_status=demo` + `source_url=null`，覆盖新加坡/上海/北京。
-- 40 条演示 Program、若干演示 Scholarship，外键关联 institution。
+- 40 条演示 Program、13 条演示 Scholarship，外键关联 institution。
 - 搜索 API `GET /api/schools`：支持 q/country/city/district/stage/curriculum/language/institutionType/minFee/maxFee/scholarship/boarding/transitStation/transitNear/verifiedOnly/sort/page/pageSize，返回 meta 分页，非法参数不崩溃。
 - 详情 API `GET /api/schools/:id`：聚合 campuses/programs/scholarships/来源溯源；404 JSON。
 - `GET /api/programs`：institution/stage/curriculum/language/minFee/maxFee/q 筛选 + 分页。

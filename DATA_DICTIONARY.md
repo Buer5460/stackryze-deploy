@@ -19,22 +19,22 @@ data/
 ## 2. reference 字典
 
 ### locations.json
-- `countries`: { id, code, name_zh, name_en, currency, timezone }
-- `cities`: { id, country_id, name_zh, name_en }
-- `districts`: { id, city_id, region_group, name_zh, name_en }
-- `transitLines`: { id, city_id, code, name_zh, name_en, type }
-- `transitStations`: { id, line_id, name_zh, name_en, latitude, longitude }
+- `countries`: { id, code, name_zh, name_en, currency, timezone }（SG / CN 共 2 国）
+- `cities`: { id, country_id, name_zh, name_en }（SG-SIN / CN-SHA / CN-BJS 共 3 城）
+- `districts`: { id, city_id, region_group, name_zh, name_en }（新加坡 45 规划区按 5 大区域分组；上海/北京各 16 区，name_zh 为「XX区」）
+- `transitLines`: { id, city_id, code, name_zh, name_en, type }（metro / lrt / maglev / airport / railway，共 28 条）
+- `transitStations`: { id, line_id, lines[], name_zh, name_en, latitude, longitude }（站点/机场/火车站共 118 个，经纬度暂为 null 占位；`lines[]` 为换乘线路代码）
 
 ### education-stages.json
-- `educationStages`: { id, zh, en, order }（preschool → phd，10 项）
+- `educationStages`: { id, zh, en }（preschool → phd，10 项）
 
 ### curricula.json
-- `curriculumFamilies`: { id, name_zh, name_en, source }
-- `curricula`: { id, family_id, name_zh, name_en, aliases[], stages[] }
+- `curriculumFamilies`: { id, name_zh, name_en }（12 族）
+- `curricula`: { id, family_id, name_zh, name_en, aliases[], stages[] }（50 项）
 
 ### languages.json
-- `languages`: { id, name_zh, name_en, code }
-- `institutionTypes`: { id, name_zh, name_en }
+- `languages`: { id, name_zh, name_en }（15 项）
+- `institutionTypes`: { id, name_zh, name_en }（8 类：international-school / bilingual-school / private-school / public-school / university / college / language-school / vocational-institution）
 
 ## 3. demo 实体
 
@@ -67,7 +67,7 @@ data/
 - 禁止用 AI 猜测或补全学校事实、佣金协议、录取概率。
 
 ## 5. 当前数据规模
-- 学校：20（SG 7 / 上海 7 / 北京 6）
+- 学校：20（新加坡 8 / 上海 6 / 北京 6）
 - 课程：40
-- 奖学金：若干（与 institution 关联）
-- 参考：3 国、3 城、77 行政区、10 阶段、50+ 课程、15 语言、若干地铁线路/站点
+- 奖学金：13（与 institution 关联）
+- 参考：2 国、3 城、77 行政区（新加坡 45 + 上海 16 + 北京 16）、10 阶段、12 课程族 50 课程、15 语言、28 条交通线路、118 个站点/机场/火车站（部分种子，经纬度待 V1.0 距离算法时补全）

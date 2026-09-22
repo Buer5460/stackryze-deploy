@@ -212,7 +212,6 @@ function buildQuery(toPage) {
 }
 
 async function runSearch(toPage) {
-  syncForm();
   searchState.page = toPage || 1;
   try {
     const j = await api('/api/schools?' + buildQuery().toString());
@@ -252,11 +251,16 @@ function toggleChip(id) {
 }
 
 function searchChanged() { runSearch(); }
+function qFieldChanged(key) {
+  const id = key === 'q' ? '#q' : '#q' + key.charAt(0).toUpperCase() + key.slice(1);
+  const el = document.querySelector(id);
+  if (el) searchState[key] = el.value;
+  runSearch();
+}
+// syncForm only picks up the free-text keyword input; selects write state via onchange.
 function syncForm() {
-  const g = (id) => { const el = document.querySelector('#' + id); return el ? el.value : null; };
-  const merge = (id, key) => { const v = g(id); if (v !== null) searchState[key] = v; };
-  merge('q', 'q'); merge('qCountry', 'country'); merge('qCity', 'city');
-  merge('qStage', 'stage'); merge('qCurriculum', 'curriculum');
+  const el = document.querySelector('#q');
+  if (el) searchState.q = el.value;
 }
 
 function advancedSheet() {
@@ -469,13 +473,13 @@ function searchPage() {
     <div class="formgrid" style="margin-top:10px">
       <div><label class="field">国家</label><select id="qCountry" onchange="qCountryChanged()">
         <option value="">全部国家</option>${countries.map((c) => `<option value="${c.id}" ${s.country === c.id ? 'selected' : ''}>${esc(c.name_zh)} ${esc(c.name_en)}</option>`).join('')}</select></div>
-      <div><label class="field">城市</label><select id="qCity" onchange="searchChanged()">
+      <div><label class="field">城市</label><select id="qCity" onchange="qFieldChanged('city')">
         <option value="">全部城市</option>${cities.filter((c) => !s.country || c.country_id === s.country).map((c) => `<option value="${c.id}" ${s.city === c.id ? 'selected' : ''}>${esc(c.name_zh || c.name_en)}</option>`).join('')}</select></div>
-      <div><label class="field">教育阶段</label><select id="qStage" onchange="searchChanged()">
+      <div><label class="field">教育阶段</label><select id="qStage" onchange="qFieldChanged('stage')">
         <option value="">全部阶段</option>${stages.map((x) => `<option value="${x.id}" ${s.stage === x.id ? 'selected' : ''}>${esc(x.zh)}</option>`).join('')}</select></div>
-      <div><label class="field">课程体系</label><select id="qCurriculum" onchange="searchChanged()">
+      <div><label class="field">课程体系</label><select id="qCurriculum" onchange="qFieldChanged('curriculum')">
         <option value="">全部课程</option>${curriculaByFamily.map((g) => `<optgroup label="${esc(g.family.name_zh || g.family.name_en)}">${g.items.map((c) => `<option value="${esc(c.name_en)}" ${s.curriculum === c.name_en ? 'selected' : ''}>${esc(c.name_zh ? c.name_zh : c.name_en)}</option>`).join('')}</optgroup>`).join('')}</select></div>
-      <div class="full"><label class="field">关键词</label><input id="q" placeholder="学校 / 区域 / 课程" value="${esc(s.q)}" onkeydown="if(event.key==='Enter')runSearch()"></div>
+      <div class="full"><label class="field">关键词</label><input id="q" placeholder="学校 / 区域 / 课程" value="${esc(s.q)}" oninput="qFieldChanged('q')"></div>
       <button class="btn primary full" style="margin-top:2px" onclick="runSearch()">搜索学校</button>
     </div>
     <div class="quick">${quickChips.map((c) => `<button class="chip ${activeChips.has(c.id) ? 'on' : ''}" onclick="toggleChip('${c.id}')">${c.label}</button>`).join('')}
