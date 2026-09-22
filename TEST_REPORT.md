@@ -15,7 +15,7 @@
 | --- | --- | --- | --- |
 | 1 | data integrity：20 条 demo school，全 is_demo + verified_status=demo + source_url=null | 数据 | ok |
 | 2 | reference：3 cities；上海 16 + 北京 16 + 新加坡 5 区域 45 规划区 | 字典 | ok |
-| 3 | reference：stages 10、curricula 50+、languages 15、transit 已种子 | 字典 | ok |
+| 3 | reference：stages 10、curricula 53、languages 15、transit 已种子 | 字典 | ok |
 | 4 | GET /api/health | API | ok |
 | 5 | GET /api/reference 返回全部字典 | API | ok |
 | 6 | GET /api/schools 基础：无参数返回分页列表 + meta | API | ok |

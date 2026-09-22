@@ -23,7 +23,7 @@ data/
 - `cities`: { id, country_id, name_zh, name_en }（SG-SIN / CN-SHA / CN-BJS 共 3 城）
 - `districts`: { id, city_id, region_group, name_zh, name_en }（新加坡 45 规划区按 5 大区域分组；上海/北京各 16 区，name_zh 为「XX区」）
 - `transitLines`: { id, city_id, code, name_zh, name_en, type }（metro / lrt / maglev / airport / railway，共 28 条）
-- `transitStations`: { id, line_id, lines[], name_zh, name_en, latitude, longitude }（站点/机场/火车站共 118 个，经纬度暂为 null 占位；`lines[]` 为换乘线路代码）
+- `transitStations`: { id, line_id, lines[], name_zh, name_en, latitude, longitude }（站点/机场/火车站共 142 个，经纬度暂为 null 占位；`lines[]` 为换乘线路代码）
 
 ### education-stages.json
 - `educationStages`: { id, zh, en }（preschool → phd，10 项）
@@ -70,4 +70,4 @@ data/
 - 学校：20（新加坡 8 / 上海 6 / 北京 6）
 - 课程：40
 - 奖学金：13（与 institution 关联）
-- 参考：2 国、3 城、77 行政区（新加坡 45 + 上海 16 + 北京 16）、10 阶段、12 课程族 50 课程、15 语言、28 条交通线路、118 个站点/机场/火车站（部分种子，经纬度待 V1.0 距离算法时补全）
+- 参考：2 国、3 城、77 行政区（新加坡 45 + 上海 16 + 北京 16）、10 阶段、12 课程族 53 课程、15 语言、28 条交通线路、142 个站点/机场/火车站（新加坡 63 + 上海 34 + 北京 45）（部分种子，经纬度待 V1.0 距离算法时补全）
