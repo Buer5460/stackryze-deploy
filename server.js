@@ -8,9 +8,54 @@ app.use(express.json({ limit: '1mb' }));
 const readJson = (relativePath) =>
   JSON.parse(fs.readFileSync(path.join(__dirname, relativePath), 'utf8'));
 
-const reference = readJson('data/reference.json');
-const schools = readJson('data/schools.demo.json');
+// ---------------------------------------------------------------------------
+// Data: split reference dictionaries + demo entities (V0.5 file layout)
+// ---------------------------------------------------------------------------
+const locationsRef = readJson('data/reference/locations.json');
+const curriculaRef = readJson('data/reference/curricula.json');
+const languagesRef = readJson('data/reference/languages.json');
+const stagesRef = readJson('data/reference/education-stages.json');
 
+const reference = {
+  version: stagesRef.version,
+  source_note: 'Reference dictionaries assembled from data/reference/*.json. Taxonomy only — not school data and not proof of any partnership.',
+  countries: locationsRef.countries,
+  cities: locationsRef.cities,
+  districts: locationsRef.districts,
+  transitLines: locationsRef.transitLines,
+  transitStations: locationsRef.transitStations,
+  educationStages: stagesRef.educationStages,
+  curriculumFamilies: curriculaRef.curriculumFamilies,
+  curricula: curriculaRef.curricula,
+  languages: languagesRef.languages,
+  institutionTypes: languagesRef.institutionTypes
+};
+
+const schools = readJson('data/demo/schools.json').schools;
+const catalogPrograms = readJson('data/demo/programs.json').programs;
+const scholarships = readJson('data/demo/scholarships.json').scholarships;
+
+// ---------------------------------------------------------------------------
+// Lookup indexes (built once at boot)
+// ---------------------------------------------------------------------------
+const indexBy = (list, key) => {
+  const map = new Map();
+  for (const item of list || []) map.set(String(item[key]).toLowerCase(), item);
+  return map;
+};
+const countryById = indexBy(reference.countries, 'id');
+const cityById = indexBy(reference.cities, 'id');
+const districtById = indexBy(reference.districts, 'id');
+const stationById = indexBy(reference.transitStations, 'id');
+const lineById = indexBy(reference.transitLines, 'id');
+const stageById = indexBy(reference.educationStages, 'id');
+const curriculumById = indexBy(reference.curricula, 'id');
+const institutionTypeById = indexBy(reference.institutionTypes, 'id');
+const schoolById = indexBy(schools, 'id');
+
+// ---------------------------------------------------------------------------
+// Application demo data (C/B/S/Admin flows, unchanged from previous version)
+// ---------------------------------------------------------------------------
 const seed = {
   profile: {
     name: '陈小雨',
@@ -94,6 +139,9 @@ const seed = {
 let db = JSON.parse(JSON.stringify(seed));
 const ok = (data, meta) => (meta ? { ok: true, data, meta } : { ok: true, data });
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 function boolQuery(value) {
   if (value === undefined) return undefined;
   if (value === 'true' || value === '1') return true;
@@ -101,55 +149,248 @@ function boolQuery(value) {
   return undefined;
 }
 
+function numberQuery(value) {
+  if (value === undefined) return undefined;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+// Query params can arrive as strings or arrays (?stage=a&stage=b) — always take all values.
+function paramValues(query, name) {
+  const raw = query[name];
+  if (raw === undefined) return [];
+  return (Array.isArray(raw) ? raw : [raw]).map((v) => String(v)).filter((v) => v.length > 0);
+}
+
+function param(query, name) {
+  const values = paramValues(query, name);
+  return values.length ? values[0] : undefined;
+}
+
 function includesCI(value, query) {
   return String(value || '').toLowerCase().includes(String(query || '').toLowerCase());
 }
 
-function listSchools(query) {
-  let list = [...schools];
+function someCI(values, predicate) {
+  return (values || []).some((v) => predicate(v));
+}
 
-  if (query.q) {
+// Resolve ids like "ib-pyp" / "international-school" / "primary" to canonical names
+// so filters accept both dictionary ids and free text.
+function curriculumQueryNames(raw) {
+  const entry = curriculumById.get(String(raw).toLowerCase());
+  if (entry) return [entry.name_en, ...(entry.aliases || [])];
+  return [String(raw)];
+}
+
+function stageQueryIds(raw) {
+  const entry = stageById.get(String(raw).toLowerCase());
+  return entry ? [entry.id] : [String(raw)];
+}
+
+function institutionTypeQueryNames(raw) {
+  const entry = institutionTypeById.get(String(raw).toLowerCase());
+  if (entry) return [entry.name_en, entry.name_zh];
+  return [String(raw)];
+}
+
+function matchLocation(school, query, key) {
+  const raw = param(query, key);
+  if (!raw) return true;
+  const needle = String(raw).toLowerCase();
+  const location = school.location || {};
+  const ids = { country: location.country_id, city: location.city_id, district: location.district_id };
+  if (String(ids[key] || '').toLowerCase() === needle) return true;
+  const names = {
+    country: [location.country_en, location.country_zh],
+    city: [location.city_en, location.city_zh],
+    district: [location.district_en, location.district_zh]
+  };
+  return (names[key] || []).some((v) => includesCI(v, needle));
+}
+
+// ---------------------------------------------------------------------------
+// Enrichment: resolve reference ids into display names for the frontend
+// ---------------------------------------------------------------------------
+function enrichSchool(school) {
+  const country = countryById.get(String(school.country_id).toLowerCase());
+  const city = cityById.get(String(school.city_id).toLowerCase());
+  const district = districtById.get(String(school.district_id).toLowerCase());
+  const station = stationById.get(String(school.nearest_station_id || '').toLowerCase());
+  const line = station ? lineById.get(String(station.line_id).toLowerCase()) : undefined;
+  return {
+    ...school,
+    location: {
+      country_id: school.country_id,
+      country_en: country ? country.name_en : null,
+      country_zh: country ? country.name_zh : null,
+      city_id: school.city_id,
+      city_en: city ? city.name_en : null,
+      city_zh: city ? city.name_zh : null,
+      district_id: school.district_id,
+      district_en: district ? district.name_en : null,
+      district_zh: district ? district.name_zh : null,
+      region_group: district ? district.region_group : null
+    },
+    station: station
+      ? {
+          id: station.id,
+          name_en: station.name_en,
+          name_zh: station.name_zh,
+          line_code: line ? line.code : null,
+          line_name_en: line ? line.name_en : null,
+          type: line ? line.type : null
+        }
+      : null
+  };
+}
+
+const enrichedSchools = schools.map(enrichSchool);
+const enrichedPrograms = catalogPrograms.map((p) => {
+  const school = schoolById.get(String(p.institution_id).toLowerCase());
+  const district = school ? districtById.get(String(school.district_id).toLowerCase()) : undefined;
+  return {
+    ...p,
+    institution_name_zh: school ? school.name_zh : null,
+    institution_name_en: school ? school.name_en : null,
+    city_id: school ? school.city_id : null,
+    district_en: district ? district.name_en : null
+  };
+});
+
+// ---------------------------------------------------------------------------
+// School search (V0.5_SPEC section 5)
+// ---------------------------------------------------------------------------
+function listSchools(query) {
+  let list = [...enrichedSchools];
+
+  const q = param(query, 'q');
+  if (q) {
     list = list.filter((s) =>
-      [s.name, s.country, s.city, s.district, s.institutionType, ...(s.curricula || []), ...(s.stages || [])]
-        .some((v) => includesCI(v, query.q))
+      [
+        s.name_zh,
+        s.name_en,
+        s.institution_type,
+        s.main_language,
+        s.location.country_en,
+        s.location.city_en,
+        s.location.district_en,
+        s.location.district_zh,
+        s.location.region_group,
+        ...(s.curricula || []),
+        ...(s.stages || []),
+        ...(s.additional_languages || [])
+      ].some((v) => includesCI(v, q))
     );
   }
-  if (query.country) list = list.filter((s) => includesCI(s.country, query.country));
-  if (query.city) list = list.filter((s) => includesCI(s.city, query.city));
-  if (query.district) list = list.filter((s) => includesCI(s.district, query.district));
-  if (query.stage) list = list.filter((s) => (s.stages || []).some((v) => includesCI(v, query.stage)));
-  if (query.curriculum) list = list.filter((s) => (s.curricula || []).some((v) => includesCI(v, query.curriculum)));
-  if (query.language) list = list.filter((s) => includesCI(s.mainLanguage, query.language));
-  if (query.institutionType) list = list.filter((s) => includesCI(s.institutionType, query.institutionType));
 
-  const minFee = Number(query.minFee);
-  if (query.minFee !== undefined && Number.isFinite(minFee)) {
-    list = list.filter((s) => Number(s.tuitionMax || s.tuitionMin || 0) >= minFee);
+  list = list.filter((s) => matchLocation(s, query, 'country'));
+  list = list.filter((s) => matchLocation(s, query, 'city'));
+  list = list.filter((s) => matchLocation(s, query, 'district'));
+
+  const stages = paramValues(query, 'stage').flatMap(stageQueryIds);
+  if (stages.length) {
+    list = list.filter((s) => someCI(s.stages, (v) => stages.some((st) => includesCI(v, st))));
   }
 
-  const maxFee = Number(query.maxFee);
-  if (query.maxFee !== undefined && Number.isFinite(maxFee)) {
-    list = list.filter((s) => Number(s.tuitionMin || s.tuitionMax || 0) <= maxFee);
+  const curricula = paramValues(query, 'curriculum').flatMap(curriculumQueryNames);
+  if (curricula.length) {
+    list = list.filter((s) => someCI(s.curricula, (v) => curricula.some((c) => includesCI(v, c))));
   }
 
-  const scholarship = boolQuery(query.scholarship);
-  if (scholarship !== undefined) list = list.filter((s) => Boolean(s.scholarship) === scholarship);
+  const languages = paramValues(query, 'language');
+  if (languages.length) {
+    list = list.filter((s) =>
+      [s.main_language, ...(s.additional_languages || [])].some((v) =>
+        languages.some((l) => includesCI(v, l))
+      )
+    );
+  }
 
-  const boarding = boolQuery(query.boarding);
+  const types = paramValues(query, 'institutionType').flatMap(institutionTypeQueryNames);
+  if (types.length) {
+    list = list.filter((s) => types.some((t) => includesCI(s.institution_type, t)));
+  }
+
+  const minFee = numberQuery(param(query, 'minFee'));
+  if (minFee !== undefined) {
+    list = list.filter((s) => Number(s.tuition_max || s.tuition_min || 0) >= minFee);
+  }
+
+  const maxFee = numberQuery(param(query, 'maxFee'));
+  if (maxFee !== undefined) {
+    list = list.filter((s) => Number(s.tuition_min || s.tuition_max || 0) <= maxFee);
+  }
+
+  const scholarship = boolQuery(param(query, 'scholarship'));
+  if (scholarship !== undefined) list = list.filter((s) => Boolean(s.scholarships) === scholarship);
+
+  const boarding = boolQuery(param(query, 'boarding'));
   if (boarding !== undefined) list = list.filter((s) => Boolean(s.boarding) === boarding);
 
-  if (query.verifiedOnly === 'true') list = list.filter((s) => s.verifiedStatus === 'verified');
+  const stations = paramValues(query, 'transitStation');
+  if (stations.length) {
+    list = list.filter((s) => {
+      if (!s.station) return false;
+      return stations.some(
+        (needle) =>
+          String(s.station.id).toLowerCase() === needle.toLowerCase() ||
+          includesCI(s.station.name_en, needle) ||
+          includesCI(s.station.name_zh, needle)
+      );
+    });
+  }
+
+  const transitNear = boolQuery(param(query, 'transitNear'));
+  if (transitNear !== undefined) {
+    list = list.filter((s) => Boolean(s.nearest_station_id) === transitNear);
+  }
+
+  if (param(query, 'verifiedOnly') === 'true') {
+    list = list.filter((s) => s.verified_status === 'verified');
+  }
+
+  const sort = param(query, 'sort');
+  if (sort === 'fee_asc') {
+    list.sort((a, b) => Number(a.tuition_min || 0) - Number(b.tuition_min || 0));
+  } else if (sort === 'fee_desc') {
+    list.sort((a, b) => Number(b.tuition_max || 0) - Number(a.tuition_max || 0));
+  }
 
   return list;
 }
 
+function paginate(list, query) {
+  const page = Math.max(1, Number.parseInt(param(query, 'page') || '1', 10) || 1);
+  const pageSize = Math.min(100, Math.max(1, Number.parseInt(param(query, 'pageSize') || '20', 10) || 20));
+  const start = (page - 1) * pageSize;
+  return {
+    data: list.slice(start, start + pageSize),
+    meta: { total: list.length, page, pageSize }
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Routes
+// ---------------------------------------------------------------------------
 app.get('/api/health', (req, res) =>
   res.json(ok({
     status: 'ok',
     service: 'global-study-mobile-mvp',
     version: '0.5.0',
     dataFoundation: true,
-    demoSchools: schools.length
+    demoSchools: schools.length,
+    demoPrograms: catalogPrograms.length,
+    demoScholarships: scholarships.length,
+    reference: {
+      countries: reference.countries.length,
+      cities: reference.cities.length,
+      districts: reference.districts.length,
+      transitLines: reference.transitLines.length,
+      transitStations: reference.transitStations.length,
+      educationStages: reference.educationStages.length,
+      curricula: reference.curricula.length
+    }
   }))
 );
 
@@ -159,43 +400,94 @@ app.get('/api/bootstrap', (req, res) =>
   res.json(ok({
     ...db,
     reference,
-    schools
+    schools: enrichedSchools,
+    catalogPrograms: enrichedPrograms,
+    scholarships
   }))
 );
 
 app.get('/api/schools', (req, res) => {
-  const filtered = listSchools(req.query);
-  const page = Math.max(1, Number.parseInt(req.query.page || '1', 10) || 1);
-  const pageSize = Math.min(100, Math.max(1, Number.parseInt(req.query.pageSize || '20', 10) || 20));
-  const start = (page - 1) * pageSize;
-  const data = filtered.slice(start, start + pageSize);
-
-  res.json(ok(data, {
-    total: filtered.length,
-    page,
-    pageSize,
-    demoOnly: data.every((s) => s.isDemo === true)
-  }));
+  const { data, meta } = paginate(listSchools(req.query), req.query);
+  res.json(ok(data, { ...meta, demoOnly: data.every((s) => s.is_demo === true) }));
 });
 
 app.get('/api/schools/:id', (req, res) => {
-  const school = schools.find((s) => s.id === req.params.id);
+  const school = schoolById.get(String(req.params.id).toLowerCase());
   if (!school) return res.status(404).json({ ok: false, error: '学校不存在' });
-  res.json(ok(school));
+  res.json(ok({
+    ...enrichSchool(school),
+    campuses: school.campuses || [],
+    programs: enrichedPrograms.filter((p) => p.institution_id === school.id),
+    scholarships: scholarships.filter((x) => x.institution_id === school.id),
+    source: {
+      source_url: school.source_url,
+      source_type: school.source_type,
+      verified_status: school.verified_status,
+      verified_at: school.verified_at,
+      effective_from: school.effective_from,
+      effective_to: school.effective_to,
+      is_demo: school.is_demo,
+      updated_at: school.updated_at
+    }
+  }));
 });
 
 app.get('/api/programs', (req, res) => {
-  let list = [...db.programs];
-  if (req.query.q) list = list.filter((p) => [p.school, p.program, p.country].some((v) => includesCI(v, req.query.q)));
-  if (req.query.country) list = list.filter((p) => includesCI(p.country, req.query.country));
-  if (req.query.degree) list = list.filter((p) => includesCI(p.degree, req.query.degree));
-  res.json(ok(list));
+  let list = [...enrichedPrograms];
+
+  const q = param(querySafe(req), 'q');
+  if (q) {
+    list = list.filter((p) =>
+      [p.name, p.name_zh, p.institution_name_zh, p.institution_name_en, p.curriculum].some((v) => includesCI(v, q))
+    );
+  }
+
+  const institution = param(querySafe(req), 'institution');
+  if (institution) {
+    list = list.filter(
+      (p) =>
+        String(p.institution_id).toLowerCase() === institution.toLowerCase() ||
+        includesCI(p.institution_name_zh, institution) ||
+        includesCI(p.institution_name_en, institution)
+    );
+  }
+
+  const stages = paramValues(req.query, 'stage').flatMap(stageQueryIds);
+  if (stages.length) list = list.filter((p) => stages.some((st) => includesCI(p.stage, st)));
+
+  const curricula = paramValues(req.query, 'curriculum').flatMap(curriculumQueryNames);
+  if (curricula.length) list = list.filter((p) => curricula.some((c) => includesCI(p.curriculum, c)));
+
+  const languages = paramValues(req.query, 'language');
+  if (languages.length) {
+    list = list.filter((p) => {
+      const school = schoolById.get(String(p.institution_id).toLowerCase());
+      const langs = [p.language_requirement, school ? school.main_language : null]
+        .concat(school ? school.additional_languages || [] : []);
+      return langs.some((v) => languages.some((l) => includesCI(v, l)));
+    });
+  }
+
+  const minFee = numberQuery(param(req.query, 'minFee'));
+  if (minFee !== undefined) list = list.filter((p) => Number(p.tuition || 0) >= minFee);
+
+  const maxFee = numberQuery(param(req.query, 'maxFee'));
+  if (maxFee !== undefined) list = list.filter((p) => Number(p.tuition || 0) <= maxFee);
+
+  const { data, meta } = paginate(list, req.query);
+  res.json(ok(data, meta));
 });
 
+// querySafe: req.query is always an object for GET, but keep a guard so odd
+// middleware setups cannot crash the handlers above.
+function querySafe(req) {
+  return req && req.query ? req.query : {};
+}
+
 app.post('/api/applications', (req, res) => {
-  const p = db.programs.find((x) => x.id === Number(req.body.programId));
+  const p = db.programs.find((x) => x.id === Number(req.body && req.body.programId));
   if (!p) return res.status(400).json({ ok: false, error: '项目不存在' });
-  if (!req.body.student) return res.status(400).json({ ok: false, error: '学生姓名必填' });
+  if (!req.body || !req.body.student) return res.status(400).json({ ok: false, error: '学生姓名必填' });
 
   if (db.applications.some((a) => a.student === req.body.student && a.programId === p.id)) {
     return res.status(409).json({ ok: false, error: '该项目已申请' });
@@ -218,12 +510,12 @@ app.post('/api/applications', (req, res) => {
 app.patch('/api/applications/:id', (req, res) => {
   const x = db.applications.find((a) => a.id === req.params.id);
   if (!x) return res.status(404).json({ ok: false, error: '申请不存在' });
-  Object.assign(x, req.body);
+  Object.assign(x, req.body || {});
   res.json(ok(x));
 });
 
 app.post('/api/clients', (req, res) => {
-  if (!req.body.name) return res.status(400).json({ ok: false, error: '姓名必填' });
+  if (!req.body || !req.body.name) return res.status(400).json({ ok: false, error: '姓名必填' });
   const x = {
     id: Date.now(),
     name: req.body.name,
@@ -239,7 +531,7 @@ app.post('/api/clients', (req, res) => {
 app.patch('/api/audits/:id', (req, res) => {
   const x = db.audits.find((a) => a.id === Number(req.params.id));
   if (!x) return res.status(404).json({ ok: false, error: '审核事项不存在' });
-  x.status = req.body.status || x.status;
+  x.status = (req.body && req.body.status) || x.status;
   res.json(ok(x));
 });
 
@@ -248,11 +540,21 @@ app.post('/api/reset', (req, res) => {
   res.json(ok({ reset: true }));
 });
 
+// Unknown API paths must return JSON 404 instead of the SPA HTML.
+app.use('/api', (req, res) => res.status(404).json({ ok: false, error: '接口不存在' }));
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+// Final error handler: malformed JSON bodies and unexpected failures must
+// surface as JSON, never crash the process.
+app.use((err, req, res, next) => {
+  const status = err && err.status ? err.status : 500;
+  res.status(status).json({ ok: false, error: status === 400 ? '请求格式错误' : '服务器内部错误' });
+});
 
 if (require.main === module) {
   app.listen(process.env.PORT || 3000, '0.0.0.0', () => console.log('GlobalStudy MVP V0.5 running'));
 }
 
-module.exports = { app, reference, schools, listSchools };
+module.exports = { app, reference, schools, catalogPrograms, scholarships, listSchools, enrichSchool };

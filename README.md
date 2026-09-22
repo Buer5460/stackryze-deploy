@@ -11,22 +11,26 @@
 5. 合规前提下的教育金融转介/服务
 
 ## 当前版本
-V0.5 开发中。
+**V0.5.0 — 数据底座与搜索引擎（已完成）**
 
 已完成：
 - C / B / S / Admin 四端手机 H5 入口
 - Node.js + Express API
 - Render 公网部署
-- 新加坡 / 上海 / 北京参考地区字典
-- 教育阶段与国际课程体系字典
-- 20 条明确标记为 Demo 的学校数据
+- 数据按规格拆分：reference（locations / curricula / languages / education-stages）+ demo（schools / programs / scholarships）
+- 新加坡 / 上海（16 区）/ 北京（16 区）参考地区字典 + 地铁线路/站点结构位
+- 教育阶段（10）与国际课程体系字典（50+）
+- 20 条明确标记为 Demo 的学校数据（Institution + Campus，覆盖 SG / 上海 / 北京）
+- 40 条演示 Program + 演示 Scholarship
 - /api/reference
-- /api/schools
-- /api/schools/:id
-- /api/programs
-- 手机 H5 学校搜索：国家 / 城市 / 阶段 / 课程 / 最高学费
-- 收藏使用 localStorage
-- V0.5 smoke tests
+- /api/schools（q/country/city/district/stage/curriculum/language/institutionType/minFee/maxFee/scholarship/boarding/transitStation/transitNear/verifiedOnly/sort + 分页）
+- /api/schools/:id（聚合校区/课程/奖学金/来源溯源）
+- /api/programs（institution/stage/curriculum/language/fee/q 筛选）
+- 手机 H5 学校搜索：API 驱动首页（国家 / 城市 / 阶段 / 课程 / 关键词 + 快捷筛选）+ 结果页（详情/对比/收藏）+ 高级筛选 Bottom Sheet（由 /api/reference 动态生成）
+- 收藏 / 对比使用 localStorage（最多 4 所对比）
+- V0.5 smoke tests：23 / 23 通过
+
+验收文档：V0.5_IMPLEMENTATION_REPORT.md / TEST_REPORT.md / DATA_DICTIONARY.md / CHANGELOG.md
 
 ## 在线地址
 https://global-study-mobile-mvp.onrender.com
@@ -81,11 +85,11 @@ http://localhost:3000
 禁止由 AI 猜测或补全学校事实、佣金协议或录取概率。
 
 ## 下一步
-V0.5：
-- 完成高级筛选 Bottom Sheet
-- 完成地区/地铁字典导入
-- 完成学校数据后台审核结构
-- 把演示搜索改为 API 驱动
-- 加入 CI 自动执行 npm test
-
-完成后进入 V1.0：学校详情、4校对比、收藏/提醒、地图和真实学校数据导入。
+V1.0（V0.5 验收完成后启动）：
+- 学校详情页地图与距离/通勤字段（基于 transitStation 经纬度）
+- 最多 4 所对比（增强差异高亮）
+- 收藏 / 提醒（localStorage → 服务端化）
+- 真实学校数据导入工具（带 source_url / verified_at / effective dates 校验）
+- 后台数据审核队列（verified_status 流转）
+- B 端学校搜索视图、佣金字段展示（仅展示有真实协议或后台录入的数据）
+- CI 自动执行 npm test

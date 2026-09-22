@@ -1,0 +1,16 @@
+{
+  "version": "0.5.0",
+  "source_note": "Education stage taxonomy from V0.5_SPEC section 2.",
+  "educationStages": [
+    { "id": "preschool", "zh": "学前", "en": "Preschool" },
+    { "id": "kindergarten", "zh": "幼儿园", "en": "Kindergarten" },
+    { "id": "primary", "zh": "小学", "en": "Primary" },
+    { "id": "lower-secondary", "zh": "初中", "en": "Lower Secondary" },
+    { "id": "upper-secondary", "zh": "高中", "en": "Upper Secondary" },
+    { "id": "vocational", "zh": "职业教育", "en": "Vocational" },
+    { "id": "college", "zh": "大专/文凭", "en": "College/Diploma" },
+    { "id": "undergraduate", "zh": "本科", "en": "Undergraduate" },
+    { "id": "master", "zh": "硕士", "en": "Master's" },
+    { "id": "phd", "zh": "博士", "en": "PhD" }
+  ]
+}

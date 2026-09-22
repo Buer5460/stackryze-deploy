@@ -1,0 +1,31 @@
+{
+  "version": "0.5.0",
+  "source_note": "Instruction-language taxonomy. Used for filtering against institution main_language / additional_languages.",
+  "languages": [
+    { "id": "english", "name_en": "English", "name_zh": "英语" },
+    { "id": "chinese-mandarin", "name_en": "Chinese (Mandarin)", "name_zh": "中文（普通话）" },
+    { "id": "cantonese", "name_en": "Cantonese", "name_zh": "粤语" },
+    { "id": "german", "name_en": "German", "name_zh": "德语" },
+    { "id": "french", "name_en": "French", "name_zh": "法语" },
+    { "id": "spanish", "name_en": "Spanish", "name_zh": "西班牙语" },
+    { "id": "portuguese", "name_en": "Portuguese", "name_zh": "葡萄牙语" },
+    { "id": "dutch", "name_en": "Dutch", "name_zh": "荷兰语" },
+    { "id": "malay", "name_en": "Malay", "name_zh": "马来语" },
+    { "id": "thai", "name_en": "Thai", "name_zh": "泰语" },
+    { "id": "vietnamese", "name_en": "Vietnamese", "name_zh": "越南语" },
+    { "id": "japanese", "name_en": "Japanese", "name_zh": "日语" },
+    { "id": "korean", "name_en": "Korean", "name_zh": "韩语" },
+    { "id": "arabic", "name_en": "Arabic", "name_zh": "阿拉伯语" },
+    { "id": "hindi", "name_en": "Hindi", "name_zh": "印地语" }
+  ],
+  "institutionTypes": [
+    { "id": "international-school", "name_en": "International School", "name_zh": "国际学校" },
+    { "id": "bilingual-school", "name_en": "Bilingual School", "name_zh": "双语学校" },
+    { "id": "private-school", "name_en": "Private School", "name_zh": "私立学校" },
+    { "id": "public-school", "name_en": "Public School", "name_zh": "公立学校" },
+    { "id": "university", "name_en": "University", "name_zh": "大学" },
+    { "id": "college", "name_en": "College/Diploma Institution", "name_zh": "大专院校" },
+    { "id": "language-school", "name_en": "Language School", "name_zh": "语言学校" },
+    { "id": "vocational-institution", "name_en": "Vocational Institution", "name_zh": "职业院校" }
+  ]
+}

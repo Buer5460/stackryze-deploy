@@ -1,1 +1,589 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"><meta name="theme-color" content="#0b55d5"><title>GlobalStudy H5 MVP</title><style>:root{--b:#0b55d5;--bg:#f5f7fb;--ink:#142033;--m:#718096;--line:#e6edf5;--g:#16a36a;--gold:#a66c0f}*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;color:var(--ink)}header{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#0b55d5,#2c7ef8);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 16px 18px;display:flex;justify-content:space-between;align-items:center}header small{opacity:.75}header h1{font-size:20px;margin:3px 0 0}.switch{border:1px solid #ffffff66;background:#ffffff20;color:#fff;border-radius:99px;padding:8px 12px}main{max-width:620px;margin:auto;padding:14px 14px calc(82px + env(safe-area-inset-bottom))}.hero{background:linear-gradient(145deg,#0d63df,#55a5ff);color:#fff;border-radius:22px;padding:20px;box-shadow:0 14px 32px #0b55d533}.hero h2{font-size:23px;margin:4px 0 8px}.hero p{font-size:13px;line-height:1.7;opacity:.94}.btn{border:0;border-radius:13px;padding:11px 13px;font-weight:700}.white{background:#fff;color:var(--b)}.primary{background:var(--b);color:#fff}.outline{background:#fff;border:1px solid #cfd9e6;color:#36506c}.success{background:#e9f8f1;color:#08774a}.hero .btn{margin-top:8px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.metric,.card,.row{background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:0 8px 24px #1f355012}.metric{padding:14px}.metric small{color:var(--m);font-size:11px}.metric b{display:block;font-size:20px;margin-top:5px}.section{display:flex;justify-content:space-between;align-items:end;margin:18px 2px 10px}.section h3{margin:0;font-size:17px}.section span{color:var(--m);font-size:11px}.cards,.list{display:grid;gap:10px}.card,.row{padding:14px}.card h4,.row h4{margin:0 0 5px;font-size:15px}.muted{color:var(--m);font-size:11px}.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.chip,.status{font-size:10px;border-radius:999px;padding:4px 7px;background:#eef5ff;color:#32669c}.good{background:#eaf8f1;color:#128155}.warn{background:#fff5e3;color:#95600d}.split{display:flex;justify-content:space-between;padding-top:9px;border-top:1px solid var(--line);font-size:11px;color:var(--m)}.split b{font-size:13px;color:var(--ink)}.actions{display:flex;gap:8px;margin-top:11px}.actions .btn{flex:1}.rowtop{display:flex;justify-content:space-between;gap:10px}.progress{height:7px;background:#edf1f6;border-radius:99px;overflow:hidden;margin:10px 0}.progress i{display:block;height:100%;background:linear-gradient(90deg,#0b55d5,#49a0ff)}.notice{background:#eef6ff;border:1px solid #d7e8fb;color:#41617e;border-radius:14px;padding:11px;font-size:11px;line-height:1.6}.search{display:flex;gap:8px;margin-bottom:10px}.search input,.search select,input,select{width:100%;border:1px solid #dfe6ef;background:#fff;border-radius:13px;padding:11px}.bottom{position:fixed;left:0;right:0;bottom:0;height:calc(62px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:#fffffff7;border-top:1px solid var(--line);display:flex;z-index:20}.bottom button{flex:1;border:0;background:transparent;color:#8090a2;font-size:10px}.bottom button b{display:block;font-size:18px;font-weight:400}.bottom .on{color:var(--b)}.mask{position:fixed;inset:0;background:#0c192b70;opacity:0;pointer-events:none;z-index:30}.mask.on{opacity:1;pointer-events:auto}.sheet{position:fixed;left:0;right:0;bottom:-90vh;max-height:86vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:12px 16px calc(20px + env(safe-area-inset-bottom));z-index:40;transition:.25s}.sheet.on{bottom:0}.sheethead{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:10px}.timeline{border-left:2px solid #dce8f5;margin:12px 0 0 8px;padding-left:17px}.ti{margin:0 0 18px;font-size:12px}.ti b{display:block}.rolegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.role{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff;text-align:left}.role b{display:block}.role span{font-size:10px;color:var(--m)}@media(min-width:700px){header,.bottom,.sheet{max-width:620px;margin:auto}.bottom{left:50%;transform:translateX(-50%)}}</style></head><body><header><div><small>GLOBALSTUDY · MOBILE MVP</small><h1 id="title">学生 / 家长端</h1></div><button class="switch" onclick="chooseRole()">切换角色</button></header><main id="view"></main><nav class="bottom" id="nav"></nav><div class="mask" id="mask" onclick="closeSheet()"></div><section class="sheet" id="sheet"><div class="sheethead"><b id="sheetTitle">详情</b><button class="btn outline" onclick="closeSheet()">关闭</button></div><div id="sheetBody" style="padding-top:12px"></div></section><script>const $=s=>document.querySelector(s);let role=localStorage.getItem('gs-role')||'student',page='home',data=null;const R={student:{t:'学生 / 家长端',m:[['home','⌂','首页'],['programs','⌕','找学校'],['applications','◎','申请'],['profile','◉','我的']]},agency:{t:'机构工作台',m:[['home','⌂','工作台'],['clients','♙','客户'],['programs','⌕','学校库'],['applications','◎','申请']]},supplier:{t:'院校 / 供应商',m:[['home','⌂','工作台'],['programs','▦','项目'],['applications','◎','受理'],['ads','◈','推广']]},admin:{t:'平台管理后台',m:[['home','⌂','总览'],['audits','✓','审核'],['applications','◎','申请'],['settlement','¥','结算']]}};const money=n=>'¥'+Number(n||0).toLocaleString('zh-CN');async function api(u,o){const r=await fetch(u,{headers:{'Content-Type':'application/json'},...o});const j=await r.json();if(!r.ok)throw Error(j.error||'请求失败');return j.data}async function load(){data=await api('/api/bootstrap');render()}function nav(p){page=p;render()}function setRole(r){role=r;page='home';localStorage.setItem('gs-role',r);closeSheet();render()}function openSheet(t,h){$('#sheetTitle').textContent=t;$('#sheetBody').innerHTML=h;$('#sheet').classList.add('on');$('#mask').classList.add('on')}function closeSheet(){$('#sheet').classList.remove('on');$('#mask').classList.remove('on')}function chooseRole(){openSheet('选择体验角色','<div class="rolegrid">'+Object.entries(R).map(([k,v])=>`<button class="role" onclick="setRole('${k}')"><b>${v.t}</b><span>${k==='student'?'找项目、建档、申请':k==='agency'?'客户、申请、协同':k==='supplier'?'项目、受理、推广':'审核、运营、结算'}</span></button>`).join('')+'</div>')}function metric(t,v){return `<div class="metric"><small>${t}</small><b>${v}</b></div>`}function hero(t,d,cta,fn){return `<section class="hero"><small>S2B2C STUDY ABROAD</small><h2>${t}</h2><p>${d}</p><button class="btn white" onclick="${fn}">${cta}</button></section>`}function st(s){return ['已录取','已通过'].some(x=>s.includes(x))?'good':['材料准备','待审核'].some(x=>s.includes(x))?'warn':''}function schoolCards(a){return '<div class="cards">'+a.map(x=>`<div class="card"><div class="rowtop"><div><h4>${x.name}</h4><div class="muted">${x.country} · ${x.city} · ${x.district}</div></div><span class="status ${x.isDemo?'warn':'good'}">${x.isDemo?'演示数据':'已验证'}</span></div><div class="chips">${(x.stages||[]).slice(0,3).map(v=>`<span class="chip">${v}</span>`).join('')}${(x.curricula||[]).slice(0,2).map(v=>`<span class="chip good">${v}</span>`).join('')}</div><div class="muted">教学语言：${x.mainLanguage||'-'} · ${x.boarding?'有住宿':'无住宿'} · ${x.scholarship?'有奖助机会':'无奖助信息'}</div><div class="split"><span>学费区间<br><b>${x.currency} ${Number(x.tuitionMin||0).toLocaleString()}–${Number(x.tuitionMax||0).toLocaleString()}</b></span><span style="text-align:right">交通<br><b>${x.nearestTransit||'-'}</b></span></div><div class="actions"><button class="btn outline" onclick="schoolDetail('${x.id}')">详情</button><button class="btn primary" onclick="toggleFav('${x.id}')">收藏</button></div></div>`).join('')+'</div>'}function apps(a){return '<div class="list">'+a.map(x=>{const p=data.programs.find(z=>z.id===x.programId);return `<div class="row" onclick="appDetail('${x.id}')"><div class="rowtop"><div><h4>${x.student} · ${p?p.program:'申请'}</h4><div class="muted">${x.school}</div></div><span class="status ${st(x.status)}">${x.status}</span></div><div class="progress"><i style="width:${x.progress}%"></i></div><div class="muted">进度 ${x.progress}% · 预计佣金 ${money(x.commission)}</div></div>`}).join('')+'</div>'}function home(){if(role==='student'){const mine=data.applications.filter(a=>a.student===data.profile.name);return hero('找学校、奖学金和申请，一部手机完成。','自己建档，也可以授权机构协同；所有申请进度集中查看。','开始找学校',"nav('programs')")+`<div class="metrics">${metric('档案完整度',data.profile.completion+'%')}${metric('进行中申请',mine.length)}${metric('推荐项目',data.programs.length)}${metric('奖助机会','¥55,000')}</div><div class="section"><h3>适合你的项目</h3><span>规则初筛</span></div>${schoolCards((data.schools||[]).slice(0,3))}`}if(role==='agency'){return hero('客户和申请，放进一个手机工作台。','顾问可代建档，也可邀请学生自己完善资料。','新增客户','clientForm()')+`<div class="metrics">${metric('客户',data.clients.length)}${metric('申请',data.applications.length)}${metric('预计佣金',money(data.applications.reduce((s,a)=>s+a.commission,0)))}${metric('材料及时率','87%')}</div><div class="section"><h3>客户</h3><span>客户归属保留</span></div>${clients()}`}if(role==='supplier')return hero('院校也能在手机上受理申请。','查看材料、补件、录取与推广。','查看申请',"nav('applications')")+`<div class="metrics">${metric('在架项目','8')}${metric('本月申请','23')}${metric('待处理','6')}${metric('推广曝光','18,620')}</div><div class="section"><h3>待处理</h3><span>已授权</span></div>${apps(data.applications.filter(a=>a.school.includes('南洋')))}`;return hero('平台看的是完整业务闭环。','审核机构、院校、项目、申请和结算。','进入审核',"nav('audits')")+`<div class="metrics">${metric('活跃B端','18')}${metric('活跃S端','12')}${metric('全局申请','53')}${metric('待审核',data.audits.filter(a=>a.status==='待审核').length)}</div><div class="section"><h3>待审核</h3><span>运营处理</span></div>${audits()}`}function programs(){const ref=data.reference||{locations:[],educationStages:[],curriculumFamilies:[]};const cities=[...new Set(ref.locations.map(x=>x.city))];const curricula=ref.curriculumFamilies.flatMap(x=>x.items||[]);return `<div class="notice">V0.5 数据底座已接入：当前学校均为明确标记的演示数据；地区和课程体系来自结构化参考字典。</div><div class="search" style="margin-top:10px"><input id="q" placeholder="学校 / 地区 / 课程" oninput="filterP()"><select id="country" onchange="filterP()"><option value="">全部国家</option>${[...new Set(ref.locations.map(x=>x.country))].map(x=>`<option value="${x}">${x}</option>`).join('')}</select></div><div class="search"><select id="city" onchange="filterP()"><option value="">全部城市</option>${cities.map(x=>`<option value="${x}">${x}</option>`).join('')}</select><select id="stage" onchange="filterP()"><option value="">全部阶段</option>${ref.educationStages.map(x=>`<option value="${x.id}">${x.zh}</option>`).join('')}</select></div><div class="search"><select id="curriculum" onchange="filterP()"><option value="">全部课程</option>${curricula.map(x=>`<option value="${x}">${x}</option>`).join('')}</select><input id="maxFee" type="number" placeholder="最高学费" oninput="filterP()"></div><div class="section"><h3>学校结果</h3><span id="resultCount">${(data.schools||[]).length} 所</span></div><div id="plist">${schoolCards(data.schools||[])}</div>`}function filterP(){const q=($('#q')?.value||'').toLowerCase(),country=$('#country')?.value||'',city=$('#city')?.value||'',stage=$('#stage')?.value||'',curriculum=$('#curriculum')?.value||'',maxFee=Number($('#maxFee')?.value||0);const arr=(data.schools||[]).filter(x=>(!q||[x.name,x.country,x.city,x.district,x.institutionType,...(x.curricula||[])].join(' ').toLowerCase().includes(q))&&(!country||x.country===country)&&(!city||x.city===city)&&(!stage||(x.stages||[]).includes(stage))&&(!curriculum||(x.curricula||[]).includes(curriculum))&&(!maxFee||Number(x.tuitionMin||0)<=maxFee));$('#plist').innerHTML=schoolCards(arr);if($('#resultCount'))$('#resultCount').textContent=arr.length+' 所'}function clients(){return '<div class="list">'+data.clients.map(c=>`<div class="row"><div class="rowtop"><div><h4>${c.name}</h4><div class="muted">${c.source} · ${c.owner}</div></div><span class="status ${st(c.stage)}">${c.stage}</span></div><div class="progress"><i style="width:${c.completion}%"></i></div><div class="muted">档案 ${c.completion}%</div></div>`).join('')+'</div>'}function audits(){return '<div class="list">'+data.audits.map(a=>`<div class="row"><div class="rowtop"><div><h4>${a.name}</h4><div class="muted">${a.type} · ${a.org}</div></div><span class="status ${st(a.status)}">${a.status}</span></div>${a.status==='待审核'?`<div class="actions"><button class="btn success" onclick="approve(${a.id})">通过</button></div>`:''}</div>`).join('')+'</div>'}function content(){if(page==='home')return home();if(page==='programs')return programs();if(page==='applications'){let a=data.applications;if(role==='student')a=a.filter(x=>x.student===data.profile.name);if(role==='supplier')a=a.filter(x=>x.school.includes('南洋'));return `<div class="section"><h3>申请管理</h3><span>统一状态机</span></div>${apps(a)}`}if(page==='clients')return `<div class="section"><h3>客户 CRM</h3><button class="btn primary" onclick="clientForm()">＋新增</button></div><div class="notice">学生可通过机构专属邀请自行建档，客户归属仍归机构。</div><br>${clients()}`;if(page==='profile')return `<div class="card"><h4>${data.profile.name}</h4><div class="progress"><i style="width:${data.profile.completion}%"></i></div>${[['学历',data.profile.education],['GPA',data.profile.gpa],['语言',data.profile.english],['预算',data.profile.budget],['目标',data.profile.country]].map(x=>`<div class="split"><span>${x[0]}</span><b>${x[1]}</b></div>`).join('')}</div>`;if(page==='audits')return `<div class="section"><h3>审核中心</h3><span>B / S / 项目</span></div>${audits()}`;if(page==='ads')return `<div class="metrics">${metric('投放中','1')}${metric('曝光','18,620')}${metric('线索','64')}${metric('预算','¥3,600')}</div><div class="notice" style="margin-top:12px">MVP 不进行真实扣款，V1.5 再接支付。</div>`;if(page==='settlement')return `<div class="metrics">${metric('预计佣金',money(data.applications.reduce((s,a)=>s+a.commission,0)))}${metric('平台应收','¥62,700')}${metric('B端应付','¥24,700')}${metric('广告收入','¥12,600')}</div><div class="notice" style="margin-top:12px">正式版按课程、批次、渠道和合同版本生成结算台账。</div>`}function render(){const cfg=R[role];$('#title').textContent=cfg.t;$('#nav').innerHTML=cfg.m.map(m=>`<button class="${page===m[0]?'on':''}" onclick="nav('${m[0]}')"><b>${m[1]}</b>${m[2]}</button>`).join('');$('#view').innerHTML=content()}function schoolDetail(id){const x=(data.schools||[]).find(s=>s.id===id);if(!x)return;openSheet(x.name,`<div class="notice">${x.isDemo?'演示学校数据，仅用于验证搜索结构。':'已验证学校数据'} 正式真实数据必须显示来源、审核状态和更新时间。</div><div class="section"><h3>${x.city} · ${x.district}</h3><span>${x.institutionType}</span></div><div class="chips">${(x.stages||[]).map(v=>`<span class="chip">${v}</span>`).join('')}${(x.curricula||[]).map(v=>`<span class="chip good">${v}</span>`).join('')}</div><div class="split"><span>教学语言</span><b>${x.mainLanguage}</b></div><div class="split"><span>学费区间</span><b>${x.currency} ${Number(x.tuitionMin||0).toLocaleString()}–${Number(x.tuitionMax||0).toLocaleString()}</b></div><div class="split"><span>住宿</span><b>${x.boarding?'有':'无'}</b></div><div class="split"><span>奖助</span><b>${x.scholarship?'有':'暂无'}</b></div><div class="split"><span>最近交通</span><b>${x.nearestTransit||'-'}</b></div><div class="split"><span>数据状态</span><b>${x.verifiedStatus}</b></div><div class="split"><span>更新时间</span><b>${x.updatedAt||'-'}</b></div>`)}function toggleFav(id){const key='gs-favs',v=JSON.parse(localStorage.getItem(key)||'[]');const i=v.indexOf(id);if(i>=0){v.splice(i,1);alert('已取消收藏')}else{v.push(id);alert('已收藏')}localStorage.setItem(key,JSON.stringify(v))}async function apply(id){try{await api('/api/applications',{method:'POST',body:JSON.stringify({student:data.profile.name,programId:id,agency:role==='agency'?'环球学桥（演示）':'待授权机构'})});data=await api('/api/bootstrap');page='applications';render()}catch(e){alert(e.message)}}function appDetail(id){const a=data.applications.find(x=>x.id===id);openSheet('申请 '+id,`<h3>${a.student}</h3><div class="notice">${a.agency} → ${a.school}</div><div class="timeline"><div class="ti"><b>建立申请</b><span class="muted">档案已关联</span></div><div class="ti"><b>材料准备</b><span class="muted">当前：${a.status}</span></div><div class="ti"><b>院校受理 / 补件</b></div><div class="ti"><b>录取 / 奖学金</b></div><div class="ti"><b>入学 / 结算</b></div></div>${role==='supplier'&&a.status==='院校受理'?`<div class="actions"><button class="btn outline" onclick="upd('${id}','补件中')">要求补件</button><button class="btn success" onclick="upd('${id}','已录取')">录取演示</button></div>`:''}`)}async function upd(id,s){await api('/api/applications/'+id,{method:'PATCH',body:JSON.stringify({status:s,progress:s==='已录取'?88:65})});data=await api('/api/bootstrap');closeSheet();render()}function clientForm(){openSheet('新增客户','<div class="notice">顾问可代建档，也可邀请学生自行建档。</div><p><input id="cn" placeholder="学生姓名"></p><p><select id="co"><option>王老师</option><option>周老师</option></select></p><button class="btn primary" style="width:100%" onclick="createClient()">创建客户</button>')}async function createClient(){const name=$('#cn').value.trim();if(!name)return;await api('/api/clients',{method:'POST',body:JSON.stringify({name,owner:$('#co').value})});data=await api('/api/bootstrap');closeSheet();page='clients';render()}async function approve(id){await api('/api/audits/'+id,{method:'PATCH',body:JSON.stringify({status:'已通过'})});data=await api('/api/bootstrap');render()}load();</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b55d5">
+<title>GlobalStudy H5 MVP</title>
+<style>
+:root{--b:#0b55d5;--bg:#f5f7fb;--ink:#142033;--m:#718096;--line:#e6edf5;--g:#16a36a;--gold:#a66c0f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;color:var(--ink)}
+header{position:sticky;top:0;z-index:10;background:linear-gradient(135deg,#0b55d5,#2c7ef8);color:#fff;padding:calc(16px + env(safe-area-inset-top)) 16px 18px;display:flex;justify-content:space-between;align-items:center}
+header small{opacity:.75}
+header h1{font-size:20px;margin:3px 0 0}
+.switch{border:1px solid #ffffff66;background:#ffffff20;color:#fff;border-radius:99px;padding:8px 12px}
+main{max-width:620px;margin:auto;padding:14px 14px calc(82px + env(safe-area-inset-bottom))}
+.hero{background:linear-gradient(145deg,#0d63df,#55a5ff);color:#fff;border-radius:22px;padding:20px;box-shadow:0 14px 32px #0b55d533}
+.hero h2{font-size:23px;margin:4px 0 8px}
+.hero p{font-size:13px;line-height:1.7;opacity:.94}
+.btn{border:0;border-radius:13px;padding:11px 13px;font-weight:700}
+.white{background:#fff;color:var(--b)}
+.primary{background:var(--b);color:#fff}
+.outline{background:#fff;border:1px solid #cfd9e6;color:#36506c}
+.success{background:#e9f8f1;color:#08774a}
+.danger{background:#fdeeee;color:#b3261e}
+.hero .btn{margin-top:8px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.metric,.card,.row{background:#fff;border:1px solid var(--line);border-radius:17px;box-shadow:0 8px 24px #1f355012}
+.metric{padding:14px}
+.metric small{color:var(--m);font-size:11px}
+.metric b{display:block;font-size:20px;margin-top:5px}
+.section{display:flex;justify-content:space-between;align-items:end;margin:18px 2px 10px}
+.section h3{margin:0;font-size:17px}
+.section span{color:var(--m);font-size:11px}
+button.linklike{border:0;background:transparent;color:var(--b);font-size:11px;padding:0}
+.cards,.list{display:grid;gap:10px}
+.card,.row{padding:14px}
+.card h4,.row h4{margin:0 0 5px;font-size:15px}
+.muted{color:var(--m);font-size:11px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.chip,.status{font-size:10px;border-radius:999px;padding:4px 7px;background:#eef5ff;color:#32669c}
+.chip{border:0;cursor:pointer}
+.chip.on{background:var(--b);color:#fff}
+.quick{display:flex;gap:6px;overflow-x:auto;padding:2px 0 6px;flex-wrap:nowrap}
+.quick .chip{white-space:nowrap;flex:0 0 auto;background:#fff;border:1px solid var(--line);color:#36506c}
+.quick .chip.on{background:var(--b);border-color:var(--b);color:#fff}
+.good{background:#eaf8f1;color:#128155}
+.warn{background:#fff5e3;color:#95600d}
+.split{display:flex;justify-content:space-between;padding-top:9px;border-top:1px solid var(--line);font-size:11px;color:var(--m)}
+.split b{font-size:13px;color:var(--ink);text-align:right}
+.actions{display:flex;gap:8px;margin-top:11px}
+.actions .btn{flex:1;padding:10px 6px;font-size:12px}
+.rowtop{display:flex;justify-content:space-between;gap:10px}
+.progress{height:7px;background:#edf1f6;border-radius:99px;overflow:hidden;margin:10px 0}
+.progress i{display:block;height:100%;background:linear-gradient(90deg,#0b55d5,#49a0ff)}
+.notice{background:#eef6ff;border:1px solid #d7e8fb;color:#41617e;border-radius:14px;padding:11px;font-size:11px;line-height:1.6}
+.search{display:flex;gap:8px;margin-bottom:10px}
+.search input,.search select,input,select{width:100%;border:1px solid #dfe6ef;background:#fff;border-radius:13px;padding:11px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.formgrid .full{grid-column:1/3}
+.field{font-size:10px;color:var(--m);display:block;margin-bottom:3px}
+.bottom{position:fixed;left:0;right:0;bottom:0;height:calc(62px + env(safe-area-inset-bottom));padding-bottom:env(safe-area-inset-bottom);background:#fffffff7;border-top:1px solid var(--line);display:flex;z-index:20}
+.bottom button{flex:1;border:0;background:transparent;color:#8090a2;font-size:10px}
+.bottom button b{display:block;font-size:18px;font-weight:400}
+.bottom .on{color:var(--b)}
+.mask{position:fixed;inset:0;background:#0c192b70;opacity:0;pointer-events:none;z-index:30}
+.mask.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:-90vh;max-height:86vh;overflow:auto;background:#fff;border-radius:24px 24px 0 0;padding:12px 16px calc(20px + env(safe-area-inset-bottom));z-index:40;transition:.25s}
+.sheet.on{bottom:0}
+.sheethead{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:10px}
+.timeline{border-left:2px solid #dce8f5;margin:12px 0 0 8px;padding-left:17px}
+.ti{margin:0 0 18px;font-size:12px}
+.ti b{display:block}
+.rolegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.role{border:1px solid var(--line);border-radius:15px;padding:13px;background:#fff;text-align:left}
+.role b{display:block}
+.role span{font-size:10px;color:var(--m)}
+.ctable{width:100%;border-collapse:collapse;font-size:11px}
+.ctable th,.ctable td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:left;vertical-align:top}
+.ctable th{color:var(--m);font-weight:400;white-space:nowrap}
+.ctable td{max-width:150px}
+.pager{display:flex;gap:8px;align-items:center;justify-content:center;margin:14px 0}
+.pager .btn{padding:9px 16px}
+.pager .btn[disabled]{opacity:.45}
+@media(min-width:700px){header,.bottom,.sheet{max-width:620px;margin:auto}.bottom{left:50%;transform:translateX(-50%)}}
+</style>
+</head>
+<body>
+<header>
+  <div><small>GLOBALSTUDY · MOBILE MVP</small><h1 id="title">学生 / 家长端</h1></div>
+  <button class="switch" onclick="chooseRole()">切换角色</button>
+</header>
+<main id="view"></main>
+<nav class="bottom" id="nav"></nav>
+<div class="mask" id="mask" onclick="closeSheet()"></div>
+<section class="sheet" id="sheet">
+  <div class="sheethead"><b id="sheetTitle">详情</b><button class="btn outline" onclick="closeSheet()">关闭</button></div>
+  <div id="sheetBody" style="padding-top:12px"></div>
+</section>
+<script>
+'use strict';
+const $ = (s) => document.querySelector(s);
+let role = localStorage.getItem('gs-role') || 'student';
+let page = 'home';
+let data = null;          // /api/bootstrap payload
+let results = [];         // current search results
+let resultMeta = { total: 0, page: 1, pageSize: 10 };
+let detailLoading = false;
+
+const searchState = {
+  q: '', country: '', city: '', stage: '', curriculum: '',
+  district: '', language: '', institutionType: '',
+  minFee: '', maxFee: '', scholarship: false, boarding: false,
+  transitNear: false, sort: '', page: 1
+};
+const quickChips = [
+  { id: 'intl', label: '国际学校', apply: () => { searchState.institutionType = 'international-school'; } },
+  { id: 'ib', label: 'IB', apply: () => { searchState.curriculum = 'IB'; } },
+  { id: 'cambridge', label: 'Cambridge', apply: () => { searchState.curriculum = 'Cambridge'; } },
+  { id: 'lowfee', label: '学费较低', apply: () => { searchState.sort = 'fee_asc'; } },
+  { id: 'scholarship', label: '有奖学金', apply: () => { searchState.scholarship = true; } },
+  { id: 'boarding', label: '有住宿', apply: () => { searchState.boarding = true; } },
+  { id: 'transit', label: '靠近公共交通', apply: () => { searchState.transitNear = true; } }
+];
+let activeChips = new Set();
+
+const R = {
+  student: { t: '学生 / 家长端', m: [['home','⌂','首页'],['programs','⌕','找学校'],['applications','◎','申请'],['profile','◉','我的']] },
+  agency: { t: '机构工作台', m: [['home','⌂','工作台'],['clients','♙','客户'],['programs','⌕','学校库'],['applications','◎','申请']] },
+  supplier: { t: '院校 / 供应商', m: [['home','⌂','工作台'],['programs','▦','项目'],['applications','◎','受理'],['ads','◈','推广']] },
+  admin: { t: '平台管理后台', m: [['home','⌂','总览'],['audits','✓','审核'],['applications','◎','申请'],['settlement','¥','结算']] }
+};
+
+const money = (n) => '¥' + Number(n || 0).toLocaleString('zh-CN');
+const fmt = (n) => Number(n || 0).toLocaleString('zh-CN');
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+async function api(u, o) {
+  const r = await fetch(u, { headers: { 'Content-Type': 'application/json' }, ...o });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.ok === false) throw Error(j.error || '请求失败');
+  return j;
+}
+
+async function load() {
+  data = (await api('/api/bootstrap')).data;
+  render();
+  if (page === 'programs') runSearch();
+}
+
+function nav(p) {
+  page = p;
+  if (p === 'programs' && (!results.length || !searchState._ran)) runSearch();
+  render();
+}
+function setRole(r) { role = r; page = 'home'; localStorage.setItem('gs-role', r); closeSheet(); render(); }
+
+function openSheet(t, h) {
+  $('#sheetTitle').textContent = t;
+  $('#sheetBody').innerHTML = h;
+  $('#sheet').classList.add('on');
+  $('#mask').classList.add('on');
+}
+function closeSheet() { $('#sheet').classList.remove('on'); $('#mask').classList.remove('on'); }
+
+function chooseRole() {
+  openSheet('选择体验角色', '<div class="rolegrid">' + Object.entries(R).map(([k, v]) =>
+    `<button class="role" onclick="setRole('${k}')"><b>${v.t}</b><span>${k==='student'?'找学校、建档、申请':k==='agency'?'客户、申请、协同':k==='supplier'?'项目、受理、推广':'审核、运营、结算'}</span></button>`).join('') + '</div>');
+}
+
+function metric(t, v) { return `<div class="metric"><small>${t}</small><b>${v}</b></div>`; }
+function hero(t, d, cta, fn) { return `<section class="hero"><small>S2B2C GLOBAL STUDY</small><h2>${t}</h2><p>${d}</p><button class="btn white" onclick="${fn}">${cta}</button></section>`; }
+function st(s) { return ['已录取','已通过'].some(x => String(s).includes(x)) ? 'good' : ['材料准备','待审核'].some(x => String(s).includes(x)) ? 'warn' : ''; }
+
+// ---------------------------------------------------------------------------
+// Reference lookups
+// ---------------------------------------------------------------------------
+const ref = () => data.reference || {};
+const stageZh = (id) => { const s = ref().educationStages.find((x) => x.id === id); return s ? s.zh : id; };
+const districtLabel = (id) => { const d = ref().districts.find((x) => x.id === id); return d ? (d.name_zh || d.name_en) : id; };
+const cityLabel = (cityId) => { const c = ref().cities.find((x) => x.id === cityId); return c ? c.name_zh : ''; };
+const locText = (s) => {
+  const l = s.location || {};
+  return [l.country_zh || l.country_en, l.city_zh || l.city_en, l.district_zh || l.district_en].filter(Boolean).join(' · ');
+};
+const tuitionText = (s) => `${s.currency} ${fmt(s.tuition_min)}–${fmt(s.tuition_max)}`;
+const stationText = (s) => s.station ? `${s.station.name_zh || s.station.name_en}${s.station.line_code ? '（' + s.station.line_code + '）' : ''}` : '-';
+
+// ---------------------------------------------------------------------------
+// Search (API-driven, V0.5)
+// ---------------------------------------------------------------------------
+function buildQuery(toPage) {
+  const s = searchState;
+  const p = new URLSearchParams();
+  if (s.q) p.set('q', s.q);
+  if (s.country) p.set('country', s.country);
+  if (s.city) p.set('city', s.city);
+  if (s.stage) p.set('stage', s.stage);
+  if (s.curriculum) p.set('curriculum', s.curriculum);
+  if (s.district) p.set('district', s.district);
+  if (s.language) p.set('language', s.language);
+  if (s.institutionType) p.set('institutionType', s.institutionType);
+  if (s.minFee !== '' && !Number.isNaN(Number(s.minFee))) p.set('minFee', s.minFee);
+  if (s.maxFee !== '' && !Number.isNaN(Number(s.maxFee))) p.set('maxFee', s.maxFee);
+  if (s.scholarship || s._negScholarship) p.set('scholarship', s._negScholarship ? 'false' : 'true');
+  if (s.boarding || s._negBoarding) p.set('boarding', s._negBoarding ? 'false' : 'true');
+  if (s.transitNear) p.set('transitNear', 'true');
+  if (s.sort) p.set('sort', s.sort);
+  p.set('page', String(toPage || s.page || 1));
+  p.set('pageSize', '10');
+  return p;
+}
+
+async function runSearch(toPage) {
+  syncForm();
+  searchState.page = toPage || 1;
+  try {
+    const j = await api('/api/schools?' + buildQuery().toString());
+    results = j.data || [];
+    resultMeta = j.meta || resultMeta;
+    searchState._ran = true;
+    renderResults();
+  } catch (e) { alert(e.message); }
+}
+
+function clearSearch() {
+  Object.assign(searchState, { q:'', country:'', city:'', stage:'', curriculum:'', district:'', language:'', institutionType:'', minFee:'', maxFee:'', scholarship:false, boarding:false, transitNear:false, sort:'', page:1, _negBoarding:false, _negScholarship:false, _boardingSet:false, _scholarshipSet:false, favOnly:false });
+  activeChips.clear();
+  render();
+  runSearch();
+}
+
+function toggleChip(id) {
+  const chip = quickChips.find((c) => c.id === id);
+  if (!chip) return;
+  if (activeChips.has(id)) {
+    activeChips.delete(id);
+    if (id === 'intl') searchState.institutionType = '';
+    if (id === 'ib' && searchState.curriculum === 'IB') searchState.curriculum = '';
+    if (id === 'cambridge' && searchState.curriculum === 'Cambridge') searchState.curriculum = '';
+    if (id === 'lowfee') searchState.sort = '';
+    if (id === 'scholarship') { searchState.scholarship = false; searchState._negScholarship = false; searchState._scholarshipSet = false; }
+    if (id === 'boarding') { searchState.boarding = false; searchState._negBoarding = false; searchState._boardingSet = false; }
+    if (id === 'transit') searchState.transitNear = false;
+  } else {
+    activeChips.add(id);
+    chip.apply();
+  }
+  syncForm();
+  render();
+  runSearch();
+}
+
+function searchChanged() { runSearch(); }
+function syncForm() {
+  const g = (id) => { const el = document.querySelector('#' + id); return el ? el.value : null; };
+  const merge = (id, key) => { const v = g(id); if (v !== null) searchState[key] = v; };
+  merge('q', 'q'); merge('qCountry', 'country'); merge('qCity', 'city');
+  merge('qStage', 'stage'); merge('qCurriculum', 'curriculum');
+}
+
+function advancedSheet() {
+  syncForm();
+  const r = ref();
+  const cities = r.cities || [];
+  const districtsByCity = cities.map((c) => ({ city: c, items: (r.districts || []).filter((d) => d.city_id === c.id) })).filter((g) => g.items.length);
+  const curriculaByFamily = (r.curriculumFamilies || []).map((f) => ({ family: f, items: (r.curricula || []).filter((c) => c.family_id === f.id) })).filter((g) => g.items.length);
+  const s = searchState;
+  openSheet('高级筛选', `
+    <div class="formgrid">
+      <div class="full"><label class="field">区域（城市 / 行政区）</label>
+        <select id="afDistrict"><option value="">全部区域</option>
+          ${districtsByCity.map((g) => `<optgroup label="${esc(cityLabel(g.city.id))}">${g.items.map((d) => `<option value="${d.id}" ${s.district === d.id ? 'selected' : ''}>${d.name_zh || d.name_en} ${d.name_en && d.name_zh ? '· ' + d.name_en : ''}</option>`).join('')}</optgroup>`).join('')}
+        </select></div>
+      <div class="full"><label class="field">课程体系</label>
+        <select id="afCurriculum"><option value="">全部课程</option>
+          ${curriculaByFamily.map((g) => `<optgroup label="${esc(g.family.name_zh || g.family.name_en)}">${g.items.map((c) => `<option value="${esc(c.name_en)}" ${s.curriculum === c.name_en ? 'selected' : ''}>${esc(c.name_zh ? c.name_zh + ' · ' + c.name_en : c.name_en)}</option>`).join('')}</optgroup>`).join('')}
+        </select></div>
+      <div class="full"><label class="field">教学语言</label>
+        <select id="afLanguage"><option value="">全部语言</option>
+          ${(r.languages || []).map((l) => `<option value="${esc(l.name_en)}" ${s.language === l.name_en ? 'selected' : ''}>${esc(l.name_zh)} · ${esc(l.name_en)}</option>`).join('')}
+        </select></div>
+      <div><label class="field">最低学费</label><input id="afMinFee" type="number" inputmode="numeric" value="${esc(s.minFee)}" placeholder="不限"></div>
+      <div><label class="field">最高学费</label><input id="afMaxFee" type="number" inputmode="numeric" value="${esc(s.maxFee)}" placeholder="不限"></div>
+      <div class="full"><label class="field">学校类型</label>
+        <select id="afType"><option value="">全部类型</option>
+          ${(r.institutionTypes || []).map((t) => `<option value="${t.id}" ${s.institutionType === t.id ? 'selected' : ''}>${esc(t.name_zh)} · ${esc(t.name_en)}</option>`).join('')}
+        </select></div>
+      <div><label class="field">住宿</label><select id="afBoarding"><option value="">不限</option><option value="1" ${s.boarding ? 'selected' : ''}>有住宿</option><option value="0" ${!s.boarding && s._boardingSet ? 'selected' : ''}>无住宿</option></select></div>
+      <div><label class="field">奖学金</label><select id="afScholarship"><option value="">不限</option><option value="1" ${s.scholarship ? 'selected' : ''}>有奖学金</option><option value="0" ${!s.scholarship && s._scholarshipSet ? 'selected' : ''}>无奖学金</option></select></div>
+    </div>
+    <div class="actions"><button class="btn outline" onclick="applyAdvancedReset()">重置</button><button class="btn primary" onclick="applyAdvanced()">应用筛选</button></div>
+  `);
+}
+
+function applyAdvanced() {
+  const g = (id) => { const el = document.querySelector('#' + id); return el ? el.value : ''; };
+  searchState.district = g('afDistrict');
+  searchState.curriculum = g('afCurriculum');
+  searchState.language = g('afLanguage');
+  searchState.minFee = g('afMinFee');
+  searchState.maxFee = g('afMaxFee');
+  searchState.institutionType = g('afType');
+  const b = g('afBoarding'), sc = g('afScholarship');
+  searchState.boarding = b === '1' ? true : b === '0' ? false : false;
+  searchState._boardingSet = b !== '';
+  searchState.scholarship = sc === '1';
+  searchState._scholarshipSet = sc !== '';
+  if (b === '0' || sc === '0') {
+    // negative filters are API-supported; send explicit false via flags
+    searchState._negBoarding = b === '0';
+    searchState._negScholarship = sc === '0';
+  } else { searchState._negBoarding = false; searchState._negScholarship = false; }
+  closeSheet();
+  runSearch();
+}
+function applyAdvancedReset() {
+  Object.assign(searchState, { district:'', language:'', minFee:'', maxFee:'', institutionType:'', _negBoarding:false, _negScholarship:false });
+  closeSheet();
+  render();
+  runSearch();
+}
+
+// ---------------------------------------------------------------------------
+// School cards / compare / favourites
+// ---------------------------------------------------------------------------
+function favs() { return JSON.parse(localStorage.getItem('gs-favs') || '[]'); }
+function compares() { return JSON.parse(localStorage.getItem('gs-compares') || '[]'); }
+
+function schoolCard(x) {
+  const isFav = favs().includes(x.id);
+  const inCmp = compares().includes(x.id);
+  return `<div class="card">
+    <div class="rowtop"><div><h4>${esc(x.name_zh)}</h4><div class="muted">${esc(locText(x))}</div></div>
+      <span class="status ${x.is_demo ? 'warn' : 'good'}">${x.is_demo ? '演示' : '已验证'}</span></div>
+    <div class="chips">${(x.stages || []).slice(0, 3).map((v) => `<span class="chip" style="cursor:default">${esc(stageZh(v))}</span>`).join('')}
+      ${(x.curricula || []).slice(0, 3).map((v) => `<span class="chip good" style="cursor:default">${esc(v)}</span>`).join('')}</div>
+    <div class="muted">语言：${esc(x.main_language || '-')} · ${x.boarding ? '有住宿' : '无住宿'} · ${x.scholarships ? '有奖学金' : '暂无奖学金信息'}</div>
+    <div class="split"><span>学费区间（每年）<br><b>${esc(tuitionText(x))}</b></span>
+      <span style="text-align:right">最近交通<br><b>${esc(stationText(x))}</b></span></div>
+    <div class="muted" style="margin-top:7px">更新时间：${esc(x.updated_at || '-')} · 数据状态：${esc(x.verified_status || 'demo')}</div>
+    <div class="actions">
+      <button class="btn outline" onclick="schoolDetail('${x.id}')">查看详情</button>
+      <button class="btn ${inCmp ? 'success' : 'outline'}" onclick="toggleCompare('${x.id}')">${inCmp ? '已选对比' : '对比'}</button>
+      <button class="btn ${isFav ? 'success' : 'outline'}" onclick="toggleFav('${x.id}')">${isFav ? '已收藏' : '收藏'}</button>
+    </div>
+  </div>`;
+}
+
+function schoolCards(list) { return '<div class="cards">' + list.map(schoolCard).join('') + '</div>'; }
+
+function renderResults() {
+  const host = document.querySelector('#plist');
+  if (!host) return;
+  const favOnly = searchState.favOnly;
+  const shown = favOnly ? results.filter((x) => favs().includes(x.id)) : results;
+  const count = document.querySelector('#resultCount');
+  if (count) count.innerHTML = `${favOnly ? '收藏 ' + shown.length + ' 所 / ' : ''}${resultMeta.total} 所 · 第 ${resultMeta.page} 页`;
+  host.innerHTML = shown.length
+    ? schoolCards(shown) + pagerHtml()
+    : '<div class="notice">没有匹配的学校，试试放宽筛选条件。</div>';
+}
+
+function pagerHtml() {
+  const totalPages = Math.max(1, Math.ceil(resultMeta.total / resultMeta.pageSize));
+  return `<div class="pager">
+    <button class="btn outline" ${resultMeta.page <= 1 ? 'disabled' : ''} onclick="runSearch(${resultMeta.page - 1})">上一页</button>
+    <span class="muted">${resultMeta.page} / ${totalPages}</span>
+    <button class="btn outline" ${resultMeta.page >= totalPages ? 'disabled' : ''} onclick="runSearch(${resultMeta.page + 1})">下一页</button>
+  </div>`;
+}
+
+function toggleFav(id) {
+  const key = 'gs-favs';
+  let v = JSON.parse(localStorage.getItem(key) || '[]');
+  const i = v.indexOf(id);
+  if (i >= 0) { v.splice(i, 1); } else { v.push(id); }
+  localStorage.setItem(key, JSON.stringify(v));
+  renderResults();
+  if (page === 'home') render();
+}
+
+function toggleCompare(id) {
+  const key = 'gs-compares';
+  let v = JSON.parse(localStorage.getItem(key) || '[]');
+  const i = v.indexOf(id);
+  if (i >= 0) { v.splice(i, 1); }
+  else {
+    if (v.length >= 4) { alert('最多同时对比 4 所学校'); return; }
+    v.push(id);
+  }
+  localStorage.setItem(key, JSON.stringify(v));
+  renderResults();
+  if (v.length) showCompare();
+}
+
+function showCompare() {
+  const ids = compares();
+  const list = (data.schools || []).filter((s) => ids.includes(s.id));
+  if (!list.length) { openSheet('学校对比', '<div class="notice">还没有选择学校。在结果卡片上点击“对比”加入，最多 4 所。</div>'); return; }
+  const row = (label, fn) => `<tr><th>${label}</th>${list.map((s) => `<td>${fn(s)}</td>`).join('')}</tr>`;
+  openSheet(`学校对比（${list.length}/4）`, `
+    <div style="overflow-x:auto"><table class="ctable">
+      ${row('学校', (s) => `<b>${esc(s.name_zh)}</b><br><span class="muted">${esc(s.name_en || '')}</span>`)}
+      ${row('数据状态', (s) => `<span class="status ${s.is_demo ? 'warn' : 'good'}">${s.is_demo ? '演示' : '已验证'}</span>`)}
+      ${row('国家/城市/区', (s) => esc(locText(s)))}
+      ${row('教育阶段', (s) => (s.stages || []).map(stageZh).join('、'))}
+      ${row('课程体系', (s) => esc((s.curricula || []).join('、')))}
+      ${row('教学语言', (s) => esc(s.main_language || '-'))}
+      ${row('学费区间', (s) => esc(tuitionText(s)))}
+      ${row('住宿', (s) => s.boarding ? '有' : '无')}
+      ${row('奖学金', (s) => s.scholarships ? '有' : '暂无')}
+      ${row('最近交通', (s) => esc(stationText(s)))}
+      ${row('更新时间', (s) => esc(s.updated_at || '-'))}
+    </table></div>
+    <div class="actions"><button class="btn danger" onclick="clearCompare()">清空对比</button><button class="btn outline" onclick="closeSheet()">继续浏览</button></div>
+  `);
+}
+function clearCompare() { localStorage.setItem('gs-compares', '[]'); closeSheet(); renderResults(); if (page === 'home') render(); }
+
+async function schoolDetail(id) {
+  if (detailLoading) return;
+  detailLoading = true;
+  openSheet('学校详情', '<div class="notice">加载中…</div>');
+  try {
+    const x = (await api('/api/schools/' + encodeURIComponent(id))).data;
+    const loc = x.location || {};
+    openSheet(x.name_zh, `
+      <div class="notice">${x.is_demo ? '演示学校数据，仅用于验证搜索与详情结构。' : '已验证学校数据。'}真实数据必须带来源与更新时间。</div>
+      <div class="section"><h3>${esc(loc.city_zh || '')} · ${esc(loc.district_zh || loc.district_en || '')}</h3><span>${esc(x.institution_type)}</span></div>
+      <div class="chips">${(x.stages || []).map((v) => `<span class="chip" style="cursor:default">${esc(stageZh(v))}</span>`).join('')}
+        ${(x.curricula || []).map((v) => `<span class="chip good" style="cursor:default">${esc(v)}</span>`).join('')}</div>
+      <div class="split"><span>国家 / 城市 / 区</span><b>${esc(locText(x))}</b></div>
+      <div class="split"><span>教学语言</span><b>${esc(x.main_language)}${(x.additional_languages || []).length ? '（另：' + esc(x.additional_languages.join('、')) + '）' : ''}</b></div>
+      <div class="split"><span>学费区间（每年）</span><b>${esc(tuitionText(x))}</b></div>
+      <div class="split"><span>住宿</span><b>${x.boarding ? '有' : '无'}</b></div>
+      <div class="split"><span>奖学金</span><b>${x.scholarships ? '有' : '暂无'}</b></div>
+      <div class="split"><span>最近交通</span><b>${esc(stationText(x))}</b></div>
+      ${(x.campuses || []).length ? `<div class="section"><h3>校区</h3><span>${x.campuses.length} 个</span></div>` +
+        x.campuses.map((c) => `<div class="row"><h4>${esc(c.name_zh || c.name)}</h4><div class="muted">${c.address ? esc(c.address) : '地址待补充'} · ${esc(districtLabel(c.district_id))}</div></div>`).join('') : ''}
+      ${(x.programs || []).length ? `<div class="section"><h3>课程 / 项目</h3><span>演示数据</span></div>` +
+        '<div class="list">' + x.programs.map((p) => `<div class="row"><div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(stageZh(p.stage))} · ${esc(p.curriculum)} · ${esc(p.duration)}</div></div><span class="status warn">演示</span></div><div class="muted" style="margin-top:6px">学费 ${esc(p.currency)} ${fmt(p.tuition)}/年 · 申请截止 ${esc(p.deadline || '-')}<br>语言要求：${esc(p.language_requirement || '-')}${p.scholarship_available ? ' · 有奖学金机会' : ''}</div></div>`).join('') + '</div>' : ''}
+      ${(x.scholarships || []).length ? `<div class="section"><h3>奖学金</h3><span>演示数据</span></div>` +
+        '<div class="list">' + x.scholarships.map((sc) => `<div class="row"><div class="rowtop"><div><h4>${esc(sc.name)}</h4><div class="muted">${esc(sc.eligibility || '')}</div></div><span class="status good">${sc.percentage ? sc.percentage + '%' : ''}</span></div><div class="muted" style="margin-top:6px">截止 ${esc(sc.deadline || '-')}</div></div>`).join('') + '</div>' : ''}
+      <div class="section"><h3>数据来源</h3><span>必须可追溯</span></div>
+      <div class="split"><span>来源 URL</span><b>${x.source_url ? esc(x.source_url) : '无（演示数据）'}</b></div>
+      <div class="split"><span>审核状态</span><b>${esc(x.verified_status)}</b></div>
+      <div class="split"><span>验证时间</span><b>${esc(x.verified_at || '-')}</b></div>
+      <div class="split"><span>有效期</span><b>${esc(x.effective_from || '-')} ~ ${esc(x.effective_to || '-')}</b></div>
+      <div class="split"><span>更新时间</span><b>${esc(x.updated_at || '-')}</b></div>
+      <div class="actions"><button class="btn outline" onclick="toggleCompare('${x.id}');closeSheet()">加入对比</button><button class="btn primary" onclick="toggleFav('${x.id}');closeSheet()">收藏</button></div>
+    `);
+  } catch (e) { openSheet('学校详情', `<div class="notice">${esc(e.message)}</div>`); }
+  finally { detailLoading = false; }
+}
+
+// ---------------------------------------------------------------------------
+// Pages
+// ---------------------------------------------------------------------------
+function searchPage() {
+  const r = ref();
+  const countries = r.countries || [];
+  const cities = r.cities || [];
+  const stages = r.educationStages || [];
+  const curriculaByFamily = (r.curriculumFamilies || []).map((f) => ({ family: f, items: (r.curricula || []).filter((c) => c.family_id === f.id) })).filter((g) => g.items.length);
+  const s = searchState;
+  return `
+    <div class="notice">V0.5 数据底座：学校均为明确标记的演示数据；地区、阶段、课程字典来自 /api/reference 动态生成。</div>
+    <div class="formgrid" style="margin-top:10px">
+      <div><label class="field">国家</label><select id="qCountry" onchange="qCountryChanged()">
+        <option value="">全部国家</option>${countries.map((c) => `<option value="${c.id}" ${s.country === c.id ? 'selected' : ''}>${esc(c.name_zh)} ${esc(c.name_en)}</option>`).join('')}</select></div>
+      <div><label class="field">城市</label><select id="qCity" onchange="searchChanged()">
+        <option value="">全部城市</option>${cities.filter((c) => !s.country || c.country_id === s.country).map((c) => `<option value="${c.id}" ${s.city === c.id ? 'selected' : ''}>${esc(c.name_zh || c.name_en)}</option>`).join('')}</select></div>
+      <div><label class="field">教育阶段</label><select id="qStage" onchange="searchChanged()">
+        <option value="">全部阶段</option>${stages.map((x) => `<option value="${x.id}" ${s.stage === x.id ? 'selected' : ''}>${esc(x.zh)}</option>`).join('')}</select></div>
+      <div><label class="field">课程体系</label><select id="qCurriculum" onchange="searchChanged()">
+        <option value="">全部课程</option>${curriculaByFamily.map((g) => `<optgroup label="${esc(g.family.name_zh || g.family.name_en)}">${g.items.map((c) => `<option value="${esc(c.name_en)}" ${s.curriculum === c.name_en ? 'selected' : ''}>${esc(c.name_zh ? c.name_zh : c.name_en)}</option>`).join('')}</optgroup>`).join('')}</select></div>
+      <div class="full"><label class="field">关键词</label><input id="q" placeholder="学校 / 区域 / 课程" value="${esc(s.q)}" onkeydown="if(event.key==='Enter')runSearch()"></div>
+      <button class="btn primary full" style="margin-top:2px" onclick="runSearch()">搜索学校</button>
+    </div>
+    <div class="quick">${quickChips.map((c) => `<button class="chip ${activeChips.has(c.id) ? 'on' : ''}" onclick="toggleChip('${c.id}')">${c.label}</button>`).join('')}
+      <button class="chip" onclick="advancedSheet()">⚙ 高级筛选</button>
+      <button class="chip ${searchState.favOnly ? 'on' : ''}" onclick="toggleFavOnly()">❤ 我的收藏</button></div>
+    <div class="section"><h3>搜索结果</h3><span id="resultCount">加载中…</span></div>
+    <div id="plist"><div class="notice">正在加载学校数据…</div></div>
+    <div class="actions" style="margin-top:4px"><button class="btn outline" onclick="clearSearch()">清空全部筛选</button></div>
+  `;
+}
+
+function qCountryChanged() {
+  const el = document.querySelector('#qCountry');
+  searchState.country = el ? el.value : '';
+  searchState.city = '';
+  render();
+  runSearch();
+}
+function toggleFavOnly() { searchState.favOnly = !searchState.favOnly; render(); runSearch(); }
+
+function home() {
+  if (role === 'student') {
+    const mine = (data.applications || []).filter((a) => a.student === data.profile.name);
+    return hero('找学校、奖学金和申请，一部手机完成。', '按国家、城市、阶段和课程体系搜索学校；对比和收藏保存在本机。', '开始找学校', "nav('programs')") +
+      `<div class="metrics">${metric('档案完整度', data.profile.completion + '%')}${metric('进行中申请', mine.length)}${metric('演示学校', (data.schools || []).length)}${metric('对比选择', compares().length)}</div>
+      <div class="section"><h3>为你展示</h3><span>演示数据</span></div>${schoolCards((data.schools || []).slice(0, 3))}`;
+  }
+  if (role === 'agency') {
+    return hero('客户和申请，放进一个手机工作台。', '顾问可代建档，也可邀请学生自己完善资料。', '新增客户', 'clientForm()') +
+      `<div class="metrics">${metric('客户', (data.clients || []).length)}${metric('申请', (data.applications || []).length)}${metric('预计佣金', money((data.applications || []).reduce((s, a) => s + a.commission, 0)))}${metric('材料及时率', '87%')}</div>
+      <div class="section"><h3>客户</h3><span>客户归属保留</span></div>${clients()}`;
+  }
+  if (role === 'supplier') {
+    return hero('院校也能在手机上受理申请。', '查看材料、补件、录取与推广。', '查看申请', "nav('applications')") +
+      `<div class="metrics">${metric('在架项目', '8')}${metric('本月申请', '23')}${metric('待处理', '6')}${metric('推广曝光', '18,620')}</div>
+      <div class="section"><h3>待处理</h3><span>已授权</span></div>${apps((data.applications || []).filter((a) => a.school.includes('南洋')))}`;
+  }
+  return hero('平台看的是完整业务闭环。', '审核机构、院校、项目、申请和结算。', '进入审核', "nav('audits')") +
+    `<div class="metrics">${metric('活跃B端', '18')}${metric('活跃S端', '12')}${metric('全局申请', '53')}${metric('待审核', (data.audits || []).filter((a) => a.status === '待审核').length)}</div>
+    <div class="section"><h3>待审核</h3><span>运营处理</span></div>${audits()}`;
+}
+
+function apps(a) {
+  return '<div class="list">' + a.map((x) => {
+    const p = (data.programs || []).find((z) => z.id === x.programId);
+    return `<div class="row" onclick="appDetail('${x.id}')"><div class="rowtop"><div><h4>${esc(x.student)} · ${esc(p ? p.program : '申请')}</h4><div class="muted">${esc(x.school)}</div></div><span class="status ${st(x.status)}">${esc(x.status)}</span></div><div class="progress"><i style="width:${x.progress}%"></i></div><div class="muted">进度 ${x.progress}% · 预计佣金 ${money(x.commission)}</div></div>`;
+  }).join('') + '</div>';
+}
+function clients() {
+  return '<div class="list">' + (data.clients || []).map((c) => `<div class="row"><div class="rowtop"><div><h4>${esc(c.name)}</h4><div class="muted">${esc(c.source)} · ${esc(c.owner)}</div></div><span class="status ${st(c.stage)}">${esc(c.stage)}</span></div><div class="progress"><i style="width:${c.completion}%"></i></div><div class="muted">档案 ${c.completion}%</div></div>`).join('') + '</div>';
+}
+function audits() {
+  return '<div class="list">' + (data.audits || []).map((a) => `<div class="row"><div class="rowtop"><div><h4>${esc(a.name)}</h4><div class="muted">${esc(a.type)} · ${esc(a.org)}</div></div><span class="status ${st(a.status)}">${esc(a.status)}</span></div>${a.status === '待审核' ? `<div class="actions"><button class="btn success" onclick="approve(${a.id})">通过</button></div>` : ''}</div>`).join('') + '</div>';
+}
+
+function content() {
+  if (page === 'home') return home();
+  if (page === 'programs') return searchPage();
+  if (page === 'applications') {
+    let a = data.applications || [];
+    if (role === 'student') a = a.filter((x) => x.student === data.profile.name);
+    if (role === 'supplier') a = a.filter((x) => x.school.includes('南洋'));
+    return `<div class="section"><h3>申请管理</h3><span>统一状态机</span></div>${apps(a)}`;
+  }
+  if (page === 'clients') return `<div class="section"><h3>客户 CRM</h3><button class="btn primary" onclick="clientForm()">＋新增</button></div><div class="notice">学生可通过机构专属邀请自行建档，客户归属仍归机构。</div><br>${clients()}`;
+  if (page === 'profile') return `<div class="card"><h4>${esc(data.profile.name)}</h4><div class="progress"><i style="width:${data.profile.completion}%"></i></div>${[['学历', data.profile.education], ['GPA', data.profile.gpa], ['语言', data.profile.english], ['预算', data.profile.budget], ['目标', data.profile.country]].map((x) => `<div class="split"><span>${x[0]}</span><b>${esc(x[1])}</b></div>`).join('')}
+    <div class="section"><h3>我的收藏</h3><span>保存在本机</span></div>${favs().length ? schoolCards((data.schools || []).filter((s) => favs().includes(s.id))) : '<div class="notice">还没有收藏学校。去“找学校”收藏吧。</div>'}</div>`;
+  if (page === 'audits') return `<div class="section"><h3>审核中心</h3><span>B / S / 项目</span></div>${audits()}`;
+  if (page === 'ads') return `<div class="metrics">${metric('投放中', '1')}${metric('曝光', '18,620')}${metric('线索', '64')}${metric('预算', '¥3,600')}</div><div class="notice" style="margin-top:12px">MVP 不进行真实扣款，V1.5 再接支付。</div>`;
+  if (page === 'settlement') return `<div class="metrics">${metric('预计佣金', money((data.applications || []).reduce((s, a) => s + a.commission, 0)))}${metric('平台应收', '¥62,700')}${metric('B端应付', '¥24,700')}${metric('广告收入', '¥12,600')}</div><div class="notice" style="margin-top:12px">正式版按课程、批次、渠道和合同版本生成结算台账。</div>`;
+  return '';
+}
+
+function render() {
+  const cfg = R[role];
+  $('#title').textContent = cfg.t;
+  $('#nav').innerHTML = cfg.m.map((m) => `<button class="${page === m[0] ? 'on' : ''}" onclick="nav('${m[0]}')"><b>${m[1]}</b>${m[2]}</button>`).join('');
+  $('#view').innerHTML = content();
+  if (page === 'programs' && searchState._ran) renderResults();
+}
+
+function appDetail(id) {
+  const a = (data.applications || []).find((x) => x.id === id);
+  if (!a) return;
+  openSheet('申请 ' + id, `<h3>${esc(a.student)}</h3><div class="notice">${esc(a.agency)} → ${esc(a.school)}</div><div class="timeline"><div class="ti"><b>建立申请</b><span class="muted">档案已关联</span></div><div class="ti"><b>材料准备</b><span class="muted">当前：${esc(a.status)}</span></div><div class="ti"><b>院校受理 / 补件</b></div><div class="ti"><b>录取 / 奖学金</b></div><div class="ti"><b>入学 / 结算</b></div></div>${role === 'supplier' && a.status === '院校受理' ? `<div class="actions"><button class="btn outline" onclick="upd('${id}','补件中')">要求补件</button><button class="btn success" onclick="upd('${id}','已录取')">录取演示</button></div>` : ''}`);
+}
+async function upd(id, s) {
+  await api('/api/applications/' + id, { method: 'PATCH', body: JSON.stringify({ status: s, progress: s === '已录取' ? 88 : 65 }) });
+  data = (await api('/api/bootstrap')).data;
+  closeSheet(); render();
+}
+function clientForm() {
+  openSheet('新增客户', '<div class="notice">顾问可代建档，也可邀请学生自行建档。</div><p><input id="cn" placeholder="学生姓名"></p><p><select id="co"><option>王老师</option><option>周老师</option></select></p><button class="btn primary" style="width:100%" onclick="createClient()">创建客户</button>');
+}
+async function createClient() {
+  const name = $('#cn').value.trim();
+  if (!name) return;
+  await api('/api/clients', { method: 'POST', body: JSON.stringify({ name, owner: $('#co').value }) });
+  data = (await api('/api/bootstrap')).data;
+  closeSheet(); page = 'clients'; render();
+}
+async function approve(id) {
+  await api('/api/audits/' + id, { method: 'PATCH', body: JSON.stringify({ status: '已通过' }) });
+  data = (await api('/api/bootstrap')).data;
+  render();
+}
+
+load();
+</script>
+</body>
+</html>
