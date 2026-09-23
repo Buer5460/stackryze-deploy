@@ -70,6 +70,30 @@ async function main() {
     assert.ok(d.source.is_demo === true);
   });
 
+  // Every field the V1.0 detail page is specified to show must exist on the
+  // payload — a missing key silently renders as "-" in the H5.
+  await test('detail: payload covers all 16 spec-required detail sections', async () => {
+    const { body } = await get('/api/schools/SG-DEMO-001');
+    const d = body.data;
+    const required = [
+      'name_zh', 'name_en', 'institution_type', 'campuses', 'stages', 'curricula',
+      'main_language', 'additional_languages', 'tuition_min', 'tuition_max',
+      'first_year_cost_min', 'boarding_fee', 'one_time_fees', 'scholarships',
+      'boarding', 'station', 'distance_m', 'distance_label', 'latitude', 'longitude',
+      'images', 'programs', 'source_url', 'verified_status', 'verified_at', 'updated_at'
+    ];
+    const missing = required.filter((k) => !(k in d));
+    assert.deepEqual(missing, []);
+    // Source block must carry the provenance fields for the "数据来源" section.
+    for (const k of ['source_url', 'source_type', 'supplier_evidence', 'verified_status', 'verified_at', 'effective_from', 'effective_to', 'is_demo', 'updated_at']) {
+      assert.ok(k in d.source, 'source block missing ' + k);
+    }
+    // Demo records must be unmistakably flagged for the UI banner.
+    assert.equal(d.is_demo, true);
+    assert.equal(d.verified_status, 'demo');
+    assert.equal(d.source_url, null);
+  });
+
   // --- map data endpoint ---
   await test('map: /api/map/:id returns structured coords + nearby stations', async () => {
     const { status, body } = await get('/api/map/SG-DEMO-001');
@@ -263,6 +287,35 @@ async function main() {
     const demoAgr = body.data.find((s) => s.id === 'SG-DEMO-001');
     assert.ok(demoAgr.agency.commission.note.includes('演示'));
     assert.equal(demoAgr.agency.commission.commission_type, null);
+  });
+
+  await test('B2B: programs view exposes stage/commission and never invents values', async () => {
+    const { status, body } = await get('/api/b2b/programs?pageSize=5', { 'x-role': 'agency' });
+    assert.equal(status, 200);
+    const d = body.data;
+    assert.ok(d.length > 0);
+    // Every program carries the agency block the B-end needs to see.
+    assert.ok(d.every((p) => 'agency' in p && 'commission' in p.agency));
+    assert.ok(d.every((p) => 'accepts_agents' in p.agency && 'cooperation_status' in p.agency));
+    assert.ok(d.every((p) => 'settlement_cycle' in p.agency.commission));
+    // No real agreements exist yet, so no commission values may be fabricated.
+    assert.equal(d.filter((p) => p.agency.commission.commission_type).length, 0);
+  });
+
+  await test('B2B: programs filter by stage and institution', async () => {
+    const all = await get('/api/b2b/programs?pageSize=100', { 'x-role': 'agency' });
+    assert.ok(all.body.data.length > 0);
+    const one = all.body.data[0];
+    const byInst = await get('/api/b2b/programs?institution=' + encodeURIComponent(one.institution_id), { 'x-role': 'agency' });
+    assert.ok(byInst.body.data.every((p) => String(p.institution_id) === String(one.institution_id)));
+    const byStage = await get('/api/b2b/programs?stage=' + encodeURIComponent(one.stage), { 'x-role': 'agency' });
+    assert.ok(byStage.body.data.length > 0);
+  });
+
+  await test('B2B: programs endpoint requires agency/admin role', async () => {
+    assert.equal((await get('/api/b2b/programs')).status, 403);
+    assert.equal((await get('/api/b2b/programs', { 'x-role': 'supplier' })).status, 403);
+    assert.equal((await get('/api/b2b/programs?pageSize=1', { 'x-role': 'admin' })).status, 200);
   });
 
   await test('B2B: admin role can access b2b endpoints; supplier cannot', async () => {

@@ -593,6 +593,84 @@ app.get('/api/b2b/schools/:id', requireB2B, (req, res) => {
   res.json(ok(agencyView(enrichSchool(school))));
 });
 
+// B2B program view (V1.0): programs enriched with their school's cooperation
+// status. A program-level agreement overrides the school-level one.
+app.get('/api/b2b/programs', requireB2B, (req, res) => {
+  const byInst = agreementsByInstitution();
+  const schoolById = new Map(schoolBaseList().map((s) => [String(s.id).toLowerCase(), s]));
+
+  let list = catalogPrograms.map((p) => {
+    const key = String(p.institution_id || '').toLowerCase();
+    const school = schoolById.get(key);
+    const agreements = byInst.get(key) || [];
+    const programLevel = agreements.filter((a) => a.program_id && String(a.program_id).toLowerCase() === String(p.id).toLowerCase());
+    const applicable = programLevel.length ? programLevel : agreements;
+    const real = applicable.filter((a) => !a.is_demo);
+    const headline = real[0] || (applicable[0] || null);
+    const anyAgreement = Boolean(headline);
+    return {
+      ...p,
+      school_name_zh: school ? school.name_zh : null,
+      school_city_zh: school ? school.location.city_zh : null,
+      agency: {
+        accepts_agents: anyAgreement && applicable.every((a) => a.accepts_agents),
+        cooperation_status: real.length ? 'active' : anyAgreement ? 'demo' : 'none',
+        agreement_level: programLevel.length ? 'program' : anyAgreement ? 'institution' : 'none',
+        // Commission is surfaced only from real, backend-recorded agreements.
+        commission: real.length
+          ? {
+              commission_type: headline.commission_type,
+              commission_value: headline.commission_value,
+              currency: headline.currency,
+              settlement_cycle: headline.settlement_cycle,
+              source_document: headline.source_document,
+              agreement_id: headline.id
+            }
+          : {
+              commission_type: null,
+              commission_value: null,
+              currency: null,
+              settlement_cycle: null,
+              source_document: null,
+              note: anyAgreement ? '该记录为演示数据，无真实佣金信息' : '暂无代理协议记录'
+            }
+      }
+    };
+  });
+
+  const q = param(req.query, 'q');
+  if (q) {
+    list = list.filter((p) =>
+      [p.name, p.name_zh, p.curriculum, p.school_name_zh].some((v) => includesCI(v, q))
+    );
+  }
+
+  const institution = param(req.query, 'institution');
+  if (institution) list = list.filter((p) => String(p.institution_id).toLowerCase() === institution.toLowerCase());
+
+  const stages = paramValues(req.query, 'stage').flatMap(stageQueryIds);
+  if (stages.length) list = list.filter((p) => stages.some((st) => includesCI(p.stage, st)));
+
+  const curricula = paramValues(req.query, 'curriculum').flatMap(curriculumQueryNames);
+  if (curricula.length) list = list.filter((p) => curricula.some((c) => includesCI(p.curriculum, c)));
+
+  const minFee = numberQuery(param(req.query, 'minFee'));
+  if (minFee !== undefined) list = list.filter((p) => Number(p.tuition || 0) >= minFee);
+  const maxFee = numberQuery(param(req.query, 'maxFee'));
+  if (maxFee !== undefined) list = list.filter((p) => Number(p.tuition || 0) <= maxFee);
+
+  const acceptsAgents = boolQuery(param(req.query, 'acceptsAgents'));
+  if (acceptsAgents !== undefined) list = list.filter((p) => p.agency.accepts_agents === acceptsAgents);
+
+  const hasCommission = boolQuery(param(req.query, 'hasCommission'));
+  if (hasCommission !== undefined) {
+    list = list.filter((p) => Boolean(p.agency.commission.commission_type) === hasCommission);
+  }
+
+  const { data, meta } = paginate(list, req.query);
+  res.json(ok(data, meta));
+});
+
 // ---------------------------------------------------------------------------
 // Admin: import pipeline (V1.0)
 // ---------------------------------------------------------------------------

@@ -572,7 +572,7 @@ async function loadMapArea(id) {
       return;
     }
     const rows = (d.stations || []).map((s) =>
-      `<div class="kv"><span>${esc(s.name_zh || s.name_en)}${s.line && s.line.code ? ' <span class="tag">${esc(s.line.code)}</span>' : ''}</span><b>${esc(s.distance_label)}</b></div>`
+      `<div class="kv"><span>${esc(s.name_zh || s.name_en)}${s.line && s.line.code ? ' <span class="tag">' + esc(s.line.code) + '</span>' : ''}</span><b>${esc(s.distance_label)}</b></div>`
     ).join('');
     slot.innerHTML = `<div style="width:100%"><div style="font-weight:700;margin-bottom:4px">🗺 最近 ${(d.stations || []).length} 个站点</div>${rows || '<div class="muted">附近暂无站点数据</div>'}<div class="muted" style="margin-top:6px">${esc(d.note || '')}</div></div>`;
     slot.style.height = 'auto';
@@ -795,10 +795,11 @@ function programFavList() {
 // --- B2B (agency) school resource search ---
 let b2bResults = [];
 let b2bMeta = { total: 0, page: 1, pageSize: 10 };
-const b2bState = { q: '', country: '', city: '', stage: '', curriculum: '', acceptsAgents: false, hasCommission: false, page: 1 };
+const b2bState = { q: '', country: '', city: '', stage: '', curriculum: '', acceptsAgents: false, hasCommission: false, page: 1, tab: 'schools' };
 
 async function b2bSearch(toPage) {
   b2bState.page = toPage || 1;
+  const isPrograms = b2bState.tab === 'programs';
   try {
     const p = new URLSearchParams();
     if (b2bState.q) p.set('q', b2bState.q);
@@ -810,11 +811,34 @@ async function b2bSearch(toPage) {
     if (b2bState.hasCommission) p.set('hasCommission', 'true');
     p.set('page', String(b2bState.page));
     p.set('pageSize', '10');
-    const j = await api('/api/b2b/schools?' + p.toString(), { headers: { 'x-role': 'agency' } });
+    const url = isPrograms ? '/api/b2b/programs?' + p.toString() : '/api/b2b/schools?' + p.toString();
+    const j = await api(url, { headers: { 'x-role': 'agency' } });
     b2bResults = j.data || [];
     b2bMeta = j.meta || b2bMeta;
     renderB2bResults();
-  } catch (e) { alert(e.message); }
+  } catch (e) {
+    const host = document.querySelector('#b2blist');
+    if (host) host.innerHTML = `<div class="notice">加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+function b2bProgramCard(p) {
+  const ag = p.agency || {};
+  const comm = ag.commission || {};
+  return `<div class="card">
+    <div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(p.school_name_zh || p.institution_id)}${p.school_city_zh ? ' · ' + esc(p.school_city_zh) : ''}</div></div>
+      <span class="status ${comm.commission_type ? 'good' : 'warn'}">${ag.cooperation_status === 'demo' ? '演示' : '未录入协议'}</span></div>
+    <div class="muted" style="margin-top:6px">招生阶段：${esc(stageZh(p.stage))} · 课程：${esc(p.curriculum || '-')}</div>
+    <div class="muted" style="margin-top:4px">学制 ${esc(p.duration || '-')} · 学费 ${esc(p.currency || '')} ${fmt(p.tuition)}/年</div>
+    <div class="muted" style="margin-top:4px">开学 ${esc(p.start_date || '-')} · 申请截止 ${esc(p.deadline || '-')}</div>
+    <div class="muted" style="margin-top:4px">语言要求：${esc(p.language_requirement || '-')}${p.scholarship_available ? ' · 有奖学金机会' : ''}</div>
+    <div class="muted" style="margin-top:4px">接受代理：${ag.accepts_agents ? '是' : '否'} · 合作状态：${esc(ag.cooperation_status || 'none')} · 协议层级：${esc(ag.agreement_level || 'none')}</div>
+    <div class="notice" style="margin-top:8px">${comm.note ? esc(comm.note) + '。' : ''}佣金仅展示后台明确录入的真实代理协议数据。</div>
+    <div class="split" style="margin-top:6px"><span>佣金类型</span><b>${comm.commission_type ? esc(comm.commission_type) : '未录入'}</b></div>
+    <div class="split"><span>佣金值</span><b>${comm.commission_value != null ? esc(String(comm.commission_value)) + (comm.commission_type === 'percentage' ? '%' : ' ' + (comm.currency || '')) : '未录入'}</b></div>
+    <div class="split"><span>结算周期</span><b>${comm.settlement_cycle ? esc(comm.settlement_cycle) : '未录入'}</b></div>
+    <div class="actions"><button class="btn outline" onclick="schoolDetail('${esc(p.institution_id)}')">查看所属学校</button><button class="btn outline" onclick="toggleFavProgram('${esc(p.id)}')">${favProgs().includes(p.id) ? '已收藏课程' : '收藏课程'}</button></div>
+  </div>`;
 }
 
 function b2bCard(x) {
@@ -836,9 +860,12 @@ function renderB2bResults() {
   const host = document.querySelector('#b2blist');
   if (!host) return;
   const c = document.querySelector('#b2bCount');
-  if (c) c.textContent = `${b2bMeta.total} 所 · 第 ${b2bMeta.page} 页`;
-  host.innerHTML = b2bResults.length ? '<div class="cards">' + b2bResults.map(b2bCard).join('') + '</div>'
-    : '<div class="notice">没有匹配的学校资源。</div>';
+  const isPrograms = b2bState.tab === 'programs';
+  if (c) c.textContent = isPrograms ? `${b2bMeta.total} 个 Program · 第 ${b2bMeta.page} 页` : `${b2bMeta.total} 所 · 第 ${b2bMeta.page} 页`;
+  const empty = isPrograms ? '没有匹配的 Program。' : '没有匹配的学校资源。';
+  host.innerHTML = b2bResults.length
+    ? '<div class="cards">' + b2bResults.map(isPrograms ? b2bProgramCard : b2bCard).join('') + '</div>'
+    : `<div class="notice">${empty}</div>`;
 }
 
 function b2bPage() {
@@ -853,7 +880,9 @@ function b2bPage() {
     <div class="quick"><button class="chip ${s.acceptsAgents ? 'on' : ''}" onclick="b2bState.acceptsAgents=!b2bState.acceptsAgents;b2bSearch()">接受代理</button>
       <button class="chip ${s.hasCommission ? 'on' : ''}" onclick="b2bState.hasCommission=!b2bState.hasCommission;b2bSearch()">有佣金协议</button>
       <button class="chip" onclick="b2bSearch()">搜索</button></div>
-    <div class="section"><h3>学校资源</h3><span id="b2bCount">加载中…</span></div>
+    <div class="quick"><button class="chip ${s.tab === 'schools' ? 'on' : ''}" onclick="b2bState.tab='schools';b2bSearch()">学校资源</button>
+      <button class="chip ${s.tab === 'programs' ? 'on' : ''}" onclick="b2bState.tab='programs';b2bSearch()">Program 列表</button></div>
+    <div class="section"><h3>${s.tab === 'programs' ? 'Program 列表' : '学校资源'}</h3><span id="b2bCount">加载中…</span></div>
     <div id="b2blist"><div class="notice">正在加载…</div></div>
   `;
 }
