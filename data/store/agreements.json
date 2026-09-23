@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "source_note": "B端代理协议。is_demo=true 的记录为演示数据，不展示任何真实佣金；只有后台明确录入真实协议(is_demo=false)的记录才在 B端展示佣金。",
+  "agreements": [
+    {
+      "id": "AGR-DEMO-001",
+      "institution_id": "SG-DEMO-001",
+      "program_id": null,
+      "agency_scope": "all",
+      "accepts_agents": true,
+      "cooperation_status": "demo",
+      "commission_type": null,
+      "commission_value": null,
+      "currency": null,
+      "settlement_cycle": null,
+      "is_demo": true,
+      "source_document": null,
+      "effective_from": null,
+      "effective_to": null,
+      "updated_at": "2026-09-22"
+    },
+    {
+      "id": "AGR-DEMO-002",
+      "institution_id": "SH-DEMO-001",
+      "program_id": null,
+      "agency_scope": "all",
+      "accepts_agents": true,
+      "cooperation_status": "demo",
+      "commission_type": null,
+      "commission_value": null,
+      "currency": null,
+      "settlement_cycle": null,
+      "is_demo": true,
+      "source_document": null,
+      "effective_from": null,
+      "effective_to": null,
+      "updated_at": "2026-09-22"
+    }
+  ]
+}

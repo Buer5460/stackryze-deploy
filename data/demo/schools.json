@@ -10,10 +10,20 @@
       "city_id": "SG-SIN",
       "district_id": "SG-SIN-BUKIT-TIMAH",
       "institution_type": "International School",
-      "stages": ["primary", "lower-secondary", "upper-secondary"],
-      "curricula": ["IB PYP", "IB MYP", "IB DP"],
+      "stages": [
+        "primary",
+        "lower-secondary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "IB PYP",
+        "IB MYP",
+        "IB DP"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 28000,
       "tuition_max": 42000,
       "currency": "SGD",
@@ -21,8 +31,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "SG-SIN-ST-SIXTH-AVENUE",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 1.335,
+      "longitude": 103.798,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -39,11 +49,17 @@
           "name_zh": "主校区（演示）",
           "address": null,
           "district_id": "SG-SIN-BUKIT-TIMAH",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 1.335,
+          "longitude": 103.798,
           "nearest_station_id": "SG-SIN-ST-SIXTH-AVENUE"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": 3360,
+      "one_time_fees": 1680,
+      "first_year_cost_min": 33040,
+      "first_year_cost_max": 47040,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SG-DEMO-002",
@@ -53,10 +69,17 @@
       "city_id": "SG-SIN",
       "district_id": "SG-SIN-BISHAN",
       "institution_type": "International School",
-      "stages": ["kindergarten", "primary"],
-      "curricula": ["Cambridge Primary"],
+      "stages": [
+        "kindergarten",
+        "primary"
+      ],
+      "curricula": [
+        "Cambridge Primary"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 18000,
       "tuition_max": 30000,
       "currency": "SGD",
@@ -64,8 +87,8 @@
       "scholarships": false,
       "accreditations": [],
       "nearest_station_id": "SG-SIN-ST-BISHAN",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 1.354,
+      "longitude": 103.845,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -82,11 +105,17 @@
           "name_zh": "主校区（演示）",
           "address": null,
           "district_id": "SG-SIN-BISHAN",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 1.354,
+          "longitude": 103.845,
           "nearest_station_id": "SG-SIN-ST-BISHAN"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 1080,
+      "first_year_cost_min": 19080,
+      "first_year_cost_max": 31080,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SG-DEMO-003",
@@ -96,8 +125,14 @@
       "city_id": "SG-SIN",
       "district_id": "SG-SIN-DOWNTOWN-CORE",
       "institution_type": "Private School",
-      "stages": ["upper-secondary", "college"],
-      "curricula": ["Cambridge IGCSE", "Cambridge AS & A Level"],
+      "stages": [
+        "upper-secondary",
+        "college"
+      ],
+      "curricula": [
+        "Cambridge IGCSE",
+        "Cambridge AS & A Level"
+      ],
       "main_language": "English",
       "additional_languages": [],
       "tuition_min": 22000,
@@ -107,8 +142,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "SG-SIN-ST-DOWNTOWN",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 1.276,
+      "longitude": 103.856,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -125,11 +160,17 @@
           "name_zh": "市中心校区（演示）",
           "address": null,
           "district_id": "SG-SIN-DOWNTOWN-CORE",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 1.276,
+          "longitude": 103.856,
           "nearest_station_id": "SG-SIN-ST-DOWNTOWN"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 1320,
+      "first_year_cost_min": 23320,
+      "first_year_cost_max": 37320,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SG-DEMO-004",
@@ -139,10 +180,18 @@
       "city_id": "SG-SIN",
       "district_id": "SG-SIN-TAMPINES",
       "institution_type": "International School",
-      "stages": ["primary", "lower-secondary"],
-      "curricula": ["IPC", "IMYC"],
+      "stages": [
+        "primary",
+        "lower-secondary"
+      ],
+      "curricula": [
+        "IPC",
+        "IMYC"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 20000,
       "tuition_max": 34000,
       "currency": "SGD",
@@ -150,8 +199,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "SG-SIN-ST-TAMPINES",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 1.359,
+      "longitude": 103.941,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -168,11 +217,17 @@
           "name_zh": "淡滨尼校区（演示）",
           "address": null,
           "district_id": "SG-SIN-TAMPINES",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 1.359,
+          "longitude": 103.941,
           "nearest_station_id": "SG-SIN-ST-TAMPINES"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 1200,
+      "first_year_cost_min": 21200,
+      "first_year_cost_max": 35200,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SG-DEMO-005",
@@ -182,10 +237,18 @@
       "city_id": "SG-SIN",
       "district_id": "SG-SIN-CLEMENTI",
       "institution_type": "International School",
-      "stages": ["lower-secondary", "upper-secondary"],
-      "curricula": ["American Curriculum", "AP"],
+      "stages": [
+        "lower-secondary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "American Curriculum",
+        "AP"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 25000,
       "tuition_max": 39000,
       "currency": "SGD",
@@ -193,8 +256,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "SG-SIN-ST-CLEMENTI",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 1.311,
+      "longitude": 103.761,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -211,11 +274,17 @@
           "name_zh": "金文泰校区（演示）",
           "address": null,
           "district_id": "SG-SIN-CLEMENTI",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 1.311,
+          "longitude": 103.761,
           "nearest_station_id": "SG-SIN-ST-CLEMENTI"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": 3000,
+      "one_time_fees": 1500,
+      "first_year_cost_min": 29500,
+      "first_year_cost_max": 43500,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SG-DEMO-006",
@@ -225,10 +294,18 @@
       "city_id": "SG-SIN",
       "district_id": "SG-SIN-WOODLANDS",
       "institution_type": "Private School",
-      "stages": ["kindergarten", "primary"],
-      "curricula": ["Montessori", "Cambridge Primary"],
+      "stages": [
+        "kindergarten",
+        "primary"
+      ],
+      "curricula": [
+        "Montessori",
+        "Cambridge Primary"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 16000,
       "tuition_max": 26000,
       "currency": "SGD",
@@ -236,8 +313,8 @@
       "scholarships": false,
       "accreditations": [],
       "nearest_station_id": "SG-SIN-ST-WOODLANDS",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 1.44,
+      "longitude": 103.794,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -254,11 +331,17 @@
           "name_zh": "兀兰校区（演示）",
           "address": null,
           "district_id": "SG-SIN-WOODLANDS",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 1.44,
+          "longitude": 103.794,
           "nearest_station_id": "SG-SIN-ST-WOODLANDS"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 960,
+      "first_year_cost_min": 16960,
+      "first_year_cost_max": 26960,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SG-DEMO-007",
@@ -268,10 +351,21 @@
       "city_id": "SG-SIN",
       "district_id": "SG-SIN-NOVENA",
       "institution_type": "International School",
-      "stages": ["primary", "lower-secondary", "upper-secondary"],
-      "curricula": ["Key Stage 1", "Key Stage 2", "Key Stage 3", "A Level"],
+      "stages": [
+        "primary",
+        "lower-secondary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "Key Stage 1",
+        "Key Stage 2",
+        "Key Stage 3",
+        "A Level"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 26000,
       "tuition_max": 41000,
       "currency": "SGD",
@@ -279,8 +373,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "SG-SIN-ST-NOVENA",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 1.317,
+      "longitude": 103.838,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -297,11 +391,17 @@
           "name_zh": "诺维娜校区（演示）",
           "address": null,
           "district_id": "SG-SIN-NOVENA",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 1.317,
+          "longitude": 103.838,
           "nearest_station_id": "SG-SIN-ST-NOVENA"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": 3120,
+      "one_time_fees": 1560,
+      "first_year_cost_min": 30680,
+      "first_year_cost_max": 45680,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SG-DEMO-008",
@@ -311,10 +411,19 @@
       "city_id": "SG-SIN",
       "district_id": "SG-SIN-PUNGGOL",
       "institution_type": "International School",
-      "stages": ["kindergarten", "primary", "lower-secondary"],
-      "curricula": ["IB PYP", "IB MYP"],
+      "stages": [
+        "kindergarten",
+        "primary",
+        "lower-secondary"
+      ],
+      "curricula": [
+        "IB PYP",
+        "IB MYP"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 19000,
       "tuition_max": 33000,
       "currency": "SGD",
@@ -322,8 +431,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "SG-SIN-ST-PUNGGOL",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 1.409,
+      "longitude": 103.905,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -340,11 +449,17 @@
           "name_zh": "榜鹅校区（演示）",
           "address": null,
           "district_id": "SG-SIN-PUNGGOL",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 1.409,
+          "longitude": 103.905,
           "nearest_station_id": "SG-SIN-ST-PUNGGOL"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 1140,
+      "first_year_cost_min": 20140,
+      "first_year_cost_max": 34140,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SH-DEMO-001",
@@ -354,10 +469,20 @@
       "city_id": "CN-SHA",
       "district_id": "CN-SHA-PUDONG",
       "institution_type": "International School",
-      "stages": ["primary", "lower-secondary", "upper-secondary"],
-      "curricula": ["IB PYP", "IB MYP", "IB DP"],
+      "stages": [
+        "primary",
+        "lower-secondary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "IB PYP",
+        "IB MYP",
+        "IB DP"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 180000,
       "tuition_max": 320000,
       "currency": "CNY",
@@ -365,8 +490,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "CN-SHA-ST-LONGYANG-ROAD",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 31.208,
+      "longitude": 121.561,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -383,11 +508,17 @@
           "name_zh": "浦东校区（演示）",
           "address": null,
           "district_id": "CN-SHA-PUDONG",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 31.208,
+          "longitude": 121.561,
           "nearest_station_id": "CN-SHA-ST-LONGYANG-ROAD"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": 21600,
+      "one_time_fees": 10800,
+      "first_year_cost_min": 212400,
+      "first_year_cost_max": 352400,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SH-DEMO-002",
@@ -397,10 +528,18 @@
       "city_id": "CN-SHA",
       "district_id": "CN-SHA-MINHANG",
       "institution_type": "Bilingual School",
-      "stages": ["primary", "lower-secondary"],
-      "curricula": ["Chinese National Curriculum", "Cambridge IGCSE"],
+      "stages": [
+        "primary",
+        "lower-secondary"
+      ],
+      "curricula": [
+        "Chinese National Curriculum",
+        "Cambridge IGCSE"
+      ],
       "main_language": "Chinese / English",
-      "additional_languages": ["English"],
+      "additional_languages": [
+        "English"
+      ],
       "tuition_min": 120000,
       "tuition_max": 220000,
       "currency": "CNY",
@@ -408,8 +547,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "CN-SHA-ST-HONGQIAO-RAILWAY-STATION",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 31.191,
+      "longitude": 121.327,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -426,11 +565,17 @@
           "name_zh": "闵行校区（演示）",
           "address": null,
           "district_id": "CN-SHA-MINHANG",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 31.191,
+          "longitude": 121.327,
           "nearest_station_id": "CN-SHA-ST-HONGQIAO-RAILWAY-STATION"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 7200,
+      "first_year_cost_min": 127200,
+      "first_year_cost_max": 227200,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SH-DEMO-003",
@@ -440,10 +585,20 @@
       "city_id": "CN-SHA",
       "district_id": "CN-SHA-CHANGNING",
       "institution_type": "International School",
-      "stages": ["kindergarten", "primary", "upper-secondary"],
-      "curricula": ["EYFS", "Cambridge Primary", "A Level"],
+      "stages": [
+        "kindergarten",
+        "primary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "EYFS",
+        "Cambridge Primary",
+        "A Level"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 170000,
       "tuition_max": 300000,
       "currency": "CNY",
@@ -451,8 +606,8 @@
       "scholarships": false,
       "accreditations": [],
       "nearest_station_id": "CN-SHA-ST-ZHONGSHAN-PARK",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 31.224,
+      "longitude": 121.417,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -469,11 +624,17 @@
           "name_zh": "长宁校区（演示）",
           "address": null,
           "district_id": "CN-SHA-CHANGNING",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 31.224,
+          "longitude": 121.417,
           "nearest_station_id": "CN-SHA-ST-ZHONGSHAN-PARK"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 10200,
+      "first_year_cost_min": 180200,
+      "first_year_cost_max": 310200,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SH-DEMO-004",
@@ -483,10 +644,18 @@
       "city_id": "CN-SHA",
       "district_id": "CN-SHA-XUHUI",
       "institution_type": "International School",
-      "stages": ["lower-secondary", "upper-secondary"],
-      "curricula": ["American Curriculum", "AP"],
+      "stages": [
+        "lower-secondary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "American Curriculum",
+        "AP"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 190000,
       "tuition_max": 310000,
       "currency": "CNY",
@@ -494,8 +663,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "CN-SHA-ST-XUJIAHUI",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 31.191,
+      "longitude": 121.44,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -512,11 +681,17 @@
           "name_zh": "徐汇校区（演示）",
           "address": null,
           "district_id": "CN-SHA-XUHUI",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 31.191,
+          "longitude": 121.44,
           "nearest_station_id": "CN-SHA-ST-XUJIAHUI"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": 22800,
+      "one_time_fees": 11400,
+      "first_year_cost_min": 224200,
+      "first_year_cost_max": 344200,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SH-DEMO-005",
@@ -526,10 +701,18 @@
       "city_id": "CN-SHA",
       "district_id": "CN-SHA-YANGPU",
       "institution_type": "Private School",
-      "stages": ["primary", "lower-secondary"],
-      "curricula": ["IPC", "IMYC"],
+      "stages": [
+        "primary",
+        "lower-secondary"
+      ],
+      "curricula": [
+        "IPC",
+        "IMYC"
+      ],
       "main_language": "Chinese / English",
-      "additional_languages": ["English"],
+      "additional_languages": [
+        "English"
+      ],
       "tuition_min": 110000,
       "tuition_max": 190000,
       "currency": "CNY",
@@ -537,8 +720,8 @@
       "scholarships": false,
       "accreditations": [],
       "nearest_station_id": "CN-SHA-ST-TONGJI-UNIVERSITY",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 31.285,
+      "longitude": 121.498,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -555,11 +738,17 @@
           "name_zh": "杨浦校区（演示）",
           "address": null,
           "district_id": "CN-SHA-YANGPU",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 31.285,
+          "longitude": 121.498,
           "nearest_station_id": "CN-SHA-ST-TONGJI-UNIVERSITY"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 6600,
+      "first_year_cost_min": 116600,
+      "first_year_cost_max": 196600,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "SH-DEMO-006",
@@ -569,10 +758,18 @@
       "city_id": "CN-SHA",
       "district_id": "CN-SHA-QINGPU",
       "institution_type": "International School",
-      "stages": ["preschool", "kindergarten", "primary"],
-      "curricula": ["Montessori"],
+      "stages": [
+        "preschool",
+        "kindergarten",
+        "primary"
+      ],
+      "curricula": [
+        "Montessori"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 90000,
       "tuition_max": 180000,
       "currency": "CNY",
@@ -580,8 +777,8 @@
       "scholarships": false,
       "accreditations": [],
       "nearest_station_id": "CN-SHA-ST-ZHUJIAJIAO",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 31.109,
+      "longitude": 121.054,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -598,11 +795,17 @@
           "name_zh": "青浦校区（演示）",
           "address": null,
           "district_id": "CN-SHA-QINGPU",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 31.109,
+          "longitude": 121.054,
           "nearest_station_id": "CN-SHA-ST-ZHUJIAJIAO"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 5400,
+      "first_year_cost_min": 95400,
+      "first_year_cost_max": 185400,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "BJ-DEMO-001",
@@ -612,10 +815,20 @@
       "city_id": "CN-BJS",
       "district_id": "CN-BJS-CHAOYANG",
       "institution_type": "International School",
-      "stages": ["primary", "lower-secondary", "upper-secondary"],
-      "curricula": ["IB PYP", "IB MYP", "IB DP"],
+      "stages": [
+        "primary",
+        "lower-secondary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "IB PYP",
+        "IB MYP",
+        "IB DP"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 180000,
       "tuition_max": 330000,
       "currency": "CNY",
@@ -623,8 +836,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "CN-BJS-ST-SANYUANQIAO",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 39.964,
+      "longitude": 116.45,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -641,11 +854,17 @@
           "name_zh": "朝阳校区（演示）",
           "address": null,
           "district_id": "CN-BJS-CHAOYANG",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 39.964,
+          "longitude": 116.45,
           "nearest_station_id": "CN-BJS-ST-SANYUANQIAO"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": 21600,
+      "one_time_fees": 10800,
+      "first_year_cost_min": 212400,
+      "first_year_cost_max": 362400,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "BJ-DEMO-002",
@@ -655,10 +874,19 @@
       "city_id": "CN-BJS",
       "district_id": "CN-BJS-HAIDIAN",
       "institution_type": "Bilingual School",
-      "stages": ["primary", "lower-secondary", "upper-secondary"],
-      "curricula": ["Chinese National Curriculum", "A Level"],
+      "stages": [
+        "primary",
+        "lower-secondary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "Chinese National Curriculum",
+        "A Level"
+      ],
       "main_language": "Chinese / English",
-      "additional_languages": ["English"],
+      "additional_languages": [
+        "English"
+      ],
       "tuition_min": 130000,
       "tuition_max": 240000,
       "currency": "CNY",
@@ -666,8 +894,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "CN-BJS-ST-HAIDIAN-HUANGZHUANG",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 39.972,
+      "longitude": 116.321,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -684,11 +912,17 @@
           "name_zh": "海淀校区（演示）",
           "address": null,
           "district_id": "CN-BJS-HAIDIAN",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 39.972,
+          "longitude": 116.321,
           "nearest_station_id": "CN-BJS-ST-HAIDIAN-HUANGZHUANG"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 7800,
+      "first_year_cost_min": 137800,
+      "first_year_cost_max": 247800,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "BJ-DEMO-003",
@@ -698,10 +932,20 @@
       "city_id": "CN-BJS",
       "district_id": "CN-BJS-SHUNYI",
       "institution_type": "International School",
-      "stages": ["kindergarten", "primary", "upper-secondary"],
-      "curricula": ["Cambridge Primary", "Cambridge IGCSE", "Cambridge AS & A Level"],
+      "stages": [
+        "kindergarten",
+        "primary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "Cambridge Primary",
+        "Cambridge IGCSE",
+        "Cambridge AS & A Level"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 160000,
       "tuition_max": 290000,
       "currency": "CNY",
@@ -709,8 +953,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "CN-BJS-ST-CAPITAL-AIRPORT-T3",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 40.058,
+      "longitude": 116.618,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -727,11 +971,17 @@
           "name_zh": "顺义校区（演示）",
           "address": null,
           "district_id": "CN-BJS-SHUNYI",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 40.058,
+          "longitude": 116.618,
           "nearest_station_id": "CN-BJS-ST-CAPITAL-AIRPORT-T3"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": 19200,
+      "one_time_fees": 9600,
+      "first_year_cost_min": 188800,
+      "first_year_cost_max": 318800,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "BJ-DEMO-004",
@@ -741,10 +991,18 @@
       "city_id": "CN-BJS",
       "district_id": "CN-BJS-DAXING",
       "institution_type": "International School",
-      "stages": ["lower-secondary", "upper-secondary"],
-      "curricula": ["American Curriculum", "AP"],
+      "stages": [
+        "lower-secondary",
+        "upper-secondary"
+      ],
+      "curricula": [
+        "American Curriculum",
+        "AP"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 150000,
       "tuition_max": 260000,
       "currency": "CNY",
@@ -752,8 +1010,8 @@
       "scholarships": true,
       "accreditations": [],
       "nearest_station_id": "CN-BJS-ST-DAXING-XINCHENG",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 39.724,
+      "longitude": 116.332,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -770,11 +1028,17 @@
           "name_zh": "大兴校区（演示）",
           "address": null,
           "district_id": "CN-BJS-DAXING",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 39.724,
+          "longitude": 116.332,
           "nearest_station_id": "CN-BJS-ST-DAXING-XINCHENG"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 9000,
+      "first_year_cost_min": 159000,
+      "first_year_cost_max": 269000,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "BJ-DEMO-005",
@@ -784,10 +1048,18 @@
       "city_id": "CN-BJS",
       "district_id": "CN-BJS-TONGZHOU",
       "institution_type": "Private School",
-      "stages": ["primary", "lower-secondary"],
-      "curricula": ["IPC", "IMYC"],
+      "stages": [
+        "primary",
+        "lower-secondary"
+      ],
+      "curricula": [
+        "IPC",
+        "IMYC"
+      ],
       "main_language": "Chinese / English",
-      "additional_languages": ["English"],
+      "additional_languages": [
+        "English"
+      ],
       "tuition_min": 100000,
       "tuition_max": 180000,
       "currency": "CNY",
@@ -795,8 +1067,8 @@
       "scholarships": false,
       "accreditations": [],
       "nearest_station_id": "CN-BJS-ST-TONGZHOU-BEIGUAN",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 39.921,
+      "longitude": 116.659,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -813,11 +1085,17 @@
           "name_zh": "通州校区（演示）",
           "address": null,
           "district_id": "CN-BJS-TONGZHOU",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 39.921,
+          "longitude": 116.659,
           "nearest_station_id": "CN-BJS-ST-TONGZHOU-BEIGUAN"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 6000,
+      "first_year_cost_min": 106000,
+      "first_year_cost_max": 186000,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     },
     {
       "id": "BJ-DEMO-006",
@@ -827,10 +1105,18 @@
       "city_id": "CN-BJS",
       "district_id": "CN-BJS-CHANGPING",
       "institution_type": "International School",
-      "stages": ["preschool", "kindergarten", "primary"],
-      "curricula": ["Montessori"],
+      "stages": [
+        "preschool",
+        "kindergarten",
+        "primary"
+      ],
+      "curricula": [
+        "Montessori"
+      ],
       "main_language": "English",
-      "additional_languages": ["Chinese (Mandarin)"],
+      "additional_languages": [
+        "Chinese (Mandarin)"
+      ],
       "tuition_min": 85000,
       "tuition_max": 170000,
       "currency": "CNY",
@@ -838,8 +1124,8 @@
       "scholarships": false,
       "accreditations": [],
       "nearest_station_id": "CN-BJS-ST-CHANGPING",
-      "latitude": null,
-      "longitude": null,
+      "latitude": 40.215,
+      "longitude": 116.228,
       "source_url": null,
       "source_type": "demo",
       "verified_status": "demo",
@@ -856,11 +1142,17 @@
           "name_zh": "昌平校区（演示）",
           "address": null,
           "district_id": "CN-BJS-CHANGPING",
-          "latitude": null,
-          "longitude": null,
+          "latitude": 40.215,
+          "longitude": 116.228,
           "nearest_station_id": "CN-BJS-ST-CHANGPING"
         }
-      ]
+      ],
+      "images": [],
+      "boarding_fee": null,
+      "one_time_fees": 5100,
+      "first_year_cost_min": 90100,
+      "first_year_cost_max": 175100,
+      "first_year_note": "演示数据：按学费区间 + 住宿费(12%估算) + 一次性费用(6%估算) 演示计算，真实首年费用以学校正式文件为准。"
     }
   ]
 }

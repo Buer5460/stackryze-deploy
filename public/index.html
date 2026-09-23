@@ -83,6 +83,32 @@ button.linklike{border:0;background:transparent;color:var(--b);font-size:11px;pa
 .pager .btn{padding:9px 16px}
 .pager .btn[disabled]{opacity:.45}
 @media(min-width:700px){header,.bottom,.sheet{max-width:620px;margin:auto}.bottom{left:50%;transform:translateX(-50%)}}
+/* --- V1.0 additions --- */
+.backbar{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.backbar button{border:0;background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 12px;color:var(--b);font-weight:700}
+.demobanner{background:#fff5e3;border:1px solid #f0dcb0;color:#95600d;border-radius:14px;padding:11px;font-size:11px;line-height:1.6;margin-bottom:12px}
+.sec{background:#fff;border:1px solid var(--line);border-radius:17px;padding:14px;margin-bottom:10px}
+.sec h3{margin:0 0 10px;font-size:15px}
+.kv{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;color:var(--m)}
+.kv b{color:var(--ink);font-weight:600;text-align:right;max-width:60%}
+.imgarea{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.imgph{background:linear-gradient(135deg,#e8eef7,#dce7f5);border:1px solid var(--line);border-radius:14px;height:120px;display:flex;align-items:center;justify-content:center;color:#8fa3bd;font-size:11px;grid-column:1/3}
+.imgbox{background:#eef3fa;border:1px solid var(--line);border-radius:14px;height:110px;display:flex;align-items:center;justify-content:center;color:#8fa3bd;font-size:11px;background-size:cover;background-position:center}
+.mapslot{background:linear-gradient(135deg,#e8f0e9,#dceadf);border:1px dashed #b9d4bd;border-radius:14px;height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#4e7d5a;font-size:11px;gap:4px;margin-top:8px}
+.cmpwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.cmpwrap .ctable{min-width:640px}
+.ctable td.diff{background:#fff7e0}
+.ctable td.diff b,.ctable td.diff{color:#95600d;font-weight:700}
+.diffhint{font-size:10px;color:#95600d;margin:4px 0 10px}
+.tagrow{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px}
+.tag{display:inline-flex;align-items:center;gap:4px;background:#eef5ff;color:#32669c;border-radius:999px;padding:3px 8px;font-size:10px}
+.tag button{border:0;background:transparent;color:#32669c;font-size:11px;padding:0;cursor:pointer}
+.remindrow{display:flex;gap:6px;align-items:center;justify-content:space-between}
+.remindrow .btn{padding:6px 9px;font-size:11px}
+textarea.imp{width:100%;border:1px solid #dfe6ef;border-radius:13px;padding:11px;font-size:11px;min-height:140px;font-family:ui-monospace,Consolas,monospace}
+.statusbar{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.qitem{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:8px}
+.qitem .rowtop{margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -126,9 +152,9 @@ let activeChips = new Set();
 
 const R = {
   student: { t: '学生 / 家长端', m: [['home','⌂','首页'],['programs','⌕','找学校'],['applications','◎','申请'],['profile','◉','我的']] },
-  agency: { t: '机构工作台', m: [['home','⌂','工作台'],['clients','♙','客户'],['programs','⌕','学校库'],['applications','◎','申请']] },
+  agency: { t: '机构工作台（B端）', m: [['home','⌂','工作台'],['programs','⌕','学校资源'],['clients','♙','客户'],['applications','◎','申请']] },
   supplier: { t: '院校 / 供应商', m: [['home','⌂','工作台'],['programs','▦','项目'],['applications','◎','受理'],['ads','◈','推广']] },
-  admin: { t: '平台管理后台', m: [['home','⌂','总览'],['audits','✓','审核'],['applications','◎','申请'],['settlement','¥','结算']] }
+  admin: { t: '平台管理后台', m: [['home','⌂','总览'],['reviews','✓','数据审核'],['audits','✓','业务审核'],['applications','◎','申请'],['settlement','¥','结算']] }
 };
 
 const money = (n) => '¥' + Number(n || 0).toLocaleString('zh-CN');
@@ -136,10 +162,20 @@ const fmt = (n) => Number(n || 0).toLocaleString('zh-CN');
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 async function api(u, o) {
-  const r = await fetch(u, { headers: { 'Content-Type': 'application/json' }, ...o });
+  const opts = { headers: { 'Content-Type': 'application/json', ...(o && o.headers) }, ...o };
+  const r = await fetch(u, opts);
   const j = await r.json().catch(() => ({}));
   if (!r.ok || j.ok === false) throw Error(j.error || '请求失败');
   return j;
+}
+
+// V1.0 hash router: #/school/:id (detail page), #/compare (compare page).
+function parseHash() {
+  const h = location.hash || '';
+  const m = h.match(/^#\/school\/([^/]+)/);
+  if (m) return { type: 'school', id: decodeURIComponent(m[1]) };
+  if (h === '#/compare') return { type: 'compare' };
+  return null;
 }
 
 async function load() {
@@ -149,6 +185,7 @@ async function load() {
 }
 
 function nav(p) {
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   page = p;
   if (p === 'programs' && (!results.length || !searchState._ran)) runSearch();
   render();
@@ -374,88 +411,249 @@ function pagerHtml() {
   </div>`;
 }
 
+// --- V1.0: favourites with school+program support & reminders (localStorage) ---
+function favs() { return JSON.parse(localStorage.getItem('gs-favs') || '[]'); }
+function compares() { return JSON.parse(localStorage.getItem('gs-compares') || '[]'); }
+function favProgs() { return JSON.parse(localStorage.getItem('gs-fav-programs') || '[]'); }
+function reminders() { return JSON.parse(localStorage.getItem('gs-reminders') || '[]'); }
+
 function toggleFav(id) {
-  const key = 'gs-favs';
-  let v = JSON.parse(localStorage.getItem(key) || '[]');
+  let v = favs();
   const i = v.indexOf(id);
-  if (i >= 0) { v.splice(i, 1); } else { v.push(id); }
-  localStorage.setItem(key, JSON.stringify(v));
+  if (i >= 0) v.splice(i, 1); else v.push(id);
+  localStorage.setItem('gs-favs', JSON.stringify(v));
   renderResults();
-  if (page === 'home') render();
+  if (page === 'home' || page === 'profile') render();
+}
+
+function toggleFavProgram(pid) {
+  let v = favProgs();
+  const i = v.indexOf(pid);
+  if (i >= 0) v.splice(i, 1); else v.push(pid);
+  localStorage.setItem('gs-fav-programs', JSON.stringify(v));
+  if (page === 'school') renderSchoolDetailPage(currentSchoolId);
+}
+
+// Reminder structure: { id, kind: 'deadline'|'start'|'scholarship', title, date, schoolId }
+function setReminder(kind, title, date, schoolId) {
+  if (!date) { alert('该数据暂无日期，无法设置提醒'); return; }
+  let v = reminders();
+  const existing = v.find((r) => r.kind === kind && r.schoolId === schoolId);
+  if (existing) { alert('已设置过该提醒，可在「我的」页查看'); return; }
+  v.push({ id: 'R-' + Date.now().toString(36), kind, title, date, schoolId, createdAt: new Date().toISOString().slice(0, 10) });
+  localStorage.setItem('gs-reminders', JSON.stringify(v));
+  alert('已设置提醒（站内）：' + title + ' · ' + date);
+}
+function removeReminder(id) {
+  let v = reminders().filter((r) => r.id !== id);
+  localStorage.setItem('gs-reminders', JSON.stringify(v));
+  render();
+}
+function remindItemHtml(r) {
+  const school = (data.schools || []).find((s) => s.id === r.schoolId);
+  const kindLabel = { deadline: '申请截止', start: '开学', scholarship: '奖学金截止' }[r.kind] || '提醒';
+  return `<div class="row"><div class="rowtop"><div><h4>${esc(r.title)}</h4><div class="muted">${esc(kindLabel)} · ${esc(r.date)}${school ? ' · ' + esc(school.name_zh) : ''}</div></div><button class="btn outline" style="padding:6px 10px" onclick="removeReminder('${r.id}')">删除</button></div></div>`;
 }
 
 function toggleCompare(id) {
-  const key = 'gs-compares';
-  let v = JSON.parse(localStorage.getItem(key) || '[]');
+  let v = compares();
   const i = v.indexOf(id);
   if (i >= 0) { v.splice(i, 1); }
   else {
     if (v.length >= 4) { alert('最多同时对比 4 所学校'); return; }
     v.push(id);
   }
-  localStorage.setItem(key, JSON.stringify(v));
+  localStorage.setItem('gs-compares', JSON.stringify(v));
   renderResults();
-  if (v.length) showCompare();
+  if (v.length) location.hash = '#/compare';
+  else if (page === 'programs') render();
 }
 
-function showCompare() {
-  const ids = compares();
-  const list = (data.schools || []).filter((s) => ids.includes(s.id));
-  if (!list.length) { openSheet('学校对比', '<div class="notice">还没有选择学校。在结果卡片上点击“对比”加入，最多 4 所。</div>'); return; }
-  const row = (label, fn) => `<tr><th>${label}</th>${list.map((s) => `<td>${fn(s)}</td>`).join('')}</tr>`;
-  openSheet(`学校对比（${list.length}/4）`, `
-    <div style="overflow-x:auto"><table class="ctable">
-      ${row('学校', (s) => `<b>${esc(s.name_zh)}</b><br><span class="muted">${esc(s.name_en || '')}</span>`)}
-      ${row('数据状态', (s) => `<span class="status ${s.is_demo ? 'warn' : 'good'}">${s.is_demo ? '演示' : '已验证'}</span>`)}
-      ${row('国家/城市/区', (s) => esc(locText(s)))}
-      ${row('教育阶段', (s) => (s.stages || []).map(stageZh).join('、'))}
-      ${row('课程体系', (s) => esc((s.curricula || []).join('、')))}
-      ${row('教学语言', (s) => esc(s.main_language || '-'))}
-      ${row('学费区间', (s) => esc(tuitionText(s)))}
-      ${row('住宿', (s) => s.boarding ? '有' : '无')}
-      ${row('奖学金', (s) => s.scholarships ? '有' : '暂无')}
-      ${row('最近交通', (s) => esc(stationText(s)))}
-      ${row('更新时间', (s) => esc(s.updated_at || '-'))}
-    </table></div>
-    <div class="actions"><button class="btn danger" onclick="clearCompare()">清空对比</button><button class="btn outline" onclick="closeSheet()">继续浏览</button></div>
-  `);
+function clearCompare() {
+  localStorage.setItem('gs-compares', '[]');
+  location.hash = '';
+  nav('programs');
 }
-function clearCompare() { localStorage.setItem('gs-compares', '[]'); closeSheet(); renderResults(); if (page === 'home') render(); }
+
+// V1.0 compare page: horizontal scroll on mobile + difference highlighting.
+async function comparePage() {
+  const ids = compares();
+  if (!ids.length) return `<div class="backbar"><button onclick="nav('programs')">← 返回</button></div><div class="notice">还没有选择学校。在结果卡片上点击「对比」加入，最多 4 所。</div>`;
+  let list = [];
+  try {
+    const j = await api('/api/compare?ids=' + ids.map(encodeURIComponent).join(','));
+    list = j.data || [];
+  } catch (e) { return `<div class="backbar"><button onclick="nav('programs')">← 返回</button></div><div class="notice">${esc(e.message)}</div>`; }
+  if (!list.length) return `<div class="backbar"><button onclick="nav('programs')">← 返回</button></div><div class="notice">所选学校均不可用，请重新选择。</div>`;
+
+  const VALUES = [
+    { label: '国家/城市/区域', fn: (s) => locText(s) },
+    { label: '教育阶段', fn: (s) => (s.stages || []).map(stageZh).join('、') },
+    { label: '课程体系', fn: (s) => (s.curricula || []).join('、') },
+    { label: '教学语言', fn: (s) => s.main_language || '-' },
+    { label: '学费区间', fn: (s) => tuitionText(s) },
+    { label: '奖学金', fn: (s) => (s.scholarships ? '有' : '暂无') },
+    { label: '住宿', fn: (s) => (s.boarding ? '有' : '无') },
+    { label: '最近交通', fn: (s) => stationText(s) },
+    { label: '学校类型', fn: (s) => s.institution_type || '-' },
+  ];
+  const row = (label, fns) => {
+    const cells = list.map((s) => {
+      const v = fns(s);
+      const diffs = list.filter((o) => o.id !== s.id).map((o) => String(fns(o)));
+      const isDiff = diffs.some((d) => d !== String(v));
+      return `<td class="${isDiff ? 'diff' : ''}">${esc(String(v))}</td>`;
+    });
+    return `<tr><th>${label}</th>${cells.join('')}</tr>`;
+  };
+  return `
+    <div class="backbar"><button onclick="nav('programs')">← 返回</button><b style="font-size:15px">学校对比（${list.length}/4）</b></div>
+    <div class="diffhint">高亮项为各校之间的差异项；向左滑动查看全部列。</div>
+    <div class="cmpwrap"><table class="ctable">
+      <tr><th>学校</th>${list.map((s) => `<td><b>${esc(s.name_zh)}</b><br><span class="muted">${esc(s.name_en || '')}</span><br><span class="status ${s.is_demo ? 'warn' : 'good'}">${s.is_demo ? '演示' : '已验证'}</span></td>`).join('')}</tr>
+      ${VALUES.map((r) => row(r.label, r.fn)).join('')}
+    </table></div>
+    <div class="actions" style="margin-top:12px"><button class="btn danger" onclick="clearCompare()">清空对比</button><button class="btn outline" onclick="nav('programs')">继续浏览</button></div>
+  `;
+}
 
 async function schoolDetail(id) {
   if (detailLoading) return;
   detailLoading = true;
-  openSheet('学校详情', '<div class="notice">加载中…</div>');
   try {
     const x = (await api('/api/schools/' + encodeURIComponent(id))).data;
-    const loc = x.location || {};
-    openSheet(x.name_zh, `
-      <div class="notice">${x.is_demo ? '演示学校数据，仅用于验证搜索与详情结构。' : '已验证学校数据。'}真实数据必须带来源与更新时间。</div>
-      <div class="section"><h3>${esc(loc.city_zh || '')} · ${esc(loc.district_zh || loc.district_en || '')}</h3><span>${esc(x.institution_type)}</span></div>
-      <div class="chips">${(x.stages || []).map((v) => `<span class="chip" style="cursor:default">${esc(stageZh(v))}</span>`).join('')}
-        ${(x.curricula || []).map((v) => `<span class="chip good" style="cursor:default">${esc(v)}</span>`).join('')}</div>
-      <div class="split"><span>国家 / 城市 / 区</span><b>${esc(locText(x))}</b></div>
-      <div class="split"><span>教学语言</span><b>${esc(x.main_language)}${(x.additional_languages || []).length ? '（另：' + esc(x.additional_languages.join('、')) + '）' : ''}</b></div>
-      <div class="split"><span>学费区间（每年）</span><b>${esc(tuitionText(x))}</b></div>
-      <div class="split"><span>住宿</span><b>${x.boarding ? '有' : '无'}</b></div>
-      <div class="split"><span>奖学金</span><b>${x.scholarships ? '有' : '暂无'}</b></div>
-      <div class="split"><span>最近交通</span><b>${esc(stationText(x))}</b></div>
-      ${(x.campuses || []).length ? `<div class="section"><h3>校区</h3><span>${x.campuses.length} 个</span></div>` +
-        x.campuses.map((c) => `<div class="row"><h4>${esc(c.name_zh || c.name)}</h4><div class="muted">${c.address ? esc(c.address) : '地址待补充'} · ${esc(districtLabel(c.district_id))}</div></div>`).join('') : ''}
-      ${(x.programs || []).length ? `<div class="section"><h3>课程 / 项目</h3><span>演示数据</span></div>` +
-        '<div class="list">' + x.programs.map((p) => `<div class="row"><div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(stageZh(p.stage))} · ${esc(p.curriculum)} · ${esc(p.duration)}</div></div><span class="status warn">演示</span></div><div class="muted" style="margin-top:6px">学费 ${esc(p.currency)} ${fmt(p.tuition)}/年 · 申请截止 ${esc(p.deadline || '-')}<br>语言要求：${esc(p.language_requirement || '-')}${p.scholarship_available ? ' · 有奖学金机会' : ''}</div></div>`).join('') + '</div>' : ''}
-      ${(x.scholarships || []).length ? `<div class="section"><h3>奖学金</h3><span>演示数据</span></div>` +
-        '<div class="list">' + x.scholarships.map((sc) => `<div class="row"><div class="rowtop"><div><h4>${esc(sc.name)}</h4><div class="muted">${esc(sc.eligibility || '')}</div></div><span class="status good">${sc.percentage ? sc.percentage + '%' : ''}</span></div><div class="muted" style="margin-top:6px">截止 ${esc(sc.deadline || '-')}</div></div>`).join('') + '</div>' : ''}
-      <div class="section"><h3>数据来源</h3><span>必须可追溯</span></div>
-      <div class="split"><span>来源 URL</span><b>${x.source_url ? esc(x.source_url) : '无（演示数据）'}</b></div>
-      <div class="split"><span>审核状态</span><b>${esc(x.verified_status)}</b></div>
-      <div class="split"><span>验证时间</span><b>${esc(x.verified_at || '-')}</b></div>
-      <div class="split"><span>有效期</span><b>${esc(x.effective_from || '-')} ~ ${esc(x.effective_to || '-')}</b></div>
-      <div class="split"><span>更新时间</span><b>${esc(x.updated_at || '-')}</b></div>
-      <div class="actions"><button class="btn outline" onclick="toggleCompare('${x.id}');closeSheet()">加入对比</button><button class="btn primary" onclick="toggleFav('${x.id}');closeSheet()">收藏</button></div>
-    `);
+    if (x.is_demo) {
+      openSheet(x.name_zh, detailSheetHtml(x) + `<div class="actions"><button class="btn outline" onclick="toggleCompare('${x.id}');closeSheet()">加入对比</button><button class="btn primary" onclick="toggleFav('${x.id}');closeSheet()">收藏</button></div>`);
+    } else {
+      closeSheet();
+      location.hash = '#/school/' + encodeURIComponent(x.id);
+      await renderSchoolDetailPage(x.id);
+    }
   } catch (e) { openSheet('学校详情', `<div class="notice">${esc(e.message)}</div>`); }
   finally { detailLoading = false; }
+}
+
+function demoBanner(x) {
+  return x.is_demo
+    ? `<div class="demobanner">⚠️ <b>演示数据</b>：该学校为演示学校，仅用于验证产品与数据结构，不是真实学校，不代表任何合作关系。</div>`
+    : '';
+}
+
+function imageArea(x) {
+  const imgs = x.images || [];
+  if (!imgs.length) return `<div class="sec"><h3>学校图片</h3><div class="imgarea"><div class="imgph">暂无图片${x.is_demo ? '（演示数据不含真实图片）' : '（待补充）'}</div></div></div>`;
+  return `<div class="sec"><h3>学校图片</h3><div class="imgarea">${imgs.map((u) => `<div class="imgbox" style="background-image:url('${esc(u)}')"></div>`).join('')}</div></div>`;
+}
+
+function mapArea(x) {
+  const st = x.station;
+  const dist = x.distance_label;
+  const commute = x.commute_label || '暂无可靠通勤数据';
+  return `<div class="sec"><h3>地图 · 距离 · 交通</h3>
+    <div class="kv"><span>学校经纬度</span><b>${x.latitude != null ? Number(x.latitude).toFixed(4) + ', ' + Number(x.longitude).toFixed(4) : '暂无坐标'}</b></div>
+    <div class="kv"><span>最近地铁/轨道站</span><b>${st ? esc(stationText(x)) : '暂无'}</b></div>
+    <div class="kv"><span>学校到地铁距离</span><b>${dist ? esc(dist) : '暂无可靠距离数据'}</b></div>
+    <div class="kv"><span>通勤时间</span><b>${esc(commute)}</b></div>
+    <div class="mapslot" id="mapslot-${esc(x.id)}">🗺 正在加载周边站点…</div>
+  </div>`;
+}
+
+// Pull the structured map payload for a school and list its nearest stations.
+// tile_provider stays null server-side, so we never pretend a map is rendered.
+async function loadMapArea(id) {
+  if (!id) return;
+  const slot = document.getElementById('mapslot-' + id);
+  if (!slot) return;
+  try {
+    const j = await api('/api/map/' + encodeURIComponent(id) + '?maxStations=5');
+    const d = j.data;
+    if (!d.renderable) {
+      slot.textContent = '🗺 ' + (d.note || '暂无坐标，无法渲染地图');
+      return;
+    }
+    const rows = (d.stations || []).map((s) =>
+      `<div class="kv"><span>${esc(s.name_zh || s.name_en)}${s.line && s.line.code ? ' <span class="tag">' + esc(s.line.code) + '</span>' : ''}</span><b>${esc(s.distance_label)}</b></div>`
+    ).join('');
+    slot.innerHTML = `<div style="width:100%"><div style="font-weight:700;margin-bottom:4px">🗺 最近 ${(d.stations || []).length} 个站点</div>${rows || '<div class="muted">附近暂无站点数据</div>'}<div class="muted" style="margin-top:6px">${esc(d.note || '')}</div></div>`;
+    slot.style.height = 'auto';
+  } catch (e) {
+    slot.textContent = '🗺 地图数据加载失败';
+  }
+}
+
+function detailSheetHtml(x) {
+  const loc = x.location || {};
+  return demoBanner(x) + `
+    <div class="section"><h3>${esc(loc.city_zh || '')} · ${esc(loc.district_zh || loc.district_en || '')}</h3><span>${esc(x.institution_type)}</span></div>
+    <div class="chips">${(x.stages || []).map((v) => `<span class="chip" style="cursor:default">${esc(stageZh(v))}</span>`).join('')}
+      ${(x.curricula || []).map((v) => `<span class="chip good" style="cursor:default">${esc(v)}</span>`).join('')}</div>
+    <div class="split"><span>国家 / 城市 / 区</span><b>${esc(locText(x))}</b></div>
+    <div class="split"><span>教学语言</span><b>${esc(x.main_language)}${(x.additional_languages || []).length ? '（另：' + esc(x.additional_languages.join('、')) + '）' : ''}</b></div>
+    <div class="split"><span>学费区间（每年）</span><b>${esc(tuitionText(x))}</b></div>
+    <div class="split"><span>住宿</span><b>${x.boarding ? '有' : '无'}</b></div>
+    <div class="split"><span>奖学金</span><b>${x.scholarships ? '有' : '暂无'}</b></div>
+    <div class="split"><span>最近交通</span><b>${esc(stationText(x))}</b></div>
+    <div class="split"><span>到站距离</span><b>${x.distance_label ? esc(x.distance_label) : '暂无可靠距离数据'}</b></div>
+    ${(x.campuses || []).length ? `<div class="section"><h3>校区</h3><span>${x.campuses.length} 个</span></div>` +
+      x.campuses.map((c) => `<div class="row"><h4>${esc(c.name_zh || c.name)}</h4><div class="muted">${c.address ? esc(c.address) : '地址待补充'} · ${esc(districtLabel(c.district_id))}</div></div>`).join('') : ''}
+    ${(x.programs || []).length ? `<div class="section"><h3>课程 / 项目</h3><span>${x.is_demo ? '演示数据' : ''}</span></div>` +
+      '<div class="list">' + x.programs.map((p) => `<div class="row"><div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(stageZh(p.stage))} · ${esc(p.curriculum)} · ${esc(p.duration)}</div></div><button class="btn outline" style="padding:6px 10px;font-size:11px" onclick="toggleFavProgram('${p.id}')">${favProgs().includes(p.id) ? '已收藏课程' : '收藏课程'}</button></div><div class="muted" style="margin-top:6px">学费 ${esc(p.currency)} ${fmt(p.tuition)}/年 · 申请截止 ${esc(p.deadline || '-')}<br>语言要求：${esc(p.language_requirement || '-')}${p.scholarship_available ? ' · 有奖学金机会' : ''}</div></div>`).join('') + '</div>' : ''}
+    ${(x.scholarships || []).length ? `<div class="section"><h3>奖学金</h3><span>${x.is_demo ? '演示数据' : ''}</span></div>` +
+      '<div class="list">' + x.scholarships.map((sc) => `<div class="row"><div class="rowtop"><div><h4>${esc(sc.name)}</h4><div class="muted">${esc(sc.eligibility || '')}</div></div><span class="status good">${sc.percentage ? sc.percentage + '%' : ''}</span></div><div class="muted" style="margin-top:6px">截止 ${esc(sc.deadline || '-')}</div></div>`).join('') + '</div>' : ''}
+    <div class="section"><h3>数据来源</h3><span>必须可追溯</span></div>
+    <div class="split"><span>来源 URL</span><b>${x.source_url ? esc(x.source_url) : '无（演示数据）'}</b></div>
+    <div class="split"><span>审核状态</span><b>${esc(x.verified_status)}</b></div>
+    <div class="split"><span>验证时间</span><b>${esc(x.verified_at || '-')}</b></div>
+    <div class="split"><span>有效期</span><b>${esc(x.effective_from || '-')} ~ ${esc(x.effective_to || '-')}</b></div>
+    <div class="split"><span>更新时间</span><b>${esc(x.updated_at || '-')}</b></div>
+  `;
+}
+
+let currentSchoolId = null;
+async function renderSchoolDetailPage(id) {
+  currentSchoolId = id;
+  let x;
+  try { x = (await api('/api/schools/' + encodeURIComponent(id))).data; }
+  catch (e) { $('#view').innerHTML = `<div class="backbar"><button onclick="nav('programs')">← 返回</button></div><div class="notice">${esc(e.message)}</div>`; return; }
+  const isFav = favs().includes(x.id);
+  $('#view').innerHTML = `
+    <div class="backbar"><button onclick="nav('programs')">← 返回</button><b style="font-size:15px">学校详情</b></div>
+    ${demoBanner(x)}
+    <div class="sec"><div class="rowtop"><div><h3 style="margin:0">${esc(x.name_zh)}</h3><div class="muted">${esc(x.name_en || '')}</div></div><span class="status ${x.is_demo ? 'warn' : 'good'}">${x.is_demo ? '演示' : '已验证'}</span></div></div>
+    <div class="sec"><h3>基础资料</h3>
+      <div class="kv"><span>国家 / 城市 / 区域</span><b>${esc(locText(x))}</b></div>
+      <div class="kv"><span>学校类型</span><b>${esc(x.institution_type || '-')}</b></div>
+      <div class="kv"><span>教育阶段</span><b>${esc((x.stages || []).map(stageZh).join('、') || '-')}</b></div>
+      <div class="kv"><span>课程体系</span><b>${esc((x.curricula || []).join('、') || '-')}</b></div>
+      <div class="kv"><span>教学语言</span><b>${esc(x.main_language || '-')}${(x.additional_languages || []).length ? '（另：' + esc(x.additional_languages.join('、')) + '）' : ''}</b></div>
+    </div>
+    <div class="sec"><h3>学费与首年费用</h3>
+      <div class="kv"><span>学费区间（每年）</span><b>${esc(tuitionText(x))}</b></div>
+      <div class="kv"><span>住宿费（每年）</span><b>${x.boarding_fee != null ? esc(x.currency) + ' ' + fmt(x.boarding_fee) : '暂无数据'}</b></div>
+      <div class="kv"><span>一次性费用</span><b>${x.one_time_fees != null ? esc(x.currency) + ' ' + fmt(x.one_time_fees) : '暂无数据'}</b></div>
+      <div class="kv"><span>首年总成本（估算）</span><b>${x.first_year_cost_min != null ? esc(x.currency) + ' ' + fmt(x.first_year_cost_min) + '–' + fmt(x.first_year_cost_max) : '资料不足'}</b></div>
+      ${x.first_year_note ? `<div class="muted" style="margin-top:6px">${esc(x.first_year_note)}</div>` : ''}
+    </div>
+    <div class="sec"><h3>奖学金 / 助学金</h3>
+      ${(x.scholarships || []).length ? '<div class="list">' + x.scholarships.map((sc) => `<div class="row"><div class="rowtop"><div><h4>${esc(sc.name)}</h4><div class="muted">${esc(sc.eligibility || '')}</div></div><span class="status good">${sc.percentage ? sc.percentage + '%' : '详情'}</span></div><div class="muted" style="margin-top:6px">截止 ${esc(sc.deadline || '-')}</div><div class="remindrow" style="margin-top:6px"><span class="muted">奖学金截止：${esc(sc.deadline || '暂无')}</span><button class="btn outline" onclick="setReminder('scholarship','${esc(sc.name)}','${esc(sc.deadline || '')}','${x.id}')">设置提醒</button></div></div>`).join('') + '</div>' : `<div class="muted">${x.scholarships ? '有奖助机会，具体项目待补充' : '暂无奖学金信息'}</div>`}
+    </div>
+    <div class="sec"><h3>住宿</h3><div class="kv"><span>是否提供住宿</span><b>${x.boarding ? '有' : '无'}</b></div>${x.boarding ? `<div class="muted" style="margin-top:6px">住宿费用与房型详情待学校提供；V2.5 将支持住宿预订。</div>` : ''}</div>
+    ${mapArea(x)}
+    ${imageArea(x)}
+    <div class="sec"><h3>Program 列表</h3>
+      ${(x.programs || []).length ? '<div class="list">' + x.programs.map((p) => `<div class="row"><div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(stageZh(p.stage))} · ${esc(p.curriculum)} · ${esc(p.duration)}</div></div><span class="status ${p.verified_status === 'verified' ? 'good' : 'warn'}">${p.verified_status === 'verified' ? '已验证' : '演示'}</span></div><div class="muted" style="margin-top:6px">学费 ${esc(p.currency)} ${fmt(p.tuition)}/年 · 开学 ${esc(p.start_date || '-')} · 申请截止 ${esc(p.deadline || '-')}<br>语言要求：${esc(p.language_requirement || '-')}${p.scholarship_available ? ' · 有奖学金机会' : ''}</div><div class="remindrow" style="margin-top:8px"><button class="btn outline" onclick="toggleFavProgram('${p.id}')">${favProgs().includes(p.id) ? '已收藏课程' : '收藏课程'}</button><button class="btn outline" onclick="setReminder('deadline','${esc(p.name_zh || p.name)} 申请截止','${esc(p.deadline || '')}','${x.id}')">截止提醒</button><button class="btn outline" onclick="setReminder('start','${esc(p.name_zh || p.name)} 开学','${esc(p.start_date || '')}','${x.id}')">开学提醒</button></div></div>`).join('') + '</div>' : '<div class="muted">暂无课程数据</div>'}
+    </div>
+    <div class="sec"><h3>数据来源与审核状态</h3>
+      <div class="kv"><span>来源 URL</span><b>${x.source_url ? esc(x.source_url) : '无（演示数据）'}</b></div>
+      <div class="kv"><span>供应商证明</span><b>${x.supplier_evidence ? esc(x.supplier_evidence) : '无'}</b></div>
+      <div class="kv"><span>verified_status</span><b>${esc(x.verified_status)}</b></div>
+      <div class="kv"><span>verified_at</span><b>${esc(x.verified_at || '-')}</b></div>
+      <div class="kv"><span>有效期</span><b>${esc(x.effective_from || '-')} ~ ${esc(x.effective_to || '-')}</b></div>
+      <div class="kv"><span>更新时间</span><b>${esc(x.updated_at || '-')}</b></div>
+    </div>
+    <div class="actions"><button class="btn ${favs().includes(x.id) ? 'success' : 'outline'}" onclick="toggleFav('${x.id}')">${isFav ? '已收藏' : '收藏学校'}</button><button class="btn outline" onclick="toggleCompare('${x.id}')">加入对比</button></div>
+  `;
+  loadMapArea(x.id);
 }
 
 // ---------------------------------------------------------------------------
@@ -485,10 +683,18 @@ function searchPage() {
     <div class="quick">${quickChips.map((c) => `<button class="chip ${activeChips.has(c.id) ? 'on' : ''}" onclick="toggleChip('${c.id}')">${c.label}</button>`).join('')}
       <button class="chip" onclick="advancedSheet()">⚙ 高级筛选</button>
       <button class="chip ${searchState.favOnly ? 'on' : ''}" onclick="toggleFavOnly()">❤ 我的收藏</button></div>
+    <div id="filterTags" class="tagrow">${renderFilterTags()}</div>
     <div class="section"><h3>搜索结果</h3><span id="resultCount">加载中…</span></div>
     <div id="plist"><div class="notice">正在加载学校数据…</div></div>
-    <div class="actions" style="margin-top:4px"><button class="btn outline" onclick="clearSearch()">清空全部筛选</button></div>
+    <div class="actions" style="margin-top:4px"><button class="btn outline" onclick="clearSearch()">一键清除全部筛选</button></div>
   `;
+}
+
+function renderFilterTags() {
+  const tags = activeFilterTags();
+  if (!tags.length) return '';
+  return tags.map((t) => `<span class="tag">${esc(t.label)} <button onclick="${t.clearFn}">✕</button></span>`).join('') +
+    `<button class="btn outline" style="padding:3px 8px;font-size:10px" onclick="clearSearch()">全部清除</button>`;
 }
 
 function qCountryChanged() {
@@ -535,9 +741,33 @@ function audits() {
   return '<div class="list">' + (data.audits || []).map((a) => `<div class="row"><div class="rowtop"><div><h4>${esc(a.name)}</h4><div class="muted">${esc(a.type)} · ${esc(a.org)}</div></div><span class="status ${st(a.status)}">${esc(a.status)}</span></div>${a.status === '待审核' ? `<div class="actions"><button class="btn success" onclick="approve(${a.id})">通过</button></div>` : ''}</div>`).join('') + '</div>';
 }
 
+function activeFilterTags() {
+  const s = searchState;
+  const tags = [];
+  const add = (label, key, clearFn) => tags.push({ label, key, clearFn });
+  if (s.country) add(countryName(s.country), 'country', "searchState.country='';render();runSearch()");
+  if (s.city) add(cityLabel(s.city), 'city', "searchState.city='';render();runSearch()");
+  if (s.district) add(districtLabel(s.district), 'district', "searchState.district='';render();runSearch()");
+  if (s.stage) add(stageZh(s.stage), 'stage', "searchState.stage='';render();runSearch()");
+  if (s.curriculum) add(s.curriculum, 'curriculum', "searchState.curriculum='';render();runSearch()");
+  if (s.language) add(s.language, 'language', "searchState.language='';render();runSearch()");
+  if (s.institutionType) add(s.institutionType, 'type', "searchState.institutionType='';render();runSearch()");
+  if (s.minFee !== '') add('学费≥' + s.minFee, 'minFee', "searchState.minFee='';render();runSearch()");
+  if (s.maxFee !== '') add('学费≤' + s.maxFee, 'maxFee', "searchState.maxFee='';render();runSearch()");
+  if (s.scholarship) add('有奖学金', 'scholarship', "searchState.scholarship=false;searchState._negScholarship=false;render();runSearch()");
+  if (s._negScholarship) add('无奖学金', 'scholarship', "searchState._negScholarship=false;render();runSearch()");
+  if (s.boarding) add('有住宿', 'boarding', "searchState.boarding=false;searchState._negBoarding=false;render();runSearch()");
+  if (s._negBoarding) add('无住宿', 'boarding', "searchState._negBoarding=false;render();runSearch()");
+  if (s.transitNear) add('靠近公共交通', 'transit', "searchState.transitNear=false;render();runSearch()");
+  if (s.sort === 'fee_asc') add('学费从低到高', 'sort', "searchState.sort='';render();runSearch()");
+  if (s.sort === 'fee_desc') add('学费从高到低', 'sort', "searchState.sort='';render();runSearch()");
+  return tags;
+}
+function countryName(id) { const c = ref().countries.find((x) => x.id === id); return c ? c.name_zh : id; }
+
 function content() {
   if (page === 'home') return home();
-  if (page === 'programs') return searchPage();
+  if (page === 'programs') return role === 'agency' ? b2bPage() : searchPage();
   if (page === 'applications') {
     let a = data.applications || [];
     if (role === 'student') a = a.filter((x) => x.student === data.profile.name);
@@ -545,21 +775,239 @@ function content() {
     return `<div class="section"><h3>申请管理</h3><span>统一状态机</span></div>${apps(a)}`;
   }
   if (page === 'clients') return `<div class="section"><h3>客户 CRM</h3><button class="btn primary" onclick="clientForm()">＋新增</button></div><div class="notice">学生可通过机构专属邀请自行建档，客户归属仍归机构。</div><br>${clients()}`;
-  if (page === 'profile') return `<div class="card"><h4>${esc(data.profile.name)}</h4><div class="progress"><i style="width:${data.profile.completion}%"></i></div>${[['学历', data.profile.education], ['GPA', data.profile.gpa], ['语言', data.profile.english], ['预算', data.profile.budget], ['目标', data.profile.country]].map((x) => `<div class="split"><span>${x[0]}</span><b>${esc(x[1])}</b></div>`).join('')}
-    <div class="section"><h3>我的收藏</h3><span>保存在本机</span></div>${favs().length ? schoolCards((data.schools || []).filter((s) => favs().includes(s.id))) : '<div class="notice">还没有收藏学校。去“找学校”收藏吧。</div>'}</div>`;
-  if (page === 'audits') return `<div class="section"><h3>审核中心</h3><span>B / S / 项目</span></div>${audits()}`;
+  if (page === 'profile') return `<div class="card"><h4>${esc(data.profile.name)}</h4><div class="progress"><i style="width:${data.profile.completion}%"></i></div>${[['学历', data.profile.education], ['GPA', data.profile.gpa], ['语言', data.profile.english], ['预算', data.profile.budget], ['目标', data.profile.country]].map((x) => `<div class="split"><span>${x[0]}</span><b>${esc(x[1])}</b></div>`).join('')}</div>
+    <div class="section"><h3>收藏的学校</h3><span>保存在本机</span></div>${favs().length ? schoolCards((data.schools || []).filter((s) => favs().includes(s.id))) : '<div class="notice">还没有收藏学校。去「找学校」收藏吧。</div>'}
+    <div class="section"><h3>收藏的课程</h3><span>保存在本机</span></div>${favProgs().length ? programFavList() : '<div class="notice">还没有收藏课程。</div>'}
+    <div class="section"><h3>我的提醒</h3><span>站内提醒</span></div>${reminders().length ? '<div class="list">' + reminders().map(remindItemHtml).join('') + '</div>' : '<div class="notice">还没有设置提醒。可在学校详情的课程与奖学金上设置。</div>'}`;
+  if (page === 'audits') return `<div class="section"><h3>业务审核</h3><span>B / S / 项目</span></div>${audits()}`;
+  if (page === 'reviews') return adminReviewsPage();
   if (page === 'ads') return `<div class="metrics">${metric('投放中', '1')}${metric('曝光', '18,620')}${metric('线索', '64')}${metric('预算', '¥3,600')}</div><div class="notice" style="margin-top:12px">MVP 不进行真实扣款，V1.5 再接支付。</div>`;
   if (page === 'settlement') return `<div class="metrics">${metric('预计佣金', money((data.applications || []).reduce((s, a) => s + a.commission, 0)))}${metric('平台应收', '¥62,700')}${metric('B端应付', '¥24,700')}${metric('广告收入', '¥12,600')}</div><div class="notice" style="margin-top:12px">正式版按课程、批次、渠道和合同版本生成结算台账。</div>`;
   return '';
+}
+
+function programFavList() {
+  const ids = favProgs();
+  const progs = (data.catalogPrograms || []).filter((p) => ids.includes(p.id));
+  return '<div class="list">' + progs.map((p) => `<div class="row"><div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(p.institution_name_zh || p.institution_id)} · ${esc(stageZh(p.stage))}</div></div><button class="btn outline" style="padding:6px 10px" onclick="toggleFavProgram('${p.id}')">取消</button></div><div class="muted" style="margin-top:6px">申请截止 ${esc(p.deadline || '-')} · 开学 ${esc(p.start_date || '-')}</div></div>`).join('') + '</div>';
+}
+
+// --- B2B (agency) school resource search ---
+let b2bResults = [];
+let b2bMeta = { total: 0, page: 1, pageSize: 10 };
+const b2bState = { q: '', country: '', city: '', stage: '', curriculum: '', acceptsAgents: false, hasCommission: false, page: 1, tab: 'schools' };
+
+async function b2bSearch(toPage) {
+  b2bState.page = toPage || 1;
+  const isPrograms = b2bState.tab === 'programs';
+  try {
+    const p = new URLSearchParams();
+    if (b2bState.q) p.set('q', b2bState.q);
+    if (b2bState.country) p.set('country', b2bState.country);
+    if (b2bState.city) p.set('city', b2bState.city);
+    if (b2bState.stage) p.set('stage', b2bState.stage);
+    if (b2bState.curriculum) p.set('curriculum', b2bState.curriculum);
+    if (b2bState.acceptsAgents) p.set('acceptsAgents', 'true');
+    if (b2bState.hasCommission) p.set('hasCommission', 'true');
+    p.set('page', String(b2bState.page));
+    p.set('pageSize', '10');
+    const url = isPrograms ? '/api/b2b/programs?' + p.toString() : '/api/b2b/schools?' + p.toString();
+    const j = await api(url, { headers: { 'x-role': 'agency' } });
+    b2bResults = j.data || [];
+    b2bMeta = j.meta || b2bMeta;
+    renderB2bResults();
+  } catch (e) {
+    const host = document.querySelector('#b2blist');
+    if (host) host.innerHTML = `<div class="notice">加载失败：${esc(e.message)}</div>`;
+  }
+}
+
+function b2bProgramCard(p) {
+  const ag = p.agency || {};
+  const comm = ag.commission || {};
+  return `<div class="card">
+    <div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(p.school_name_zh || p.institution_id)}${p.school_city_zh ? ' · ' + esc(p.school_city_zh) : ''}</div></div>
+      <span class="status ${comm.commission_type ? 'good' : 'warn'}">${ag.cooperation_status === 'demo' ? '演示' : '未录入协议'}</span></div>
+    <div class="muted" style="margin-top:6px">招生阶段：${esc(stageZh(p.stage))} · 课程：${esc(p.curriculum || '-')}</div>
+    <div class="muted" style="margin-top:4px">学制 ${esc(p.duration || '-')} · 学费 ${esc(p.currency || '')} ${fmt(p.tuition)}/年</div>
+    <div class="muted" style="margin-top:4px">开学 ${esc(p.start_date || '-')} · 申请截止 ${esc(p.deadline || '-')}</div>
+    <div class="muted" style="margin-top:4px">语言要求：${esc(p.language_requirement || '-')}${p.scholarship_available ? ' · 有奖学金机会' : ''}</div>
+    <div class="muted" style="margin-top:4px">接受代理：${ag.accepts_agents ? '是' : '否'} · 合作状态：${esc(ag.cooperation_status || 'none')} · 协议层级：${esc(ag.agreement_level || 'none')}</div>
+    <div class="notice" style="margin-top:8px">${comm.note ? esc(comm.note) + '。' : ''}佣金仅展示后台明确录入的真实代理协议数据。</div>
+    <div class="split" style="margin-top:6px"><span>佣金类型</span><b>${comm.commission_type ? esc(comm.commission_type) : '未录入'}</b></div>
+    <div class="split"><span>佣金值</span><b>${comm.commission_value != null ? esc(String(comm.commission_value)) + (comm.commission_type === 'percentage' ? '%' : ' ' + (comm.currency || '')) : '未录入'}</b></div>
+    <div class="split"><span>结算周期</span><b>${comm.settlement_cycle ? esc(comm.settlement_cycle) : '未录入'}</b></div>
+    <div class="actions"><button class="btn outline" onclick="schoolDetail('${esc(p.institution_id)}')">查看所属学校</button><button class="btn outline" onclick="toggleFavProgram('${esc(p.id)}')">${favProgs().includes(p.id) ? '已收藏课程' : '收藏课程'}</button></div>
+  </div>`;
+}
+
+function b2bCard(x) {
+  const ag = x.agency || {};
+  const comm = ag.commission || {};
+  return `<div class="card">
+    <div class="rowtop"><div><h4>${esc(x.name_zh)}</h4><div class="muted">${esc(locText(x))}</div></div>
+      <span class="status ${x.is_demo ? 'warn' : 'good'}">${x.is_demo ? '演示' : x.verified_status === 'verified' ? '已验证' : '待审核'}</span></div>
+    <div class="muted" style="margin-top:6px">招生阶段：${esc((x.stages || []).map(stageZh).join('、') || '-')}</div>
+    <div class="muted" style="margin-top:4px">接受代理：${ag.accepts_agents ? '是' : '否'} · 合作状态：${esc(ag.cooperation_status || 'none')}</div>
+    <div class="notice" style="margin-top:8px">${comm.note ? esc(comm.note) + '。' : ''}佣金仅展示后台明确录入的真实代理协议数据。</div>
+    <div class="split" style="margin-top:6px"><span>佣金类型</span><b>${comm.commission_type ? esc(comm.commission_type) : '未录入'}</b></div>
+    <div class="split"><span>佣金值</span><b>${comm.commission_value != null ? esc(String(comm.commission_value)) + (comm.commission_type === 'percentage' ? '%' : ' ' + (comm.currency || '')) : '未录入'}</b></div>
+    <div class="split"><span>结算周期</span><b>${comm.settlement_cycle ? esc(comm.settlement_cycle) : '未录入'}</b></div>
+    <div class="actions"><button class="btn outline" onclick="schoolDetail('${x.id}')">查看学校</button><button class="btn outline" onclick="toggleFav('${x.id}')">${favs().includes(x.id) ? '已收藏' : '收藏'}</button></div>
+  </div>`;
+}
+function renderB2bResults() {
+  const host = document.querySelector('#b2blist');
+  if (!host) return;
+  const c = document.querySelector('#b2bCount');
+  const isPrograms = b2bState.tab === 'programs';
+  if (c) c.textContent = isPrograms ? `${b2bMeta.total} 个 Program · 第 ${b2bMeta.page} 页` : `${b2bMeta.total} 所 · 第 ${b2bMeta.page} 页`;
+  const empty = isPrograms ? '没有匹配的 Program。' : '没有匹配的学校资源。';
+  host.innerHTML = b2bResults.length
+    ? '<div class="cards">' + b2bResults.map(isPrograms ? b2bProgramCard : b2bCard).join('') + '</div>'
+    : `<div class="notice">${empty}</div>`;
+}
+
+function b2bPage() {
+  const r = ref();
+  const s = b2bState;
+  return `
+    <div class="notice">B端学校资源库：招生阶段、代理接受度、合作状态。佣金字段只在后台明确录入真实代理协议后展示，平台绝不自动生成佣金。</div>
+    <div class="search" style="margin-top:10px"><input id="b2bq" placeholder="学校 / 课程关键词" value="${esc(s.q)}" oninput="b2bState.q=this.value">
+      <select onchange="b2bState.country=this.value"><option value="">全部国家</option>${r.countries.map((c) => `<option value="${c.id}" ${s.country === c.id ? 'selected' : ''}>${esc(c.name_zh)}</option>`).join('')}</select></div>
+    <div class="search"><select onchange="b2bState.city=this.value"><option value="">全部城市</option>${r.cities.filter((c) => !s.country || c.country_id === s.country).map((c) => `<option value="${c.id}" ${s.city === c.id ? 'selected' : ''}>${esc(c.name_zh || c.name_en)}</option>`).join('')}</select>
+      <select onchange="b2bState.stage=this.value"><option value="">全部阶段</option>${r.educationStages.map((x) => `<option value="${x.id}" ${s.stage === x.id ? 'selected' : ''}>${esc(x.zh)}</option>`).join('')}</select></div>
+    <div class="quick"><button class="chip ${s.acceptsAgents ? 'on' : ''}" onclick="b2bState.acceptsAgents=!b2bState.acceptsAgents;b2bSearch()">接受代理</button>
+      <button class="chip ${s.hasCommission ? 'on' : ''}" onclick="b2bState.hasCommission=!b2bState.hasCommission;b2bSearch()">有佣金协议</button>
+      <button class="chip" onclick="b2bSearch()">搜索</button></div>
+    <div class="quick"><button class="chip ${s.tab === 'schools' ? 'on' : ''}" onclick="b2bState.tab='schools';b2bSearch()">学校资源</button>
+      <button class="chip ${s.tab === 'programs' ? 'on' : ''}" onclick="b2bState.tab='programs';b2bSearch()">Program 列表</button></div>
+    <div class="section"><h3>${s.tab === 'programs' ? 'Program 列表' : '学校资源'}</h3><span id="b2bCount">加载中…</span></div>
+    <div id="b2blist"><div class="notice">正在加载…</div></div>
+  `;
+}
+
+// --- Admin: data review queue + import tool ---
+let queueItems = [];
+function adminReviewsPage() {
+  return `
+    <div class="section"><h3>数据审核队列</h3><span id="qCount">加载中…</span></div>
+    <div id="qlist"><div class="notice">正在加载…</div></div>
+    <div class="section"><h3>真实数据导入</h3><span>CSV / JSON</span></div>
+    <div class="notice" style="margin-bottom:8px">导入规则：每条真实学校必须含 name / country / city 与 source_url（或 supplier_evidence）；缺少来源的数据不得标记 verified；重复学校自动检测。</div>
+    <textarea class="imp" id="impContent" placeholder="粘贴 CSV 或 JSON（数组）数据…"></textarea>
+    <div class="actions"><button class="btn outline" onclick="impPreview()">预览校验</button><button class="btn primary" onclick="impCommit()">批量导入</button></div>
+    <div id="impResult"></div>
+  `;
+}
+async function loadQueue() {
+  try {
+    const j = await api('/api/admin/queue', { headers: { 'x-role': 'admin' } });
+    queueItems = j.data || [];
+    const c = document.querySelector('#qCount');
+    if (c) c.textContent = `${queueItems.length} 项`;
+    const host = document.querySelector('#qlist');
+    if (!host) return;
+    host.innerHTML = queueItems.length ? queueItems.map(qItemHtml).join('') : '<div class="notice">队列为空。导入数据后在这里审核。</div>';
+  } catch (e) {
+    const host = document.querySelector('#qlist');
+    if (host) host.innerHTML = `<div class="notice">${esc(e.message)}</div>`;
+  }
+}
+function qItemHtml(item) {
+  const s = item.school;
+  const revs = item.revisions || [];
+  const latest = revs.slice(-3).reverse();
+  return `<div class="qitem">
+    <div class="rowtop"><div><h4>${s ? esc(s.name_zh || s.name) : esc(item.school_id)}</h4><div class="muted">${s ? esc(locText(s)) : ''} · 状态：${esc(item.status)}</div></div>
+      <span class="status ${item.status === 'verified' ? 'good' : 'warn'}">${esc(item.status)}</span></div>
+    ${s && s.source_url ? `<div class="muted">来源：<a href="${esc(s.source_url)}" target="_blank" rel="noopener">${esc(s.source_url)}</a></div>` : `<div class="muted">来源：${s && s.supplier_evidence ? esc(s.supplier_evidence) : '无'}</div>`}
+    ${revs.length ? `<div class="muted" style="margin-top:6px">最近修订：<br>${latest.map((r) => `${esc(r.field)}: ${esc(String(r.old))} → ${esc(String(r.new))}`).join('<br>')}</div>` : ''}
+    <div class="actions">
+      ${item.status === 'draft' ? `<button class="btn outline" onclick="queueAction('${item.school_id}','submit')">提交审核</button>` : ''}
+      ${item.status === 'pending' ? `<button class="btn success" onclick="queueAction('${item.school_id}','approve')">通过</button><button class="btn danger" onclick="queueAction('${item.school_id}','reject')">驳回</button><button class="btn outline" onclick="queueAction('${item.school_id}','request-info')">要求补资料</button>` : ''}
+      ${(item.status === 'verified' || item.status === 'pending') ? `<button class="btn outline" onclick="queueAction('${item.school_id}','expire')">标记过期</button>` : ''}
+      <button class="btn outline" onclick="showRevisions('${item.school_id}')">历史</button>
+    </div>
+  </div>`;
+}
+async function queueAction(schoolId, action) {
+  try {
+    await api('/api/admin/queue/' + encodeURIComponent(schoolId) + '/action', {
+      method: 'POST',
+      headers: { 'x-role': 'admin' },
+      body: JSON.stringify({ action })
+    });
+    await loadQueue();
+  } catch (e) { alert(e.message); }
+}
+async function showRevisions(schoolId) {
+  try {
+    const j = await api('/api/admin/schools/' + encodeURIComponent(schoolId) + '/revisions', { headers: { 'x-role': 'admin' } });
+    const d = j.data;
+    openSheet('修订历史 · ' + schoolId, `
+      <div class="section"><h3>状态流转</h3></div>
+      ${(d.history || []).map((h) => `<div class="muted" style="margin:4px 0">${esc(h.at)} · ${esc(h.status)} · ${esc(h.note || '')}</div>`).join('')}
+      <div class="section"><h3>字段修订</h3></div>
+      ${(d.revisions || []).length ? (d.revisions || []).map((r) => `<div class="split"><span>${esc(r.field)} · ${esc(r.at)}</span><b>${esc(String(r.old))} → ${esc(String(r.new))}</b></div>`).join('') : '<div class="notice">暂无字段修订记录</div>'}`);
+  } catch (e) { openSheet('修订历史', `<div class="notice">${esc(e.message)}</div>`); }
+}
+async function impPreview() {
+  const content = document.querySelector('#impContent').value;
+  const host = document.querySelector('#impResult');
+  if (!content.trim()) { host.innerHTML = '<div class="notice">请先粘贴数据</div>'; return; }
+  host.innerHTML = '<div class="notice">校验中…</div>';
+  try {
+    const j = await api('/api/admin/import/preview', { method: 'POST', headers: { 'x-role': 'admin' }, body: JSON.stringify({ content }) });
+    const d = j.data;
+    host.innerHTML = `
+      <div class="notice" style="margin:8px 0">共 ${d.total} 行：可导入 ${d.importable} · 无效 ${d.invalid} · 疑似重复 ${d.duplicates}</div>
+      ${(d.preview || []).map((p) => `<div class="qitem"><div class="rowtop"><div><h4>${esc(p.name)}</h4><div class="muted">${esc(p.country_id)} · ${esc(p.city_id)} · 来源:${p.source_url ? '有' : '无'} · 状态:${esc(p.verified_status)}</div></div><span class="status ${p.verified_status === 'verified' ? 'good' : 'warn'}">${esc(p.verified_status)}</span></div></div>`).join('')}
+      ${(d.report || []).filter((r) => !r.ok).map((r) => `<div class="notice" style="border-color:#f0dcb0;background:#fff9ee;margin:4px 0">第 ${r.row} 行：${r.errors.map(esc).join('；')}${r.warnings.length ? '<br>警告：' + r.warnings.map(esc).join('；') : ''}</div>`).join('')}
+    `;
+  } catch (e) { host.innerHTML = `<div class="notice">${esc(e.message)}</div>`; }
+}
+async function impCommit() {
+  const content = document.querySelector('#impContent').value;
+  const host = document.querySelector('#impResult');
+  if (!content.trim()) { host.innerHTML = '<div class="notice">请先粘贴数据</div>'; return; }
+  host.innerHTML = '<div class="notice">导入中…</div>';
+  try {
+    const j = await api('/api/admin/import/commit', { method: 'POST', headers: { 'x-role': 'admin' }, body: JSON.stringify({ content }) });
+    const d = j.data;
+    host.innerHTML = `<div class="notice">导入完成：成功 ${d.committed} 条（进入 draft 审核队列），跳过 ${d.skipped} 条。</div>`;
+    await loadQueue();
+    await load();
+  } catch (e) { host.innerHTML = `<div class="notice">${esc(e.message)}</div>`; }
 }
 
 function render() {
   const cfg = R[role];
   $('#title').textContent = cfg.t;
   $('#nav').innerHTML = cfg.m.map((m) => `<button class="${page === m[0] ? 'on' : ''}" onclick="nav('${m[0]}')"><b>${m[1]}</b>${m[2]}</button>`).join('');
+  const hash = parseHash();
+  if (hash && hash.type === 'school') {
+    $('#view').innerHTML = '<div class="notice">加载中…</div>';
+    renderSchoolDetailPage(hash.id);
+    return;
+  }
+  if (hash && hash.type === 'compare') {
+    $('#view').innerHTML = '<div class="notice">加载中…</div>';
+    comparePage().then((html) => { $('#view').innerHTML = html; });
+    return;
+  }
+  if (location.hash) { location.hash = ''; return; }
   $('#view').innerHTML = content();
-  if (page === 'programs' && searchState._ran) renderResults();
+  if (page === 'programs' && searchState._ran && role !== 'agency') renderResults();
+  if (page === 'programs' && role === 'agency') { b2bSearch(); }
+  if (page === 'reviews') { loadQueue(); }
 }
+
+window.addEventListener('hashchange', () => {
+  if (parseHash()) render();
+  else if (!location.hash) render();
+});
+
 
 function appDetail(id) {
   const a = (data.applications || []).find((x) => x.id === id);
