@@ -1,12 +1,12 @@
 {
   "name": "global-study-mobile-fullstack",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Mobile-first S2B2C global school search and study abroad MVP",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/smoke.test.js"
+    "test": "node tests/smoke.test.js && node tests/v1.test.js"
   },
   "engines": {
     "node": ">=18"

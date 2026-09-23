@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## V1.0.0 — 搜索体验 / 详情对比 / 真实数据导入与审核（2026-09-23）
+### Added
+- 学校详情页（H5 独立页面 + `#/school/:id` hash 路由）：基础资料、学费与首年总成本、奖学金、住宿、Program 列表、数据来源与审核状态。
+- 最多 4 所对比：`GET /api/compare?ids=...`（服务端聚合，上限 4）+ H5 对比页横向滚动与差异高亮。
+- 收藏与提醒：学校/课程收藏、奖学金截止与开学/申请截止提醒（localStorage，本机保存）。
+- 地图数据接口 `GET /api/map/:id`：返回结构化中心坐标与按距离排序的临近站点（支持 `maxStations`/`within`）。`tile_provider` 保持 `null`——V1.0 未接入地图瓦片，前端展示占位与说明而非伪造地图。
+- 距离/通勤字段：`distance_m`（haversine 直线距离）、`distance_label`；`commute_label` 恒为 `null`，前端显示「暂无可靠通勤数据」，不编造通勤时间。
+- 全部 142 个站点补齐经纬度（`scripts/migrate-v1.js`），20 所演示学校已可计算到站距离。
+- 真实数据导入工具：CSV/JSON 解析、字段归一化、字典匹配、校验、重复检测；`POST /api/admin/import/preview` 与 `/api/admin/import/commit`（仅 admin）。
+- 来源与有效期机制：`source_url` / `supplier_evidence` / `verified_status` / `verified_at` / `effective_from` / `effective_to`。无来源的数据**不得**标记 verified，导入时强制降级为 draft。
+- 后台数据审核队列：`GET /api/admin/queue`、`POST /api/admin/queue/:schoolId/action`（submit / approve / reject / request-info / expire）、`GET /api/admin/schools/:id/revisions`。状态机 draft → pending → verified → expired / rejected，非法流转拒绝。
+- 敏感字段（学费/奖学金等）变更强制回退到 pending 重新审核；draft/pending 学校不出现在 C 端搜索。
+- B 端学校搜索视图 `GET /api/b2b/schools` 与 `/api/b2b/schools/:id`（需 `x-role: agency|admin`）。
+- B 端佣金字段展示：佣金**仅**来自 `is_demo=false` 的真实协议；演示协议只显示「该记录为演示数据，无真实佣金信息」，不泄露任何佣金数值。
+- 20 个 V1.0 测试（`tests/v1.test.js`），并入 `npm test`。
+
+### Changed
+- `npm test` 现依次运行 V0.5 smoke（23 项）与 V1.0（20 项）。
+- 导入记录补齐 `name_zh` / `name_en`，与演示数据同构，保证 C 端搜索可命中。
+- 城市解析改为先在已解析国家范围内匹配，避免「Singapore, Singapore」误匹配到国家字典而得到错误 `city_id`。
+
+### Fixed
+- `haversineMeters` 对 `null` / 空字符串坐标错误地按 0 处理，返回虚假距离 157km；现正确返回 `null`。
+- `parseInput` 对不可解析文本返回 `[]`（假装成功解析）；现返回 `null` 并在预览接口报 400。
+- 重复行同时计入 `invalid` 与 `duplicates`，导致三个计数之和不等于 `total`；现重复单独计数。
+
+### Removed
+- 无。
+
 ## V0.5.0 — 全球学校搜索数据底座（2026-09-22）
 ### Added
 - 项目结构按规格拆分：`data/reference/`（locations、curricula、languages、education-stages）+ `data/demo/`（schools、programs、scholarships）。

@@ -11,6 +11,19 @@
 5. 合规前提下的教育金融转介/服务
 
 ## 当前版本
+**V1.0.0 — 搜索体验、详情对比、真实数据导入与审核（已完成，2026-09-23）**
+
+V1.0 在 V0.5 之上新增：
+- 学校详情页 + 最多 4 所对比（`/api/compare`）
+- 收藏与奖学金/截止提醒（localStorage）
+- 地图数据接口 `/api/map/:id`（结构化坐标 + 临近站点；未接入瓦片，不伪造地图）
+- 到站距离 `distance_m` / `distance_label`（haversine）；`commute_label` 恒为 null，不编造通勤时间
+- 真实数据导入工具：`/api/admin/import/preview` 与 `/commit`（CSV/JSON，含校验与重复检测）
+- 来源与有效期：`source_url` / `supplier_evidence` / `verified_status` / `verified_at` / `effective_*`
+- 后台审核队列与状态机 draft → pending → verified → expired / rejected；敏感字段变更强制复审
+- B 端学校搜索与佣金展示（仅真实协议展示佣金，演示协议不泄露任何数值）
+- 测试：V0.5 smoke 23 项 + V1.0 20 项，`npm test` 全部通过
+
 **V0.5.0 — 数据底座与搜索引擎（已完成）**
 
 已完成：
