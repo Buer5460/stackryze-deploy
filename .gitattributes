@@ -1,0 +1,6 @@
+# Normalize line endings: repo stores LF, working tree checks out LF.
+# Prevents false "modified" status when the test suite rewrites JSON stores.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
