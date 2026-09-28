@@ -1,0 +1,10 @@
+{
+  "version": "1.0.1",
+  "note": "复核周期后台可配置。单位：月。deadline/scholarship 按招生季节点（新加坡两季，约 4 个月）。",
+  "review_cycles_months": {
+    "tuition": 6,
+    "deadlines": 4,
+    "scholarships": 4,
+    "basics": 12
+  }
+}

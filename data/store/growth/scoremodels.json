@@ -1,0 +1,23 @@
+{
+  "version": "1.1.0",
+  "active": "general",
+  "models": [
+    {
+      "id": "general",
+      "name": "通用 B 端评分",
+      "persona": "all",
+      "weights": {
+        "organization_strength": 0.15,
+        "audience_strength": 0.15,
+        "student_pool": 0.2,
+        "platform_match": 0.15,
+        "cooperation_intent": 0.15,
+        "online_influence": 0.1,
+        "engagement": 0.05,
+        "data_quality": 0.03,
+        "risk": -0.03
+      },
+      "max_score": 100
+    }
+  ]
+}

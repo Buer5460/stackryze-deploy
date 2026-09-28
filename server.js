@@ -38,13 +38,16 @@ const scholarships = readJson('data/demo/scholarships.json').scholarships;
 const store = require('./lib/store');
 const review = require('./lib/review');
 const importer = require('./lib/importer');
+const freshness = require('./lib/freshness');
+const growth = require('./lib/growth');
 const { schoolStationDistance, distanceLabel, haversineMeters } = require('./lib/distance');
 
 function importedSchools() {
   return store.load('imports').schools || [];
 }
 
-// Real (imported) schools visible on the C-end: verified and not expired.
+// Real (imported) schools visible on the C-end: verified, within their
+// effective window, and not freshness-expired.
 function isExpired(school) {
   if (!school.effective_to) return false;
   const today = new Date().toISOString().slice(0, 10);
@@ -52,9 +55,12 @@ function isExpired(school) {
 }
 
 function searchableImported() {
-  return importedSchools().filter(
-    (s) => String(s.verified_status).toLowerCase() === 'verified' && !isExpired(s)
-  );
+  return importedSchools().filter((s) => {
+    if (String(s.verified_status).toLowerCase() !== 'verified') return false;
+    if (isExpired(s)) return false;
+    const fresh = freshness.computeFreshness(s);
+    return !fresh || fresh.freshness !== 'expired';
+  });
 }
 
 // All known schools (demo + imported) for detail lookup & duplicate detection.
@@ -196,8 +202,11 @@ function enrichSchool(school) {
   const station = stationById.get(String(school.nearest_station_id || '').toLowerCase());
   const line = station ? lineById.get(String(station.line_id).toLowerCase()) : undefined;
   const distanceMeters = schoolStationDistance(school, station);
+  const fresh = freshness.computeFreshness(school);
   return {
     ...school,
+    freshness: fresh ? fresh.freshness : null,
+    freshness_detail: fresh ? fresh.categories : null,
     location: {
       country_id: school.country_id,
       country_en: country ? country.name_en : null,
@@ -694,6 +703,8 @@ app.post('/api/admin/import/preview', requireAdmin, (req, res) => {
     importable: report.importable,
     invalid: report.invalid,
     duplicates: report.duplicates,
+    headers: report.headers,
+    header_mapping: report.header_mapping,
     preview: report.preview,
     report: report.report
   }));
@@ -711,10 +722,22 @@ app.post('/api/admin/import/commit', requireAdmin, (req, res) => {
 
   const data = store.load('imports');
   const committed = [];
+  const batchIdCounts = new Map();
   for (const r of report.rows) {
     if (!r.ok) continue;
     const candidate = r.candidate;
-    candidate.id = 'IMP-' + Date.now().toString(36).toUpperCase() + '-' + String(committed.length + 1).padStart(3, '0');
+    // Honour an institution_id supplied by the import when the row validated
+    // cleanly; otherwise mint one so downstream references never dangle.
+    // Collisions (against the store or within the batch) get a numeric suffix
+    // so a bad CSV never overwrites an existing institution.
+    let id = candidate.institution_id ? String(candidate.institution_id).trim() : '';
+    if (id) {
+      const n = batchIdCounts.get(id.toLowerCase()) || 0;
+      batchIdCounts.set(id.toLowerCase(), n + 1);
+      const taken = n > 0 || allKnownSchools().some((s) => String(s.id).toLowerCase() === id.toLowerCase());
+      if (taken) id = id + '-' + (n + 2);
+    }
+    candidate.id = id || 'IMP-' + Date.now().toString(36).toUpperCase() + '-' + String(committed.length + 1).padStart(3, '0');
     candidate.verified_status = 'draft';
     data.schools.push(candidate);
     review.upsertQueueItem(candidate.id, 'draft', { note: '批量导入', by: 'admin' });
@@ -831,6 +854,222 @@ app.get('/api/admin/schools/:id/revisions', requireAdmin, (req, res) => {
   res.json(ok({ history: item.history || [], revisions: item.revisions || [] }));
 });
 
+// Public error-report / correction entry (Task 6): any visitor can flag a
+// wrong or stale fact on a school. Reports land in the review queue for staff.
+app.post('/api/corrections', (req, res) => {
+  const schoolId = req.body && req.body.school_id;
+  if (!schoolId) return res.status(400).json({ ok: false, error: 'school_id 必填' });
+  const rec = allKnownSchools().find((s) => String(s.id).toLowerCase() === String(schoolId).toLowerCase());
+  if (!rec) return res.status(404).json({ ok: false, error: '学校不存在' });
+  const type = ['wrong_fact', 'stale_data', 'broken_link', 'missing_info', 'other'].includes(req.body && req.body.type) ? req.body.type : 'other';
+  const message = String((req.body && req.body.message) || '').trim();
+  if (!message) return res.status(400).json({ ok: false, error: '请填写纠错说明' });
+  const data = store.load('corrections');
+  const entry = {
+    id: 'CORR-' + Date.now().toString(36).toUpperCase(),
+    school_id: rec.id,
+    school_name_zh: rec.name_zh || null,
+    type,
+    message,
+    contact: (req.body && req.body.contact) || null,
+    status: 'open',
+    created_at: new Date().toISOString()
+  };
+  data.items.push(entry);
+  store.save('corrections', data);
+  res.status(201).json(ok(entry));
+});
+
+app.get('/api/admin/corrections', requireAdmin, (req, res) => {
+  const data = store.load('corrections');
+  res.json(ok(data.items, { total: data.items.length }));
+});
+
+// ---------------------------------------------------------------------------
+// Growth Center (V1.1) — internal BD/sales/marketing acquisition engine.
+// External B/S/C users MUST NOT reach these routes (role gate below).
+// ---------------------------------------------------------------------------
+const GROWTH_ROLES = ['growth_admin', 'growth_manager', 'bd', 'sales', 'marketing', 'ops', 'admin'];
+function requireGrowth(req, res, next) {
+  const role = String(req.headers['x-role'] || '').toLowerCase();
+  if (!GROWTH_ROLES.includes(role)) {
+    return res.status(403).json({ ok: false, error: 'Growth Center 仅限平台增长团队 / 管理员访问' });
+  }
+  next();
+}
+
+// --- Leads ---
+app.get('/api/growth/leads', requireGrowth, (req, res) => {
+  let items = growth.getLeads();
+  const persona = param(req.query, 'persona');
+  const country = param(req.query, 'country');
+  const tier = param(req.query, 'score_tier');
+  const source = param(req.query, 'source_type');
+  if (persona) items = items.filter((l) => l.persona_type === persona);
+  if (country) items = items.filter((l) => l.country === country);
+  if (tier) items = items.filter((l) => l.score_tier === tier);
+  if (source) items = items.filter((l) => l.source_type === source);
+  res.json(ok(items, { total: items.length, personas: growth.PERSONA_TYPES }));
+});
+
+app.post('/api/growth/leads', requireGrowth, (req, res) => {
+  const r = growth.createLead(req.body || {}, { skipDupCheck: req.body && req.body.skip_dup_check });
+  if (!r.ok) return res.status(r.dedup_blocked ? 409 : 400).json(r);
+  res.status(201).json(ok(r.lead, { dedup: r.dup, match: r.dup.match }));
+});
+
+app.get('/api/growth/leads/:id', requireGrowth, (req, res) => {
+  const lead = growth.findLead(req.params.id);
+  if (!lead) return res.status(404).json({ ok: false, error: '线索不存在' });
+  res.json(ok(lead));
+});
+
+app.patch('/api/growth/leads/:id', requireGrowth, (req, res) => {
+  const r = growth.updateLead(req.params.id, req.body || {});
+  if (!r.ok) return res.status(400).json(r);
+  res.json(ok(r.lead));
+});
+
+app.post('/api/growth/leads/:id/merge', requireGrowth, (req, res) => {
+  const r = growth.mergeLeads(req.params.id, req.body && req.body.merge_id, req.body && req.body.note);
+  if (!r.ok) return res.status(400).json(r);
+  res.json(ok(r.lead));
+});
+
+// --- Enrichment / Evidence ---
+app.post('/api/growth/leads/:id/evidence', requireGrowth, (req, res) => {
+  const r = growth.addEvidence(req.params.id, req.body || {});
+  if (!r.ok) return res.status(400).json(r);
+  res.status(201).json(ok(r.evidence));
+});
+
+// --- Scoring (ScoreModel aware) ---
+app.get('/api/growth/scoremodels', requireGrowth, (req, res) => {
+  const m = growth.getScoreModels();
+  res.json(ok({ active: m.active, models: m.models }));
+});
+
+app.post('/api/growth/leads/:id/score', requireGrowth, (req, res) => {
+  const r = growth.scoreLead(req.params.id, req.body && req.body.model_id);
+  if (!r.ok) return res.status(400).json(r);
+  res.json(ok(r));
+});
+
+// --- Outreach + Communication ---
+app.get('/api/growth/outreach', requireGrowth, (req, res) => {
+  res.json(ok(growth.getOutreach(), { total: growth.getOutreach().length }));
+});
+
+app.post('/api/growth/outreach', requireGrowth, (req, res) => {
+  const r = growth.enqueueOutreach(req.body && req.body.lead_id, req.body || {});
+  if (!r.ok) return res.status(400).json(r);
+  res.status(201).json(ok(r.item));
+});
+
+app.patch('/api/growth/outreach/:id', requireGrowth, (req, res) => {
+  const r = growth.updateOutreach(req.params.id, req.body || {});
+  if (!r.ok) return res.status(400).json(r);
+  res.json(ok(r.item));
+});
+
+app.post('/api/growth/communications', requireGrowth, (req, res) => {
+  const r = growth.logCommunication(req.body || {});
+  if (!r.ok) return res.status(400).json(r);
+  res.status(201).json(ok(r.comm));
+});
+
+// --- Opportunities (Lead → Opportunity) ---
+app.get('/api/growth/opportunities', requireGrowth, (req, res) => {
+  res.json(ok(growth.getOpportunities(), { total: growth.getOpportunities().length }));
+});
+
+app.post('/api/growth/leads/:id/opportunity', requireGrowth, (req, res) => {
+  const r = growth.createOpportunity(req.params.id, req.body || {});
+  if (!r.ok) return res.status(400).json(r);
+  res.status(201).json(ok(r.opportunity));
+});
+
+app.post('/api/growth/opportunities/:id/advance', requireGrowth, (req, res) => {
+  const r = growth.advanceOpportunity(req.params.id, req.body && req.body.stage, req.body && req.body.note);
+  if (!r.ok) return res.status(400).json(r);
+  res.json(ok(r.opportunity));
+});
+
+// --- Onboarding + Activation ---
+app.post('/api/growth/onboarding', requireGrowth, (req, res) => {
+  const r = growth.startOnboarding(req.body && req.body.organization_id, req.body || {});
+  if (!r.ok) return res.status(400).json(r);
+  res.status(201).json(ok(r.onboarding));
+});
+
+app.post('/api/growth/onboarding/:id/step', requireGrowth, (req, res) => {
+  const r = growth.completeOnboardingStep(req.params.id, req.body && req.body.step);
+  if (!r.ok) return res.status(400).json(r);
+  res.json(ok(r.onboarding, r.b_account ? { b_account: r.b_account } : undefined));
+});
+
+app.post('/api/growth/activation', requireGrowth, (req, res) => {
+  const r = growth.recordActivation(req.body && req.body.b_account_id, req.body && req.body.event);
+  if (!r.ok) return res.status(400).json(r);
+  res.status(201).json(ok(r.activation));
+});
+
+// --- Campaigns + Dashboard ---
+app.get('/api/growth/campaigns', requireGrowth, (req, res) => {
+  res.json(ok(growth.load('campaigns').items, { total: growth.load('campaigns').items.length }));
+});
+
+app.post('/api/growth/campaigns', requireGrowth, (req, res) => {
+  const r = growth.createCampaign(req.body || {});
+  if (!r.ok) return res.status(400).json(r);
+  res.status(201).json(ok(r.campaign));
+});
+
+app.get('/api/growth/dashboard', requireGrowth, (req, res) => {
+  const filters = {
+    persona: param(req.query, 'persona'),
+    country: param(req.query, 'country'),
+    score_tier: param(req.query, 'score_tier'),
+    source_type: param(req.query, 'source_type')
+  };
+  res.json(ok(growth.dashboard(filters)));
+});
+
+// --- Insurance reservation (feature flag disabled) ---
+app.get('/api/growth/insurance', requireGrowth, (req, res) => {
+  // Always readable for internal planning, but feature flag stays false.
+  res.json(ok(growth.getInsurance()));
+});
+app.get('/api/growth/insurance/enabled', (req, res) => {
+  // Public-safe read of the flag (no role gate) so the front end can hide the shop.
+  res.json(ok({ insurance_enabled: growth.insuranceEnabled() }));
+});
+
+// Freshness review cycles are backend-configurable (Task 7): admins tune the
+// months per category here instead of us hard-coding policy in code.
+app.get('/api/admin/config/review-cycles', requireAdmin, (req, res) => {
+  res.json(ok({ review_cycles_months: freshness.loadConfig() }));
+});
+
+app.put('/api/admin/config/review-cycles', requireAdmin, (req, res) => {
+  const incoming = req.body && req.body.review_cycles_months;
+  if (!incoming || typeof incoming !== 'object') {
+    return res.status(400).json({ ok: false, error: 'review_cycles_months 必填（对象，单位：月）' });
+  }
+  const current = freshness.loadConfig();
+  const next = { ...current };
+  const errors = [];
+  for (const [k, v] of Object.entries(incoming)) {
+    const n = Number(v);
+    if (!(k in current)) { errors.push(`未知复核类别: ${k}`); continue; }
+    if (!Number.isFinite(n) || n < 1 || n > 120) { errors.push(`${k} 的复核月数必须是 1–120 的数字`); continue; }
+    next[k] = Math.round(n);
+  }
+  if (errors.length) return res.status(400).json({ ok: false, error: errors.join('；') });
+  freshness.saveReviewCycles(next);
+  res.json(ok({ review_cycles_months: next }));
+});
+
 // ---------------------------------------------------------------------------
 // C/B/S/Admin legacy demo flows (unchanged)
 // ---------------------------------------------------------------------------
@@ -894,6 +1133,8 @@ app.post('/api/reset', (req, res) => {
 app.use('/api', (req, res) => res.status(404).json({ ok: false, error: '接口不存在' }));
 
 app.use(express.static(path.join(__dirname, 'public')));
+// Import templates live at repo root per the V1.0.1 spec; expose them read-only.
+app.use('/templates', express.static(path.join(__dirname, 'templates')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 // Final error handler: malformed JSON bodies and unexpected failures must
@@ -910,6 +1151,6 @@ if (require.main === module) {
 module.exports = {
   app, reference, schools: demoSchools, demoSchools, catalogPrograms, scholarships, listSchools, enrichSchool,
   allKnownSchools, importedSchools, searchableImported, schoolBaseList,
-  importer, review, store,
+  importer, review, freshness, growth, store,
   distance: { haversineMeters, schoolStationDistance, distanceLabel }
 };

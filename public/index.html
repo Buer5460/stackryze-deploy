@@ -154,7 +154,12 @@ const R = {
   student: { t: '学生 / 家长端', m: [['home','⌂','首页'],['programs','⌕','找学校'],['applications','◎','申请'],['profile','◉','我的']] },
   agency: { t: '机构工作台（B端）', m: [['home','⌂','工作台'],['programs','⌕','学校资源'],['clients','♙','客户'],['applications','◎','申请']] },
   supplier: { t: '院校 / 供应商', m: [['home','⌂','工作台'],['programs','▦','项目'],['applications','◎','受理'],['ads','◈','推广']] },
-  admin: { t: '平台管理后台', m: [['home','⌂','总览'],['reviews','✓','数据审核'],['audits','✓','业务审核'],['applications','◎','申请'],['settlement','¥','结算']] }
+  admin: { t: '平台管理后台', m: [['home','⌂','总览'],['reviews','✓','数据审核'],['audits','✓','业务审核'],['applications','◎','申请'],['settlement','¥','结算'],['growth','★','Growth']] },
+  growth_admin: { t: 'Growth Center', m: [['growthDashboard','★','看板'],['growthLeads','♟','线索池'],['growthOutreach','✉','触达'],['growthOpps','◈','商机'],['growthCampaigns','▦','活动']] },
+  bd: { t: 'BD / 增长团队', m: [['growthDashboard','★','看板'],['growthLeads','♟','线索池'],['growthOutreach','✉','触达'],['growthOpps','◈','商机'],['growthCampaigns','▦','活动']] },
+  sales: { t: '销售 / 增长团队', m: [['growthDashboard','★','看板'],['growthLeads','♟','线索池'],['growthOutreach','✉','触达'],['growthOpps','◈','商机']] },
+  marketing: { t: '市场 / 增长团队', m: [['growthDashboard','★','看板'],['growthLeads','♟','线索池'],['growthCampaigns','▦','活动']] },
+  ops: { t: '运营 / 增长团队', m: [['growthDashboard','★','看板'],['growthLeads','♟','线索池'],['growthOpps','◈','商机']] }
 };
 
 const money = (n) => '¥' + Number(n || 0).toLocaleString('zh-CN');
@@ -201,8 +206,13 @@ function openSheet(t, h) {
 function closeSheet() { $('#sheet').classList.remove('on'); $('#mask').classList.remove('on'); }
 
 function chooseRole() {
+  const sub = {
+    student: '找学校、建档、申请', agency: '客户、申请、协同', supplier: '项目、受理、推广',
+    admin: '审核、运营、结算', growth_admin: '内部增长 / 获客中台', bd: '找线索、触达、转商机',
+    sales: '商机跟进与签约', marketing: '活动与内容获客', ops: '入驻与激活运营'
+  };
   openSheet('选择体验角色', '<div class="rolegrid">' + Object.entries(R).map(([k, v]) =>
-    `<button class="role" onclick="setRole('${k}')"><b>${v.t}</b><span>${k==='student'?'找学校、建档、申请':k==='agency'?'客户、申请、协同':k==='supplier'?'项目、受理、推广':'审核、运营、结算'}</span></button>`).join('') + '</div>');
+    `<button class="role" onclick="setRole('${k}')"><b>${v.t}</b><span>${sub[k] || ''}</span></button>`).join('') + '</div>');
 }
 
 function metric(t, v) { return `<div class="metric"><small>${t}</small><b>${v}</b></div>`; }
@@ -449,6 +459,16 @@ function removeReminder(id) {
   localStorage.setItem('gs-reminders', JSON.stringify(v));
   render();
 }
+async function submitCorrection(schoolId) {
+  const type = document.querySelector('#corrType');
+  const msg = document.querySelector('#corrMsg');
+  if (!msg || !msg.value.trim()) { alert('请填写纠错说明'); return; }
+  try {
+    await api('/api/corrections', { method: 'POST', body: JSON.stringify({ school_id: schoolId, type: type ? type.value : 'other', message: msg.value.trim() }) });
+    alert('纠错已提交，平台会复核该学校资料。感谢反馈！');
+    msg.value = '';
+  } catch (e) { alert('提交失败：' + e.message); }
+}
 function remindItemHtml(r) {
   const school = (data.schools || []).find((s) => s.id === r.schoolId);
   const kindLabel = { deadline: '申请截止', start: '开学', scholarship: '奖学金截止' }[r.kind] || '提醒';
@@ -647,9 +667,19 @@ async function renderSchoolDetailPage(id) {
       <div class="kv"><span>来源 URL</span><b>${x.source_url ? esc(x.source_url) : '无（演示数据）'}</b></div>
       <div class="kv"><span>供应商证明</span><b>${x.supplier_evidence ? esc(x.supplier_evidence) : '无'}</b></div>
       <div class="kv"><span>verified_status</span><b>${esc(x.verified_status)}</b></div>
-      <div class="kv"><span>verified_at</span><b>${esc(x.verified_at || '-')}</b></div>
-      <div class="kv"><span>有效期</span><b>${esc(x.effective_from || '-')} ~ ${esc(x.effective_to || '-')}</b></div>
+      <div class="kv"><span>最近核验时间</span><b>${esc(x.verified_at || '-')}</b></div>
+      <div class="kv"><span>信息有效期</span><b>${esc(x.effective_from || '-')} ~ ${esc(x.effective_to || '-')}</b></div>
+      ${x.freshness ? `<div class="kv"><span>数据新鲜度</span><b>${x.freshness === 'fresh' ? '🟢 新鲜' : x.freshness === 'review_due' ? '🟡 待复核' : '🔴 已过期'}</b></div>` : ''}
       <div class="kv"><span>更新时间</span><b>${esc(x.updated_at || '-')}</b></div>
+      ${x.is_demo ? '<div class="notice" style="margin-top:8px">⚠️ 演示数据：来源 URL 恒为「无」，不代表任何真实合作关系。</div>' : ''}
+    </div>
+    <div class="sec"><h3>报错 / 纠错</h3>
+      <div class="notice" style="margin-bottom:8px">发现资料错误、过期或链接失效？提交纠错后平台会复核。请勿在此上传个人隐私信息。</div>
+      <div class="formgrid">
+        <div><label class="field">类型</label><select id="corrType"><option value="wrong_fact">事实错误</option><option value="stale_data">信息过期</option><option value="broken_link">链接失效</option><option value="missing_info">信息缺失</option><option value="other">其他</option></select></div>
+        <div class="full"><label class="field">说明</label><textarea id="corrMsg" placeholder="请描述错误内容或应更正的信息"></textarea></div>
+      </div>
+      <div class="actions"><button class="btn primary" onclick="submitCorrection('${x.id}')">提交纠错</button></div>
     </div>
     <div class="actions"><button class="btn ${favs().includes(x.id) ? 'success' : 'outline'}" onclick="toggleFav('${x.id}')">${isFav ? '已收藏' : '收藏学校'}</button><button class="btn outline" onclick="toggleCompare('${x.id}')">加入对比</button></div>
   `;
@@ -783,6 +813,7 @@ function content() {
   if (page === 'reviews') return adminReviewsPage();
   if (page === 'ads') return `<div class="metrics">${metric('投放中', '1')}${metric('曝光', '18,620')}${metric('线索', '64')}${metric('预算', '¥3,600')}</div><div class="notice" style="margin-top:12px">MVP 不进行真实扣款，V1.5 再接支付。</div>`;
   if (page === 'settlement') return `<div class="metrics">${metric('预计佣金', money((data.applications || []).reduce((s, a) => s + a.commission, 0)))}${metric('平台应收', '¥62,700')}${metric('B端应付', '¥24,700')}${metric('广告收入', '¥12,600')}</div><div class="notice" style="margin-top:12px">正式版按课程、批次、渠道和合同版本生成结算台账。</div>`;
+  if (page.startsWith('growth')) return growthCenterPage();
   return '';
 }
 
@@ -790,6 +821,197 @@ function programFavList() {
   const ids = favProgs();
   const progs = (data.catalogPrograms || []).filter((p) => ids.includes(p.id));
   return '<div class="list">' + progs.map((p) => `<div class="row"><div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(p.institution_name_zh || p.institution_id)} · ${esc(stageZh(p.stage))}</div></div><button class="btn outline" style="padding:6px 10px" onclick="toggleFavProgram('${p.id}')">取消</button></div><div class="muted" style="margin-top:6px">申请截止 ${esc(p.deadline || '-')} · 开学 ${esc(p.start_date || '-')}</div></div>`).join('') + '</div>';
+}
+
+// ---------------------------------------------------------------------------
+// Growth Center (V1.1) — internal BD/sales/marketing acquisition engine.
+// Reached only by growth_* roles; the backend enforces the same gate (403).
+// ---------------------------------------------------------------------------
+let growthData = { leads: [], dashboard: null, opps: [], outreach: [], campaigns: [] };
+
+function growthRoleHeaders() { return { 'x-role': role }; }
+
+function growthCenterPage() {
+  if (!['growth_admin','bd','sales','marketing','ops'].includes(role)) {
+    return `<div class="notice" style="margin-top:20px">Growth Center 仅限平台增长团队 / 管理员访问。请在右上角切换为 BD / Sales / Marketing / Ops / Growth Admin 角色体验。</div>`;
+  }
+  if (page === 'growthDashboard') return growthDashboardPage();
+  if (page === 'growthLeads') return growthLeadsPage();
+  if (page === 'growthOutreach') return growthOutreachPage();
+  if (page === 'growthOpps') return growthOppsPage();
+  if (page === 'growthCampaigns') return growthCampaignsPage();
+  return growthDashboardPage();
+}
+
+async function growthLoad() {
+  try {
+    const d = await api('/api/growth/dashboard', { headers: growthRoleHeaders() });
+    growthData.dashboard = d.data;
+    const l = await api('/api/growth/leads?score_tier=&persona=&country=&source_type=', { headers: growthRoleHeaders() });
+    growthData.leads = l.data || [];
+    const o = await api('/api/growth/opportunities', { headers: growthRoleHeaders() });
+    growthData.opps = o.data || [];
+    const q = await api('/api/growth/outreach', { headers: growthRoleHeaders() });
+    growthData.outreach = q.data || [];
+    const c = await api('/api/growth/campaigns', { headers: growthRoleHeaders() });
+    growthData.campaigns = c.data || [];
+  } catch (e) { /* surfaced per-section */ }
+}
+
+function tierBadge(t) {
+  const map = { A: 'good', B: '', C: 'warn', D: 'danger' };
+  const label = { A: 'A 高价值', B: 'B 较高', C: 'C 普通', D: 'D 低质/风险' };
+  return `<span class="status ${map[t] || ''}">${label[t] || t}</span>`;
+}
+function personaLabel(p) { return ({ study_abroad_agency:'留学中介', immigration_firm:'移民公司', independent_advisor:'独立顾问', education_influencer:'教育博主', school_representative:'学校代表', international_school:'国际学校', language_training:'语言/培训', family_office:'家族办公室', other:'其他' })[p] || p; }
+
+function growthDashboardPage() {
+  const d = growthData.dashboard || {};
+  const dist = d.distribution || { A:0,B:0,C:0,D:0 };
+  return `
+    <div class="sec"><h3>Growth 看板</h3><span>Lead → Opportunity → Organization → B 端</span></div>
+    <div class="metrics">
+      ${metric('线索总数', d.total_leads || 0)}
+      ${metric('新线索', d.new_leads || 0)}
+      ${metric('A/B/C/D', ((dist.A||0)+'/'+(dist.B||0)+'/'+(dist.C||0)+'/'+(dist.D||0)))}
+      ${metric('已联系', d.contacted || 0)}
+      ${metric('商机', d.opportunities || 0)}
+      ${metric('已入驻 B', d.onboarded_b || 0)}
+      ${metric('已激活 B', d.activated_b || 0)}
+      ${metric('首次申请', d.first_application || 0)}
+      ${metric('首次佣金', d.first_commission || 0)}
+      ${metric('Do-Not-Contact', d.do_not_contact || 0)}
+    </div>
+    <div class="notice" style="margin-top:10px">Lead 绝不会自动变成正式 B 端账号：必须先建商机，S5 生成 Organization，S6+ 完成入驻后才开通 B 端账号，并保留原始来源归属。</div>
+    <div class="section"><h3>最近线索</h3><span>${growthData.leads.length} 条</span></div>
+    ${growthData.leads.slice(0, 8).map(leadRowHtml).join('') || '<div class="notice">还没有线索。去「线索池」新建或导入。</div>'}
+  `;
+}
+
+function leadRowHtml(l) {
+  return `<div class="row" onclick="openLead('${l.id}')">
+    <div class="rowtop"><div><h4>${esc(l.organization_name || l.contact_name || '未命名线索')}</h4>
+      <div class="muted">${esc(personaLabel(l.persona_type))} · ${esc(l.country || '-')} · ${esc(l.source_type || '-')}</div></div>
+      ${tierBadge(l.score_tier)}
+    </div>
+    <div class="muted" style="margin-top:4px">来源：${esc(l.source_name || (l.source_url ? '链接' : '未记录'))}${l.do_not_contact ? ' · 🚫 Do-Not-Contact' : ''}</div>
+  </div>`;
+}
+
+function growthLeadsPage() {
+  const leads = growthData.leads || [];
+  return `
+    <div class="sec"><h3>Lead 线索池</h3><span>${leads.length} 条</span></div>
+    <div class="actions" style="margin-bottom:8px">
+      <button class="btn outline" onclick="growthNewLead()">＋ 新建线索</button>
+      <button class="btn outline" onclick="growthImportLeads()">↥ 批量导入</button>
+    </div>
+    <div class="notice" style="margin-bottom:8px">AI 不编造：联系方式 / 粉丝数 / 学生量 / 资质 / 合作意愿 拿不到就空。每条来源 URL 与核验时间必须保留。</div>
+    <div class="list">${leads.map(leadRowHtml).join('') || '<div class="notice">还没有线索。</div>'}</div>
+  `;
+}
+
+function growthOppsPage() {
+  const opps = growthData.opps || [];
+  return `
+    <div class="sec"><h3>商机 Opportunity</h3><span>${opps.length} 条</span></div>
+    <div class="list">${opps.map((o) => `<div class="row"><div class="rowtop"><div><h4>Opportunity ${esc(o.id)}</h4><div class="muted">${esc(personaLabel(o.persona_type))} · 阶段 ${esc(o.stage)} · 预估 ${o.estimated_value ? '¥'+Number(o.estimated_value).toLocaleString() : '-'}</div></div><span class="status">${esc(o.stage)}</span></div></div>`).join('') || '<div class="notice">还没有商机。在线索详情里点「创建商机」。</div>'}</div>
+  `;
+}
+
+function growthOutreachPage() {
+  const q = growthData.outreach || [];
+  return `
+    <div class="sec"><h3>触达队列 Outreach</h3><span>${q.length} 条</span></div>
+    <div class="notice" style="margin-bottom:8px">默认 Human-in-the-loop：AI 生成草稿 → 人工审核 → 已授权渠道发送 → 记录结果。支持 opt-out / do-not-contact。</div>
+    <div class="list">${q.map((x) => `<div class="row"><div class="rowtop"><div><h4>${esc(x.channel)} · ${esc(x.template)}</h4><div class="muted">Lead ${esc(x.lead_id)} · 状态 ${esc(x.status)}</div></div><span class="status ${x.status==='sent'?'good':''}">${esc(x.status)}</span></div></div>`).join('') || '<div class="notice">还没有触达任务。</div>'}</div>
+  `;
+}
+
+function growthCampaignsPage() {
+  const c = growthData.campaigns || [];
+  return `
+    <div class="sec"><h3>活动 Campaign</h3><span>${c.length} 条</span></div>
+    <div class="actions" style="margin-bottom:8px"><button class="btn outline" onclick="growthNewCampaign()">＋ 新建活动</button></div>
+    <div class="notice" style="margin-bottom:8px">统计口径：目标线索 / 联系 / 送达 / 打开 / 回复 / 正向回复 / 会议 / 入驻 / 激活 / 首次收入，不只看发了多少消息。</div>
+    <div class="list">${c.map((x) => `<div class="row"><div class="rowtop"><div><h4>${esc(x.name)}</h4><div class="muted">${esc(personaLabel(x.persona))} · ${esc(x.channel)} · 目标 ${x.stats.target_leads||0}</div></div></div></div>`).join('') || '<div class="notice">还没有活动。</div>'}</div>
+  `;
+}
+
+async function openLead(id) {
+  try {
+    const j = await api('/api/growth/leads/' + encodeURIComponent(id), { headers: growthRoleHeaders() });
+    const l = j.data;
+    openSheet('线索详情 · ' + (l.organization_name || l.contact_name || id), `
+      <div class="split"><span>机构</span><b>${esc(l.organization_name || '-')}</b></div>
+      <div class="split"><span>联系人</span><b>${esc(l.contact_name || '-')} ${esc(l.contact_title||'')}</b></div>
+      <div class="split"><span>Persona</span><b>${esc(personaLabel(l.persona_type))}</b></div>
+      <div class="split"><span>国家/城市</span><b>${esc(l.country||'-')} / ${esc(l.city||'-')}</b></div>
+      <div class="split"><span>官网</span><b>${l.website ? ('<a href="'+esc(l.website)+'" target="_blank" rel="noopener">'+esc(l.website)+'</a>') : '无'}</b></div>
+      <div class="split"><span>来源</span><b>${esc(l.source_name || (l.source_url?'链接':'未记录'))}</b></div>
+      <div class="split"><span>来源 URL</span><b>${l.source_url ? ('<a href="'+esc(l.source_url)+'" target="_blank" rel="noopener">'+esc(l.source_url)+'</a>') : '无'}</b></div>
+      <div class="split"><span>最近核验</span><b>${esc(l.last_verified_at || '-')}</b></div>
+      <div class="split"><span>评分</span><b>${l.score != null ? l.score + ' ' : '-'}${tierBadge(l.score_tier)}</b></div>
+      <div class="split"><span>阶段</span><b>${esc(l.stage)}</b></div>
+      <div class="split"><span>Do-Not-Contact</span><b>${l.do_not_contact ? '是 🚫' : '否'}</b></div>
+      <div class="muted" style="margin-top:8px">证据 ${(l.evidence||[]).length} 条 · 备注：${esc(l.notes||'')}</div>
+      <div class="actions" style="margin-top:10px">
+        <button class="btn outline" onclick="growthScore('${l.id}')">评分</button>
+        <button class="btn outline" onclick="growthEnrich('${l.id}')">补充证据</button>
+        <button class="btn primary" onclick="growthCreateOpp('${l.id}')">创建商机</button>
+        <button class="btn outline" onclick="growthEnqueueOutreach('${l.id}')">加入触达</button>
+      </div>
+    `);
+  } catch (e) { openSheet('线索详情', `<div class="notice">${esc(e.message)}</div>`); }
+}
+
+async function growthScore(id) {
+  try { const r = await api('/api/growth/leads/' + encodeURIComponent(id) + '/score', { method: 'POST', headers: growthRoleHeaders(), body: JSON.stringify({}) }); openSheet('评分结果', `<div class="notice">分数 ${r.data.score} · 等级 ${r.data.tier}</div><div class="muted">${esc((r.data.reasons||[]).join('；'))}</div>`); await growthLoad(); render(); }
+  catch (e) { alert(e.message); }
+}
+async function growthEnrich(id) {
+  const field = prompt('补全字段名（如 organization_name / email / 学生量 annual_student_volume）');
+  const value = prompt('字段值（必须来自公开可核验来源，不要编造）');
+  const url = prompt('来源 URL（可空）');
+  if (!field || value == null) return;
+  try { await api('/api/growth/leads/' + encodeURIComponent(id) + '/evidence', { method: 'POST', headers: growthRoleHeaders(), body: JSON.stringify({ field, value, source_url: url || null, confidence: 'medium' }) }); alert('已记录证据'); await growthLoad(); }
+  catch (e) { alert(e.message); }
+}
+async function growthCreateOpp(id) {
+  try { const r = await api('/api/growth/leads/' + encodeURIComponent(id) + '/opportunity', { method: 'POST', headers: growthRoleHeaders(), body: JSON.stringify({}) }); alert('已创建商机 ' + r.data.id); await growthLoad(); nav('growthOpps'); }
+  catch (e) { alert(e.message); }
+}
+async function growthEnqueueOutreach(id) {
+  try { await api('/api/growth/outreach', { method: 'POST', headers: growthRoleHeaders(), body: JSON.stringify({ lead_id: id, channel: 'email', template: 'first_contact', content: 'Hi，我们是 GlobalStudy…' }) }); alert('已加入触达队列（待人工审核发送）'); await growthLoad(); nav('growthOutreach'); }
+  catch (e) { alert(e.message); }
+}
+async function growthNewLead() {
+  const org = prompt('机构 / 组织名称（可空）');
+  const persona = prompt('Persona（study_abroad_agency / immigration_firm / independent_advisor / education_influencer / school_representative / international_school / language_training / family_office / other）', 'study_abroad_agency');
+  const country = prompt('国家', 'Singapore');
+  const url = prompt('来源 URL（可空）');
+  if (!persona) return;
+  try { const r = await api('/api/growth/leads', { method: 'POST', headers: growthRoleHeaders(), body: JSON.stringify({ organization_name: org || null, persona_type: persona, country: country || null, source_url: url || null }) }); alert('已创建线索 ' + r.data.id); await growthLoad(); render(); }
+  catch (e) { alert(e.message); }
+}
+async function growthImportLeads() {
+  const txt = prompt('粘贴多行线索 JSON 数组（每行一个 JSON 对象），例如：\n{"organization_name":"X","persona_type":"study_abroad_agency","country":"Singapore","source_url":"https://x.sg"}');
+  if (!txt) return;
+  let okN = 0, failN = 0;
+  for (const line of txt.split('\n')) {
+    const s = line.trim(); if (!s) continue;
+    try { JSON.parse(s); const r = await api('/api/growth/leads', { method: 'POST', headers: growthRoleHeaders(), body: s }); if (r.data && r.data.id) okN++; else failN++; }
+    catch (_) { failN++; }
+  }
+  alert('导入完成：成功 ' + okN + '，失败/重复 ' + failN);
+  await growthLoad(); render();
+}
+async function growthNewCampaign() {
+  const name = prompt('活动名称'); if (!name) return;
+  const persona = prompt('Persona（留空=all）', 'all');
+  const channel = prompt('渠道（email/linkedin/wechat 等）', 'email');
+  try { await api('/api/growth/campaigns', { method: 'POST', headers: growthRoleHeaders(), body: JSON.stringify({ name, persona: persona || 'all', channel }) }); alert('已创建活动'); await growthLoad(); nav('growthCampaigns'); }
+  catch (e) { alert(e.message); }
 }
 
 // --- B2B (agency) school resource search ---
@@ -887,18 +1109,69 @@ function b2bPage() {
   `;
 }
 
-// --- Admin: data review queue + import tool ---
+// --- Admin: data review queue + import tool (V1.0.1 real-data pilot) ---
 let queueItems = [];
+let lastPreview = null; // keeps the preview verdict so commit is a confirmed second step
 function adminReviewsPage() {
   return `
     <div class="section"><h3>数据审核队列</h3><span id="qCount">加载中…</span></div>
     <div id="qlist"><div class="notice">正在加载…</div></div>
     <div class="section"><h3>真实数据导入</h3><span>CSV / JSON</span></div>
-    <div class="notice" style="margin-bottom:8px">导入规则：每条真实学校必须含 name / country / city 与 source_url（或 supplier_evidence）；缺少来源的数据不得标记 verified；重复学校自动检测。</div>
-    <textarea class="imp" id="impContent" placeholder="粘贴 CSV 或 JSON（数组）数据…"></textarea>
-    <div class="actions"><button class="btn outline" onclick="impPreview()">预览校验</button><button class="btn primary" onclick="impCommit()">批量导入</button></div>
+    <div class="notice" style="margin-bottom:8px">导入规则：每条真实学校必须含 name / country / city 与 source_url（或 supplier_evidence）；缺少来源的数据不得标记 verified；重复学校自动检测。导入后一律进入 draft 审核队列。</div>
+    <div class="actions" style="margin-bottom:6px">
+      <label class="btn outline" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer">📁 上传 CSV/JSON 文件<input type="file" id="impFile" accept=".csv,.json,.txt" style="display:none" onchange="impLoadFile(this)"></label>
+      <button class="btn outline" onclick="impLoadTemplate()">填入示例模板</button>
+    </div>
+    <textarea class="imp" id="impContent" placeholder="上传文件或直接粘贴 CSV / JSON（数组）数据…"></textarea>
+    <div class="actions"><button class="btn outline" onclick="impPreview()">① 预览校验</button><button class="btn primary" onclick="impCommit()">② 确认导入</button></div>
     <div id="impResult"></div>
+    <div class="section"><h3>复核周期配置</h3><span>月为单位</span></div>
+    <div class="notice" style="margin-bottom:8px">fresh / review_due / expired 由各字段类别按此周期计算；保存后立即生效。</div>
+    <div class="formgrid" id="cycleForm"><div class="notice">加载中…</div></div>
+    <div class="actions"><button class="btn primary" onclick="saveCycles()">保存复核周期</button></div>
   `;
+}
+async function impLoadFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { alert('文件超过 5MB，请分批导入'); input.value = ''; return; }
+  const text = await file.text();
+  const box = document.querySelector('#impContent');
+  if (box) box.value = text;
+  impPreview();
+}
+async function impLoadTemplate() {
+  try {
+    const r = await fetch('templates/singapore-schools-import-example.csv');
+    const text = await r.text();
+    const box = document.querySelector('#impContent');
+    if (box) box.value = text;
+    impPreview();
+  } catch (e) { alert('示例模板加载失败：' + e.message); }
+}
+async function loadCycles() {
+  const host = document.querySelector('#cycleForm');
+  if (!host) return;
+  try {
+    const j = await api('/api/admin/config/review-cycles', { headers: { 'x-role': 'admin' } });
+    const c = j.data.review_cycles_months;
+    const labels = { tuition: '学费', deadlines: '申请截止日期', scholarships: '奖学金', basics: '地址 / 基础资料' };
+    host.innerHTML = Object.keys(labels).map((k) =>
+      `<div><label class="field">${labels[k]}</label><input id="cycle-${k}" type="number" min="1" max="120" value="${c[k] || ''}"></div>`
+    ).join('');
+  } catch (e) { host.innerHTML = `<div class="notice">${esc(e.message)}</div>`; }
+}
+async function saveCycles() {
+  const cycles = {};
+  for (const k of ['tuition', 'deadlines', 'scholarships', 'basics']) {
+    const el = document.querySelector('#cycle-' + k);
+    if (el && el.value !== '') cycles[k] = Number(el.value);
+  }
+  try {
+    await api('/api/admin/config/review-cycles', { method: 'PUT', headers: { 'x-role': 'admin' }, body: JSON.stringify({ review_cycles_months: cycles }) });
+    alert('复核周期已保存，立即生效');
+    loadCycles();
+  } catch (e) { alert(e.message); }
 }
 async function loadQueue() {
   try {
@@ -955,27 +1228,45 @@ async function showRevisions(schoolId) {
 async function impPreview() {
   const content = document.querySelector('#impContent').value;
   const host = document.querySelector('#impResult');
-  if (!content.trim()) { host.innerHTML = '<div class="notice">请先粘贴数据</div>'; return; }
+  if (!content.trim()) { host.innerHTML = '<div class="notice">请先上传文件或粘贴数据</div>'; return; }
   host.innerHTML = '<div class="notice">校验中…</div>';
   try {
     const j = await api('/api/admin/import/preview', { method: 'POST', headers: { 'x-role': 'admin' }, body: JSON.stringify({ content }) });
     const d = j.data;
+    lastPreview = d;
+    const mapped = (d.header_mapping || []).filter((m) => m.field);
+    const unmapped = (d.header_mapping || []).filter((m) => !m.field);
     host.innerHTML = `
-      <div class="notice" style="margin:8px 0">共 ${d.total} 行：可导入 ${d.importable} · 无效 ${d.invalid} · 疑似重复 ${d.duplicates}</div>
-      ${(d.preview || []).map((p) => `<div class="qitem"><div class="rowtop"><div><h4>${esc(p.name)}</h4><div class="muted">${esc(p.country_id)} · ${esc(p.city_id)} · 来源:${p.source_url ? '有' : '无'} · 状态:${esc(p.verified_status)}</div></div><span class="status ${p.verified_status === 'verified' ? 'good' : 'warn'}">${esc(p.verified_status)}</span></div></div>`).join('')}
+      <div class="notice" style="margin:8px 0">预览结果：共 ${d.total} 行 — <b>可导入 ${d.importable}</b> · 无效 ${d.invalid} · 疑似重复 ${d.duplicates}。${d.importable > 0 ? '确认无误后点「② 确认导入」。' : '没有可导入的行。'}</div>
+      ${d.total === 0 ? '<div class="notice">0 行数据：模板只有表头（属正常）。填入数据后再预览。</div>' : ''}
+      ${(d.header_mapping || []).length ? `<div class="qitem"><div class="rowtop"><h4>字段映射</h4></div><div class="muted">识别到 ${d.headers.length} 列 → ${mapped.length} 列已映射${unmapped.length ? '，未映射列将忽略：' + esc(unmapped.map((m) => m.column).join('、')) : ''}</div><div class="tagrow" style="margin-top:6px">${mapped.map((m) => `<span class="tag">${esc(m.column)} → ${esc(m.field)}</span>`).join('')}</div></div>` : ''}
       ${(d.report || []).filter((r) => !r.ok).map((r) => `<div class="notice" style="border-color:#f0dcb0;background:#fff9ee;margin:4px 0">第 ${r.row} 行：${r.errors.map(esc).join('；')}${r.warnings.length ? '<br>警告：' + r.warnings.map(esc).join('；') : ''}</div>`).join('')}
+      ${(d.preview || []).slice(0, 50).map((p) => `<div class="qitem"><div class="rowtop"><div><h4>${esc(p.name_zh || p.name)}</h4><div class="muted">${esc(p.country_id)} · ${esc(p.city_id)} · 阶段:${esc((p.stages || []).join('/') || '-')} · 来源:${p.source_url ? '有' : '无'} · ${p.institution_id ? 'ID:' + esc(p.institution_id) : 'ID:自动分配'}</div></div><span class="status ${p.verified_status === 'verified' ? 'good' : 'warn'}">${esc(p.verified_status)}</span></div></div>`).join('')}
+      ${(d.preview || []).length > 50 ? `<div class="notice">仅展示前 50 条，其余 ${d.preview.length - 50} 条导入后可在审核队列查看。</div>` : ''}
     `;
-  } catch (e) { host.innerHTML = `<div class="notice">${esc(e.message)}</div>`; }
+  } catch (e) { lastPreview = null; host.innerHTML = `<div class="notice">${esc(e.message)}</div>`; }
 }
 async function impCommit() {
   const content = document.querySelector('#impContent').value;
   const host = document.querySelector('#impResult');
-  if (!content.trim()) { host.innerHTML = '<div class="notice">请先粘贴数据</div>'; return; }
+  if (!content.trim()) { host.innerHTML = '<div class="notice">请先上传文件或粘贴数据</div>'; return; }
+  // Import is a confirmed two-step flow: preview first, then commit.
+  if (!lastPreview) { host.innerHTML = '<div class="notice">请先点「① 预览校验」查看结果，再确认导入。</div>'; return; }
+  if (!lastPreview.total) { host.innerHTML = '<div class="notice">没有可导入的行（0 行）。</div>'; return; }
+  const warn = [];
+  if (lastPreview.invalid) warn.push(lastPreview.invalid + ' 行无效（将被跳过）');
+  if (lastPreview.duplicates) warn.push(lastPreview.duplicates + ' 行疑似重复（将被跳过）');
+  if (warn.length && !confirm(`注意：${warn.join('，')}。确定只导入 ${lastPreview.importable} 条有效数据吗？`)) return;
   host.innerHTML = '<div class="notice">导入中…</div>';
   try {
     const j = await api('/api/admin/import/commit', { method: 'POST', headers: { 'x-role': 'admin' }, body: JSON.stringify({ content }) });
     const d = j.data;
-    host.innerHTML = `<div class="notice">导入完成：成功 ${d.committed} 条（进入 draft 审核队列），跳过 ${d.skipped} 条。</div>`;
+    lastPreview = null;
+    host.innerHTML = `
+      <div class="notice" style="border-color:#cfe3cf;background:#f2f9f2">导入完成：成功 <b>${d.committed}</b> 条（全部进入 draft 审核队列），跳过 ${d.skipped} 条。</div>
+      ${(d.committed_ids || []).map((x) => `<div class="muted" style="margin:2px 0">✓ ${esc(x.name)} <span class="tag">${esc(x.id)}</span></div>`).join('')}
+      ${(d.report || []).filter((r) => !r.ok).map((r) => `<div class="notice" style="border-color:#f0dcb0;background:#fff9ee;margin:4px 0">第 ${r.row} 行已跳过：${r.errors.map(esc).join('；')}</div>`).join('')}
+    `;
     await loadQueue();
     await load();
   } catch (e) { host.innerHTML = `<div class="notice">${esc(e.message)}</div>`; }
@@ -1001,6 +1292,10 @@ function render() {
   if (page === 'programs' && searchState._ran && role !== 'agency') renderResults();
   if (page === 'programs' && role === 'agency') { b2bSearch(); }
   if (page === 'reviews') { loadQueue(); }
+  if (page.startsWith('growth')) {
+    $('#view').innerHTML = '<div class="notice">Growth Center 加载中…</div>';
+    growthLoad().then(() => { if (page.startsWith('growth')) render(); });
+  }
 }
 
 window.addEventListener('hashchange', () => {

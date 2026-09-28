@@ -1,0 +1,15 @@
+{
+  "version": "1.1.0",
+  "feature_flag": {
+    "insurance_enabled": false
+  },
+  "providers": [
+    {
+      "id": "insurance-reserved",
+      "provider_type": "insurance",
+      "integration_mode": "manual",
+      "integration_status": "reserved",
+      "note": "保险 API 未启用；未来通过 Provider + ServiceProduct + IntegrationConfig 接入。"
+    }
+  ]
+}
