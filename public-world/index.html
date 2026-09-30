@@ -1,40 +1,67 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#062d4e">
-<title>GlobalStudy — Choose a client</title>
+<title>GlobalStudy — 选择客户端</title>
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
 <main class="portal">
   <div class="portal-inner">
-    <div class="portal-brand"><div class="logo">G</div><div><b>GlobalStudy</b><small style="display:block;color:#bcd4e0">Public MVP</small></div></div>
-    <h1>Choose a client to open</h1>
-    <p class="portal-lead">Three separate mobile clients. Open any one directly — no marketing page, no internal admin tools.</p>
+    <div class="portal-brand" style="justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:11px"><div class="logo">G</div><div><b>GlobalStudy</b><small style="display:block;color:#bcd4e0" id="subTitle">公网 MVP</small></div></div>
+      <button class="lang-btn" id="langBtn">English</button>
+    </div>
+    <h1 id="title">请选择要打开的客户端</h1>
+    <p class="portal-lead" id="lead">三个独立的手机端客户端，可以直接进入使用；没有宣传介绍页，也不暴露内部管理工具。</p>
     <div class="client-grid">
       <a class="client-card" href="/student.html">
         <div class="icon">🎓</div>
-        <h2>Student / Parent</h2>
-        <p>Search schools, compare options, save a shortlist and create a demo application.</p>
-        <div class="open">Open student client →</div>
+        <h2 id="studentTitle">学生 / 家长端</h2>
+        <p id="studentText">搜索学校、筛选、收藏、对比并创建演示申请草稿。</p>
+        <div class="open" id="studentOpen">打开学生端 →</div>
       </a>
       <a class="client-card" href="/agent.html">
         <div class="icon">🤝</div>
-        <h2>Education Agent</h2>
-        <p>Manage students, search school resources and create application drafts.</p>
-        <div class="open">Open agent client →</div>
+        <h2 id="agentTitle">留学机构端</h2>
+        <p id="agentText">管理学生、搜索学校资源并创建申请草稿。</p>
+        <div class="open" id="agentOpen">打开机构端 →</div>
       </a>
       <a class="client-card" href="/institution.html">
         <div class="icon">🏫</div>
-        <h2>Institution / Supplier</h2>
-        <p>Review programs, incoming applications and public data verification status.</p>
-        <div class="open">Open institution client →</div>
+        <h2 id="instTitle">院校 / 供应商端</h2>
+        <p id="instText">查看课程、申请记录与公开数据核验状态。</p>
+        <div class="open" id="instOpen">打开院校端 →</div>
       </a>
     </div>
-    <div class="portal-note">Demo data is clearly labeled. Internal Growth, Admin and commission APIs are not exposed by this public service.</div>
+    <div class="portal-note" id="note">演示数据会明确标识；内部 Growth、Admin 和佣金接口不会在公网开放。</div>
   </div>
 </main>
+<script>
+const I18N={
+  zh:{subTitle:'公网 MVP',title:'请选择要打开的客户端',lead:'三个独立的手机端客户端，可以直接进入使用；没有宣传介绍页，也不暴露内部管理工具。',
+      studentTitle:'学生 / 家长端',studentText:'搜索学校、筛选、收藏、对比并创建演示申请草稿。',studentOpen:'打开学生端 →',
+      agentTitle:'留学机构端',agentText:'管理学生、搜索学校资源并创建申请草稿。',agentOpen:'打开机构端 →',
+      instTitle:'院校 / 供应商端',instText:'查看课程、申请记录与公开数据核验状态。',instOpen:'打开院校端 →',
+      note:'演示数据会明确标识；内部 Growth、Admin 和佣金接口不会在公网开放。',btn:'English',html:'zh-CN',page:'GlobalStudy — 选择客户端'},
+  en:{subTitle:'Public MVP',title:'Choose a client to open',lead:'Three separate mobile clients. Open any one directly — no marketing page, no internal admin tools.',
+      studentTitle:'Student / Parent',studentText:'Search schools, compare options, save a shortlist and create a demo application.',studentOpen:'Open student client →',
+      agentTitle:'Education Agent',agentText:'Manage students, search school resources and create application drafts.',agentOpen:'Open agent client →',
+      instTitle:'Institution / Supplier',instText:'Review programs, incoming applications and public data verification status.',instOpen:'Open institution client →',
+      note:'Demo data is clearly labeled. Internal Growth, Admin and commission APIs are not exposed by this public service.',btn:'中文',html:'en',page:'GlobalStudy — Choose a client'}
+};
+let lang=localStorage.getItem('gs-world-lang')||'zh';
+function apply(){
+  const t=I18N[lang];document.documentElement.lang=t.html;document.title=t.page;
+  for(const k of ['subTitle','title','lead','studentTitle','studentText','studentOpen','agentTitle','agentText','agentOpen','instTitle','instText','instOpen','note']){
+    document.getElementById(k).textContent=t[k];
+  }
+  document.getElementById('langBtn').textContent=t.btn;
+}
+document.getElementById('langBtn').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('gs-world-lang',lang);apply()};
+apply();
+</script>
 </body>
 </html>
