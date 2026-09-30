@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>GlobalStudy — Institution / Supplier</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="phone">
+  <header class="header">
+    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>Institution / Supplier</small></div></a>
+    <a class="pill" href="/">Switch client</a>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">INSTITUTION CLIENT · LIVE DEMO</div>
+    <h1>Programs, applications and data status</h1>
+    <p>A public demonstration of the institution workspace without exposing internal admin, commission or growth systems.</p>
+  </section>
+
+  <div class="tabs">
+    <button id="tabDash" class="active" onclick="showTab('dash')">Dashboard</button>
+    <button id="tabPrograms" onclick="showTab('programs')">Programs</button>
+    <button id="tabApps" onclick="showTab('apps')">Applications</button>
+    <button id="tabData" onclick="showTab('data')">Data status</button>
+  </div>
+
+  <main id="main"></main>
+
+  <nav class="bottom">
+    <button id="navDash" class="active" onclick="showTab('dash')"><b>⌂</b>Dashboard</button>
+    <button id="navPrograms" onclick="showTab('programs')"><b>▦</b>Programs</button>
+    <button id="navApps" onclick="showTab('apps')"><b>◎</b>Applications</button>
+    <button id="navData" onclick="showTab('data')"><b>✓</b>Data</button>
+  </nav>
+</div>
+
+<div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>
+<section class="drawer" id="drawer">
+  <div class="handle"></div>
+  <div class="drawer-head"><b id="drawerTitle">Details</b><button onclick="closeDrawer()">Close</button></div>
+  <div id="drawerBody"></div>
+</section>
+
+<script>
+const $=s=>document.querySelector(s);
+let tab='dash',school=null,programs=[];
+let incoming=JSON.parse(localStorage.getItem('gs-inst-apps')||'null')||[
+  {id:'IA-1001',student:'Demo Applicant A',program:'IB Primary Programme',status:'Received',updated:'Today'},
+  {id:'IA-1002',student:'Demo Applicant B',program:'IB Diploma Programme',status:'Documents review',updated:'Yesterday'},
+  {id:'IA-1003',student:'Demo Applicant C',program:'IB Middle Years Programme',status:'Interview requested',updated:'2 days ago'}
+];
+
+async function api(url){const r=await fetch(url);const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||'Request failed');return j}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
+function openDrawer(t,h){$('#drawerTitle').textContent=t;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
+function closeDrawer(){$('#drawer').classList.remove('open');$('#mask').classList.remove('open')}
+function persist(){localStorage.setItem('gs-inst-apps',JSON.stringify(incoming))}
+function setActive(name){['Dash','Programs','Apps','Data'].forEach(x=>{const a=$('#tab'+x),b=$('#nav'+x);if(a)a.classList.toggle('active',x.toLowerCase()===name);if(b)b.classList.toggle('active',x.toLowerCase()===name)})}
+function showTab(name){tab=name;setActive(name);render()}
+
+function dash(){
+  return '<section class="section"><div class="metrics">'+
+  '<div class="metric"><small>Programs</small><b>'+programs.length+'</b></div>'+
+  '<div class="metric"><small>Incoming applications</small><b>'+incoming.length+'</b></div>'+
+  '<div class="metric"><small>Need review</small><b>'+incoming.filter(x=>x.status==='Documents review').length+'</b></div>'+
+  '<div class="metric"><small>Public data status</small><b>'+(school?.verification?.is_demo?'Demo':'Verified')+'</b></div>'+
+  '</div><div class="section-head"><h2>Latest applications</h2><span>Institution demo</span></div>'+
+  '<div class="list">'+incoming.slice(0,3).map(appCard).join('')+'</div></section>'
+}
+function programCard(p){
+  return '<div class="card"><div class="row"><div><h3>'+esc(p.name||p.name_zh||p.id)+'</h3><div class="muted">'+esc([p.stage,p.curriculum,p.duration].filter(Boolean).join(' · '))+'</div></div><span class="status demo">DEMO</span></div>'+
+  '<div class="split"><div><small>Tuition</small><b>'+esc(money(p.tuition,p.currency||school?.fees?.currency))+'</b></div><div><small>Deadline</small><b>'+esc(p.deadline||'—')+'</b></div></div>'+
+  '<div class="actions"><button class="btn ghost" onclick="programDetail(\''+esc(p.id)+'\')">Open program</button></div></div>'
+}
+function programsPage(){
+  return '<section class="section"><div class="section-head"><h2>Programs</h2><span>'+programs.length+' listed</span></div><div class="notice">Programs shown here are demonstration records attached to the public demo school. Real institution data would require source verification before publication.</div><div class="list" style="margin-top:9px">'+(programs.length?programs.map(programCard).join(''):'<div class="empty">No programs available.</div>')+'</div></section>'
+}
+function appCard(a){
+  const cls=a.status==='Received'?'blue':a.status==='Documents review'?'warn':'good';
+  return '<div class="card"><div class="row"><div><h3>'+esc(a.student)+'</h3><div class="muted">'+esc(a.program)+' · '+esc(a.updated)+'</div></div><span class="status '+cls+'">'+esc(a.status)+'</span></div><div class="actions"><button class="btn ghost" onclick="appDetail(\''+esc(a.id)+'\')">Review</button><button class="btn soft" onclick="advance(\''+esc(a.id)+'\')">Advance demo status</button></div></div>'
+}
+function appsPage(){
+  return '<section class="section"><div class="section-head"><h2>Incoming applications</h2><span>'+incoming.length+' demo records</span></div><div class="notice">These are local demonstration applications only. No real student files or personal documents are exposed in this public client.</div><div class="list" style="margin-top:9px">'+incoming.map(appCard).join('')+'</div></section>'
+}
+function dataPage(){
+  const demo=school?.verification?.is_demo;
+  return '<section class="section"><div class="section-head"><h2>Public data status</h2><span>'+(demo?'Demo':'Verified')+'</span></div>'+
+  '<div class="card"><div class="row"><div><h3>'+esc(school?.name?.en||'Institution')+'</h3><div class="muted">'+esc([school?.location?.city_en,school?.location?.district_en].filter(Boolean).join(' · '))+'</div></div><span class="status '+(demo?'demo':'good')+'">'+(demo?'DEMO DATA':'VERIFIED')+'</span></div>'+
+  '<div class="detail-grid" style="margin-top:10px"><div class="detail"><small>Verification</small><b>'+esc(school?.verification?.status||'—')+'</b></div><div class="detail"><small>Last updated</small><b>'+esc(school?.verification?.updated_at||'—')+'</b></div><div class="detail"><small>Source</small><b>'+(demo?'Not claimed':'Available')+'</b></div><div class="detail"><small>Public visibility</small><b>Visible</b></div></div></div>'+
+  '<div class="section-head"><h2>Publishing rules</h2><span>Public MVP</span></div><div class="notice">Verified records require an accepted source URL or supplier evidence. Missing facts remain blank. Demo data is always labeled and never presented as a real partnership.</div></section>'
+}
+function programDetail(id){const p=programs.find(x=>x.id===id);openDrawer('Program details','<h3>'+esc(p.name||p.name_zh||p.id)+'</h3><div class="detail-grid"><div class="detail"><small>Stage</small><b>'+esc(p.stage||'—')+'</b></div><div class="detail"><small>Curriculum</small><b>'+esc(p.curriculum||'—')+'</b></div><div class="detail"><small>Duration</small><b>'+esc(p.duration||'—')+'</b></div><div class="detail"><small>Tuition</small><b>'+esc(money(p.tuition,p.currency||school?.fees?.currency))+'</b></div><div class="detail"><small>Start date</small><b>'+esc(p.start_date||'—')+'</b></div><div class="detail"><small>Deadline</small><b>'+esc(p.deadline||'—')+'</b></div></div><div class="notice" style="margin-top:10px">Demonstration program data for product preview only.</div>')}
+function appDetail(id){const a=incoming.find(x=>x.id===id);openDrawer('Application review','<h3>'+esc(a.student)+'</h3><div class="detail-grid"><div class="detail"><small>Application ID</small><b>'+esc(a.id)+'</b></div><div class="detail"><small>Status</small><b>'+esc(a.status)+'</b></div><div class="detail"><small>Program</small><b>'+esc(a.program)+'</b></div><div class="detail"><small>Updated</small><b>'+esc(a.updated)+'</b></div></div><div class="notice" style="margin-top:10px">No real applicant data or uploaded documents are included in this public demo.</div>')}
+function advance(id){const a=incoming.find(x=>x.id===id);const stages=['Received','Documents review','Interview requested','Decision demo'];let i=stages.indexOf(a.status);a.status=stages[Math.min(stages.length-1,i+1)];a.updated='Just now';persist();render()}
+function render(){if(tab==='dash')main.innerHTML=dash();else if(tab==='programs')main.innerHTML=programsPage();else if(tab==='apps')main.innerHTML=appsPage();else main.innerHTML=dataPage()}
+const main=$('#main');
+(async()=>{
+  const list=(await api('/api/schools?pageSize=50')).data||[];
+  school=list.find(x=>x.id==='SG-DEMO-001')||list[0];
+  if(school){const d=(await api('/api/schools/'+encodeURIComponent(school.id))).data;school=d;programs=d.programs||[]}
+  render()
+})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
+</script>
+</body>
+</html>
