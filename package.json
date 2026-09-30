@@ -6,7 +6,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/smoke.test.js && node tests/v1.test.js && node tests/v1.0.1.test.js && node tests/v1.1.test.js"
+    "test": "node tests/smoke.test.js && node tests/v1.test.js && node tests/v1.0.1.test.js && node tests/v1.1.test.js && node tests/public-mvp.test.js",
+    "start:public": "node server-public.js"
   },
   "engines": {
     "node": ">=18"
