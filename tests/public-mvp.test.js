@@ -81,6 +81,9 @@ async function run() {
       assert.match(body, /Find the right school/);
       assert.doesNotMatch(body, /Growth Center/);
       assert.doesNotMatch(body, /线索池/);
+      const script = body.match(/<script>([\s\S]*?)<\/script>/);
+      assert.ok(script && script[1], 'public MVP inline script must exist');
+      assert.doesNotThrow(() => new Function(script[1]), 'public MVP inline script must parse');
     }
 
     console.log('Public MVP tests passed');
