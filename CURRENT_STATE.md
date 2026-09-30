@@ -58,7 +58,7 @@ stackryze-deploy/            （分支 global-study-mvp）
 4. /api/programs 与规格脱节；申请演示数据（db.programs）与课程目录概念混用。
 5. 前端搜索是内存过滤，不是 API 驱动；高级筛选缺失。
 6. 测试仅函数级，未覆盖 HTTP 状态码、404、非法参数、应用启动 smoke。
-7. mvp-server.js / mvp-server-v2.js 为无关遗留文件；render.yaml 服务名 ai-action-mini 与产品无关（不影响部署，保留不动）。
+7. mvp-server.js / mvp-server-v2.js 为无关遗留文件（已修正：render.yaml 服务名原为错误的 ai-action-mini，2026-09-30 已改为实际部署服务 global-study-mobile-mvp）。
 8. reference 中 Singapore 用英文区名、无 zh 名；district 无稳定 id，学校与字典无外键关联。
 
 ## 5. 可能破坏线上 H5 的风险点

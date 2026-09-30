@@ -5,12 +5,12 @@
 > Growth Center 与「B 端工作台（机构 agency workspace）」是**两个独立的 B 端**，互不混用。
 
 ## 0. 如何进入
-- 打开 H5（线上 `https://ai-action-mini.onrender.com`），在角色选择页选择 **Growth Center / BD / 销售 / 市场 / 运营 / admin**。
+- 打开 H5（线上 `https://global-study-mobile-mvp.onrender.com`），在角色选择页选择 **Growth Center / BD / 销售 / 市场 / 运营 / admin**。
 - 顶部导航出现：**★ 看板 / ♟ 线索池 / ✉ 触达 / ◈ 商机 / ▦ 活动**（角色不同可见项略有差异）。
 - `admin` 用户在「平台管理后台」顶部可见「★ Growth」入口跳转。
 - API 调用需在请求头带 `x-role: bd`（或其它增长角色），例如：
   ```bash
-  curl -H "x-role: bd" https://ai-action-mini.onrender.com/api/growth/leads
+  curl -H "x-role: bd" https://global-study-mobile-mvp.onrender.com/api/growth/leads
   ```
 
 ## 1. 看板（Dashboard）

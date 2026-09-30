@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ai-action-mini
+    name: global-study-mobile-mvp
     runtime: node
     plan: free
     buildCommand: echo "No dependencies"
