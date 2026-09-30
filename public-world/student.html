@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>GlobalStudy — Student / Parent</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="phone">
+  <header class="header">
+    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>Student / Parent</small></div></a>
+    <a class="pill" href="/">Switch client</a>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">STUDENT CLIENT · LIVE DEMO</div>
+    <h1>Find and shortlist schools</h1>
+    <p>Search by location, stage and curriculum. Compare schools and create a demo application draft from your shortlist.</p>
+  </section>
+
+  <div class="tabs">
+    <button id="tabExplore" class="active" onclick="showTab('explore')">Explore</button>
+    <button id="tabShortlist" onclick="showTab('shortlist')">Shortlist</button>
+    <button id="tabApps" onclick="showTab('apps')">Applications</button>
+  </div>
+
+  <main id="main"></main>
+
+  <nav class="bottom">
+    <button class="active" id="navExplore" onclick="showTab('explore')"><b>⌕</b>Explore</button>
+    <button id="navShortlist" onclick="showTab('shortlist')"><b>♡</b>Shortlist</button>
+    <button id="navApps" onclick="showTab('apps')"><b>◎</b>Applications</button>
+    <button onclick="location.href='/'"><b>↔</b>Clients</button>
+  </nav>
+</div>
+
+<div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>
+<section class="drawer" id="drawer">
+  <div class="handle"></div>
+  <div class="drawer-head"><b id="drawerTitle">Details</b><button onclick="closeDrawer()">Close</button></div>
+  <div id="drawerBody"></div>
+</section>
+
+<script>
+const $=s=>document.querySelector(s);
+let ref=null, schools=[], tab='explore';
+let saved=JSON.parse(localStorage.getItem('gs-student-saved')||'[]');
+let applications=JSON.parse(localStorage.getItem('gs-student-apps')||'[]');
+
+async function api(url){const r=await fetch(url);const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||'Request failed');return j}
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
+function label(s){return s?.en||s?.zh||s?.id||s||'—'}
+function loc(s){return [s.location?.country_en,s.location?.city_en,s.location?.district_en].filter(Boolean).join(' · ')}
+function openDrawer(t,h){$('#drawerTitle').textContent=t;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
+function closeDrawer(){$('#drawer').classList.remove('open');$('#mask').classList.remove('open')}
+
+function setActive(name){
+  ['Explore','Shortlist','Apps'].forEach(x=>{
+    const a=$('#tab'+x),b=$('#nav'+x);if(a)a.classList.toggle('active',x.toLowerCase()===name);if(b)b.classList.toggle('active',x.toLowerCase()===name)
+  })
+}
+function showTab(name){tab=name;setActive(name);render()}
+
+function searchUI(){
+  return '<section class="section"><div class="search">'+
+  '<input id="q" class="wide" placeholder="School, area or curriculum">'+
+  '<select id="country"></select><select id="city"></select>'+
+  '<select id="stage"></select><select id="curriculum"></select>'+
+  '<button class="btn primary wide" onclick="runSearch()">Search schools</button></div>'+
+  '<div class="quick"><button onclick="quick(\'IB\')">IB</button><button onclick="quick(\'Cambridge\')">Cambridge</button><button onclick="runSearch({scholarship:true})">Scholarships</button><button onclick="runSearch({boarding:true})">Boarding</button></div>'+
+  '<div class="section-head"><h2>School results</h2><span id="resultCount">—</span></div><div id="schoolList" class="list"></div></section>'
+}
+function fillSelect(id,items,all,labelFn,valueFn){
+  const el=$(id);if(!el)return;const old=el.value;el.innerHTML='<option value="">'+all+'</option>'+items.map(x=>'<option value="'+esc(valueFn(x))+'">'+esc(labelFn(x))+'</option>').join('');if([...el.options].some(o=>o.value===old))el.value=old
+}
+function fillFilters(){
+  if(!ref)return;
+  fillSelect('#country',ref.countries,'All countries',x=>x.en,x=>x.id);
+  const c=$('#country')?.value||'';
+  fillSelect('#city',ref.cities.filter(x=>!c||x.country_id===c),'All cities',x=>x.en,x=>x.id);
+  fillSelect('#stage',ref.stages,'All stages',x=>x.en,x=>x.id);
+  fillSelect('#curriculum',ref.curricula,'All curricula',x=>x.en,x=>x.en);
+  if($('#country'))$('#country').onchange=()=>{fillFilters();runSearch()};
+  if($('#city'))$('#city').onchange=()=>runSearch();
+  if($('#stage'))$('#stage').onchange=()=>runSearch();
+  if($('#curriculum'))$('#curriculum').onchange=()=>runSearch();
+  if($('#q'))$('#q').onkeydown=e=>{if(e.key==='Enter')runSearch()}
+}
+
+function schoolCard(s){
+  const isSaved=saved.includes(s.id),demo=s.verification?.is_demo;
+  return '<article class="card"><div class="row"><div class="school"><div class="schoolmark">'+esc((s.name?.en||'G').slice(0,1))+'</div><div><h3>'+esc(s.name?.en)+'</h3><div class="muted">'+esc(loc(s))+'</div></div></div><span class="status '+(demo?'demo':'good')+'">'+(demo?'DEMO':'VERIFIED')+'</span></div>'+
+  '<div class="tags">'+(s.stages||[]).slice(0,3).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).slice(0,2).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div>'+
+  '<div class="split"><div><small>Tuition / year</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div><small>Nearest transit</small><b>'+esc(s.transit?.name_en||'—')+'</b></div></div>'+
+  '<div class="actions"><button class="btn ghost" onclick="details(\''+esc(s.id)+'\')">Details</button><button class="btn '+(isSaved?'soft':'ghost')+'" onclick="toggleSave(\''+esc(s.id)+'\')">'+(isSaved?'Saved':'Save')+'</button><button class="btn primary" onclick="startApplication(\''+esc(s.id)+'\')">Apply</button></div></article>'
+}
+function renderSchools(){const box=$('#schoolList');if(!box)return;box.innerHTML=schools.length?schools.map(schoolCard).join(''):'<div class="empty">No matching schools.</div>'}
+
+async function runSearch(extra={}){
+  const p=new URLSearchParams();[['q','#q'],['country','#country'],['city','#city'],['stage','#stage'],['curriculum','#curriculum']].forEach(([k,id])=>{const el=$(id);if(el&&el.value)p.set(k,el.value)});
+  Object.entries(extra).forEach(([k,v])=>p.set(k,String(v)));p.set('pageSize','50');
+  const j=await api('/api/schools?'+p.toString());schools=j.data||[];renderSchools();if($('#resultCount'))$('#resultCount').textContent=j.meta.total+' schools'
+}
+function quick(v){const el=$('#curriculum');if(!el)return;const opt=[...el.options].find(o=>o.value.includes(v));if(opt)el.value=opt.value;runSearch()}
+
+function toggleSave(id){const i=saved.indexOf(id);if(i>=0)saved.splice(i,1);else saved.push(id);localStorage.setItem('gs-student-saved',JSON.stringify(saved));render()}
+async function details(id){
+  openDrawer('School details','<div class="empty">Loading…</div>');
+  try{const s=(await api('/api/schools/'+encodeURIComponent(id))).data;
+    $('#drawerBody').innerHTML='<div class="row"><div><h3>'+esc(s.name?.en)+'</h3><div class="muted">'+esc(loc(s))+'</div></div><span class="status '+(s.verification?.is_demo?'demo':'good')+'">'+(s.verification?.is_demo?'DEMO':'VERIFIED')+'</span></div>'+
+    '<div class="tags">'+(s.stages||[]).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div>'+
+    '<div class="detail-grid"><div class="detail"><small>School type</small><b>'+esc(s.institution_type||'—')+'</b></div><div class="detail"><small>Teaching language</small><b>'+esc(s.languages?.primary||'—')+'</b></div><div class="detail"><small>Tuition</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div class="detail"><small>First-year cost</small><b>'+esc(money(s.fees?.first_year_cost_min,s.fees?.currency))+'</b></div><div class="detail"><small>Boarding</small><b>'+(s.boarding?'Yes':'No')+'</b></div><div class="detail"><small>Scholarships</small><b>'+(s.scholarships?'Yes':'No')+'</b></div></div>'+
+    '<div class="notice" style="margin-top:10px">'+(s.source?.source_url?'Source: '+esc(s.source.source_url):'Demonstration record. No public source is claimed.')+'</div>'+
+    '<div class="actions"><button class="btn primary" onclick="startApplication(\''+esc(s.id)+'\');closeDrawer()">Create application draft</button></div>'
+  }catch(e){$('#drawerBody').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+}
+async function startApplication(id){
+  const s=schools.find(x=>x.id===id)||((await api('/api/schools/'+encodeURIComponent(id))).data);
+  if(applications.some(x=>x.school_id===id)){alert('Application draft already exists.');showTab('apps');return}
+  applications.unshift({id:'APP-'+Date.now().toString().slice(-6),school_id:id,school_name:s.name?.en||id,status:'Draft',progress:15,created_at:new Date().toLocaleDateString()});
+  localStorage.setItem('gs-student-apps',JSON.stringify(applications));showTab('apps')
+}
+
+async function render(){
+  if(tab==='explore'){main.innerHTML=searchUI();fillFilters();await runSearch();return}
+  if(tab==='shortlist'){
+    const items=[];for(const id of saved){try{items.push((await api('/api/schools/'+encodeURIComponent(id))).data)}catch{}}
+    main.innerHTML='<section class="section"><div class="section-head"><h2>Your shortlist</h2><span>'+items.length+' saved</span></div><div class="list">'+(items.length?items.map(schoolCard).join(''):'<div class="empty">No schools saved yet.</div>')+'</div></section>';return
+  }
+  main.innerHTML='<section class="section"><div class="section-head"><h2>Application drafts</h2><span>Demo workflow</span></div><div class="notice">This public demo stores application drafts only in your browser. It does not submit anything to a real institution.</div><div class="list" style="margin-top:9px">'+(applications.length?applications.map(a=>'<div class="card"><div class="row"><div><h3>'+esc(a.school_name)+'</h3><div class="muted">'+esc(a.id)+' · '+esc(a.created_at)+'</div></div><span class="status blue">'+esc(a.status)+'</span></div><div class="split"><div><small>Progress</small><b>'+a.progress+'%</b></div><div><small>Next step</small><b>Complete profile</b></div></div></div>').join(''):'<div class="empty">No application drafts yet.</div>')+'</div></section>'
+}
+
+const main=$('#main');
+(async()=>{const [r,s]=await Promise.all([api('/api/reference'),api('/api/schools?pageSize=50')]);ref=r.data;schools=s.data;render()})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
+</script>
+</body>
+</html>
