@@ -1,109 +1,118 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>GlobalStudy — Institution / Supplier</title>
+<title>GlobalStudy — 院校 / 供应商端</title>
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
 <div class="phone">
   <header class="header">
-    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>Institution / Supplier</small></div></a>
-    <a class="pill" href="/">Switch client</a>
+    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small id="clientName">院校 / 供应商端</small></div></a>
+    <div class="header-actions"><button class="lang-btn" id="langBtn">English</button><a class="pill" href="/" id="switchClient">切换客户端</a></div>
   </header>
 
   <section class="hero">
-    <div class="eyebrow">INSTITUTION CLIENT · LIVE DEMO</div>
-    <h1>Programs, applications and data status</h1>
-    <p>A public demonstration of the institution workspace without exposing internal admin, commission or growth systems.</p>
+    <div class="eyebrow" id="heroEyebrow">院校端 · 在线演示</div>
+    <h1 id="heroTitle">课程、申请与公开数据状态</h1>
+    <p id="heroText">演示院校工作台：查看课程、处理申请，并查看公开数据的核验状态。</p>
   </section>
 
   <div class="tabs">
-    <button id="tabDash" class="active" onclick="showTab('dash')">Dashboard</button>
-    <button id="tabPrograms" onclick="showTab('programs')">Programs</button>
-    <button id="tabApps" onclick="showTab('apps')">Applications</button>
-    <button id="tabData" onclick="showTab('data')">Data status</button>
+    <button id="tabDash" class="active" onclick="showTab('dash')">工作台</button>
+    <button id="tabPrograms" onclick="showTab('programs')">课程</button>
+    <button id="tabApps" onclick="showTab('apps')">申请</button>
+    <button id="tabData" onclick="showTab('data')">数据状态</button>
   </div>
 
   <main id="main"></main>
 
   <nav class="bottom">
-    <button id="navDash" class="active" onclick="showTab('dash')"><b>⌂</b>Dashboard</button>
-    <button id="navPrograms" onclick="showTab('programs')"><b>▦</b>Programs</button>
-    <button id="navApps" onclick="showTab('apps')"><b>◎</b>Applications</button>
-    <button id="navData" onclick="showTab('data')"><b>✓</b>Data</button>
+    <button id="navDash" class="active" onclick="showTab('dash')"><b>⌂</b><span id="navDashText">工作台</span></button>
+    <button id="navPrograms" onclick="showTab('programs')"><b>▦</b><span id="navProgramsText">课程</span></button>
+    <button id="navApps" onclick="showTab('apps')"><b>◎</b><span id="navAppsText">申请</span></button>
+    <button id="navData" onclick="showTab('data')"><b>✓</b><span id="navDataText">数据</span></button>
   </nav>
 </div>
 
 <div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>
 <section class="drawer" id="drawer">
   <div class="handle"></div>
-  <div class="drawer-head"><b id="drawerTitle">Details</b><button onclick="closeDrawer()">Close</button></div>
+  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="closeDrawer()">关闭</button></div>
   <div id="drawerBody"></div>
 </section>
 
 <script>
 const $=s=>document.querySelector(s);
+let lang=localStorage.getItem('gs-world-lang')||'zh';
 let tab='dash',school=null,programs=[];
 let incoming=JSON.parse(localStorage.getItem('gs-inst-apps')||'null')||[
-  {id:'IA-1001',student:'Demo Applicant A',program:'IB Primary Programme',status:'Received',updated:'Today'},
-  {id:'IA-1002',student:'Demo Applicant B',program:'IB Diploma Programme',status:'Documents review',updated:'Yesterday'},
-  {id:'IA-1003',student:'Demo Applicant C',program:'IB Middle Years Programme',status:'Interview requested',updated:'2 days ago'}
+  {id:'IA-1001',student_zh:'演示申请人 A',student_en:'Demo Applicant A',program_zh:'IB 小学项目',program_en:'IB Primary Programme',status:'Received',updated:'Today'},
+  {id:'IA-1002',student_zh:'演示申请人 B',student_en:'Demo Applicant B',program_zh:'IB DP 项目',program_en:'IB Diploma Programme',status:'Documents review',updated:'Yesterday'},
+  {id:'IA-1003',student_zh:'演示申请人 C',student_en:'Demo Applicant C',program_zh:'IB MYP 项目',program_en:'IB Middle Years Programme',status:'Interview requested',updated:'2 days ago'}
 ];
 
+const T={
+zh:{
+ client:'院校 / 供应商端',switch:'切换客户端',heroEyebrow:'院校端 · 在线演示',heroTitle:'课程、申请与公开数据状态',heroText:'演示院校工作台：查看课程、处理申请，并查看公开数据的核验状态。',
+ dash:'工作台',programs:'课程',apps:'申请',data:'数据状态',close:'关闭',programCount:'课程数',incomingApps:'收到申请',needReview:'待审核',publicDataStatus:'公开数据状态',latestApps:'最新申请',institutionDemo:'院校端演示',
+ programsListed:'个课程',programNotice:'这里展示的是公网演示学校下的演示课程。真实院校数据在公开前必须完成来源核验。',tuition:'学费',deadline:'截止日期',openProgram:'查看课程',noPrograms:'暂无课程。',
+ incomingTitle:'收到的申请',demoRecords:'条演示记录',appNotice:'这些是浏览器本地的演示申请，不包含真实学生材料或个人文件。',review:'查看',advance:'推进演示状态',
+ dataStatus:'公开数据状态',demo:'演示',verified:'已核验',verification:'核验状态',updated:'最近更新',source:'来源',notClaimed:'未声明真实来源',available:'可用',visibility:'公开状态',visible:'可见',
+ publishingRules:'发布规则',publicMvp:'公网 MVP',rulesText:'已核验记录必须有认可的来源 URL 或供应商证明。缺失的信息保持为空；演示数据始终明确标识，不冒充真实合作关系。',
+ programDetails:'课程详情',stage:'学段',curriculum:'课程体系',duration:'学制',startDate:'开学日期',demoProgram:'演示课程数据，仅用于产品预览。',applicationReview:'申请查看',applicationId:'申请编号',status:'状态',program:'课程',noRealApplicant:'公网演示不包含真实申请人数据或上传文件。',
+ page:'GlobalStudy — 院校 / 供应商端',langBtn:'English'
+},
+en:{
+ client:'Institution / Supplier',switch:'Switch client',heroEyebrow:'INSTITUTION CLIENT · LIVE DEMO',heroTitle:'Programs, applications and data status',heroText:'A public demonstration of the institution workspace: review programs, incoming applications and public data verification status.',
+ dash:'Dashboard',programs:'Programs',apps:'Applications',data:'Data status',close:'Close',programCount:'Programs',incomingApps:'Incoming applications',needReview:'Need review',publicDataStatus:'Public data status',latestApps:'Latest applications',institutionDemo:'Institution demo',
+ programsListed:'listed',programNotice:'Programs shown here are demonstration records attached to the public demo school. Real institution data requires source verification before publication.',tuition:'Tuition',deadline:'Deadline',openProgram:'Open program',noPrograms:'No programs available.',
+ incomingTitle:'Incoming applications',demoRecords:'demo records',appNotice:'These are local demonstration applications only. No real student files or personal documents are exposed in this public client.',review:'Review',advance:'Advance demo status',
+ dataStatus:'Public data status',demo:'Demo',verified:'Verified',verification:'Verification',updated:'Last updated',source:'Source',notClaimed:'Not claimed',available:'Available',visibility:'Public visibility',visible:'Visible',
+ publishingRules:'Publishing rules',publicMvp:'Public MVP',rulesText:'Verified records require an accepted source URL or supplier evidence. Missing facts remain blank. Demo data is always labeled and never presented as a real partnership.',
+ programDetails:'Program details',stage:'Stage',curriculum:'Curriculum',duration:'Duration',startDate:'Start date',demoProgram:'Demonstration program data for product preview only.',applicationReview:'Application review',applicationId:'Application ID',status:'Status',program:'Program',noRealApplicant:'No real applicant data or uploaded documents are included in this public demo.',
+ page:'GlobalStudy — Institution / Supplier',langBtn:'中文'
+}};
+function t(k){return T[lang][k]||k}
 async function api(url){const r=await fetch(url);const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||'Request failed');return j}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
-function openDrawer(t,h){$('#drawerTitle').textContent=t;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
+function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat(lang==='zh'?'zh-CN':'en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
+function sname(){return lang==='zh'?(school?.name?.zh||school?.name?.en):(school?.name?.en||school?.name?.zh)}
+function appStudent(a){return lang==='zh'?(a.student_zh||a.student_en||a.student):(a.student_en||a.student_zh||a.student)}
+function appProgram(a){return lang==='zh'?(a.program_zh||a.program_en||a.program):(a.program_en||a.program_zh||a.program)}
+function pname(p){return lang==='zh'?(p.name_zh||p.name||p.id):(p.name||p.name_zh||p.id)}
+function loc(){return [lang==='zh'?school?.location?.city_zh:school?.location?.city_en,lang==='zh'?school?.location?.district_zh:school?.location?.district_en].filter(Boolean).join(' · ')}
+function openDrawer(title,h){$('#drawerTitle').textContent=title;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
 function closeDrawer(){$('#drawer').classList.remove('open');$('#mask').classList.remove('open')}
 function persist(){localStorage.setItem('gs-inst-apps',JSON.stringify(incoming))}
+function applyLang(){
+ document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.title=t('page');$('#clientName').textContent=t('client');$('#switchClient').textContent=t('switch');$('#heroEyebrow').textContent=t('heroEyebrow');$('#heroTitle').textContent=t('heroTitle');$('#heroText').textContent=t('heroText');
+ $('#tabDash').textContent=t('dash');$('#tabPrograms').textContent=t('programs');$('#tabApps').textContent=t('apps');$('#tabData').textContent=t('data');
+ $('#navDashText').textContent=t('dash');$('#navProgramsText').textContent=t('programs');$('#navAppsText').textContent=t('apps');$('#navDataText').textContent=t('data');$('#drawerClose').textContent=t('close');$('#langBtn').textContent=t('langBtn');render()
+}
+$('#langBtn').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('gs-world-lang',lang);applyLang()};
 function setActive(name){['Dash','Programs','Apps','Data'].forEach(x=>{const a=$('#tab'+x),b=$('#nav'+x);if(a)a.classList.toggle('active',x.toLowerCase()===name);if(b)b.classList.toggle('active',x.toLowerCase()===name)})}
 function showTab(name){tab=name;setActive(name);render()}
 
 function dash(){
-  return '<section class="section"><div class="metrics">'+
-  '<div class="metric"><small>Programs</small><b>'+programs.length+'</b></div>'+
-  '<div class="metric"><small>Incoming applications</small><b>'+incoming.length+'</b></div>'+
-  '<div class="metric"><small>Need review</small><b>'+incoming.filter(x=>x.status==='Documents review').length+'</b></div>'+
-  '<div class="metric"><small>Public data status</small><b>'+(school?.verification?.is_demo?'Demo':'Verified')+'</b></div>'+
-  '</div><div class="section-head"><h2>Latest applications</h2><span>Institution demo</span></div>'+
-  '<div class="list">'+incoming.slice(0,3).map(appCard).join('')+'</div></section>'
+ return '<section class="section"><div class="metrics"><div class="metric"><small>'+esc(t('programCount'))+'</small><b>'+programs.length+'</b></div><div class="metric"><small>'+esc(t('incomingApps'))+'</small><b>'+incoming.length+'</b></div><div class="metric"><small>'+esc(t('needReview'))+'</small><b>'+incoming.filter(x=>x.status==='Documents review').length+'</b></div><div class="metric"><small>'+esc(t('publicDataStatus'))+'</small><b>'+esc(school?.verification?.is_demo?t('demo'):t('verified'))+'</b></div></div><div class="section-head"><h2>'+esc(t('latestApps'))+'</h2><span>'+esc(t('institutionDemo'))+'</span></div><div class="list">'+incoming.slice(0,3).map(appCard).join('')+'</div></section>'
 }
-function programCard(p){
-  return '<div class="card"><div class="row"><div><h3>'+esc(p.name||p.name_zh||p.id)+'</h3><div class="muted">'+esc([p.stage,p.curriculum,p.duration].filter(Boolean).join(' · '))+'</div></div><span class="status demo">DEMO</span></div>'+
-  '<div class="split"><div><small>Tuition</small><b>'+esc(money(p.tuition,p.currency||school?.fees?.currency))+'</b></div><div><small>Deadline</small><b>'+esc(p.deadline||'—')+'</b></div></div>'+
-  '<div class="actions"><button class="btn ghost" onclick="programDetail(\''+esc(p.id)+'\')">Open program</button></div></div>'
-}
-function programsPage(){
-  return '<section class="section"><div class="section-head"><h2>Programs</h2><span>'+programs.length+' listed</span></div><div class="notice">Programs shown here are demonstration records attached to the public demo school. Real institution data would require source verification before publication.</div><div class="list" style="margin-top:9px">'+(programs.length?programs.map(programCard).join(''):'<div class="empty">No programs available.</div>')+'</div></section>'
-}
-function appCard(a){
-  const cls=a.status==='Received'?'blue':a.status==='Documents review'?'warn':'good';
-  return '<div class="card"><div class="row"><div><h3>'+esc(a.student)+'</h3><div class="muted">'+esc(a.program)+' · '+esc(a.updated)+'</div></div><span class="status '+cls+'">'+esc(a.status)+'</span></div><div class="actions"><button class="btn ghost" onclick="appDetail(\''+esc(a.id)+'\')">Review</button><button class="btn soft" onclick="advance(\''+esc(a.id)+'\')">Advance demo status</button></div></div>'
-}
-function appsPage(){
-  return '<section class="section"><div class="section-head"><h2>Incoming applications</h2><span>'+incoming.length+' demo records</span></div><div class="notice">These are local demonstration applications only. No real student files or personal documents are exposed in this public client.</div><div class="list" style="margin-top:9px">'+incoming.map(appCard).join('')+'</div></section>'
-}
+function programCard(p){return '<div class="card"><div class="row"><div><h3>'+esc(pname(p))+'</h3><div class="muted">'+esc([p.stage,p.curriculum,p.duration].filter(Boolean).join(' · '))+'</div></div><span class="status demo">'+esc(t('demo'))+'</span></div><div class="split"><div><small>'+esc(t('tuition'))+'</small><b>'+esc(money(p.tuition,p.currency||school?.fees?.currency))+'</b></div><div><small>'+esc(t('deadline'))+'</small><b>'+esc(p.deadline||'—')+'</b></div></div><div class="actions"><button class="btn ghost" onclick="programDetail(\''+esc(p.id)+'\')">'+esc(t('openProgram'))+'</button></div></div>'}
+function programsPage(){return '<section class="section"><div class="section-head"><h2>'+esc(t('programs'))+'</h2><span>'+programs.length+' '+esc(t('programsListed'))+'</span></div><div class="notice">'+esc(t('programNotice'))+'</div><div class="list" style="margin-top:9px">'+(programs.length?programs.map(programCard).join(''):'<div class="empty">'+esc(t('noPrograms'))+'</div>')+'</div></section>'}
+function appCard(a){const cls=a.status==='Received'?'blue':a.status==='Documents review'?'warn':'good';return '<div class="card"><div class="row"><div><h3>'+esc(appStudent(a))+'</h3><div class="muted">'+esc(appProgram(a))+' · '+esc(a.updated)+'</div></div><span class="status '+cls+'">'+esc(a.status)+'</span></div><div class="actions"><button class="btn ghost" onclick="appDetail(\''+esc(a.id)+'\')">'+esc(t('review'))+'</button><button class="btn soft" onclick="advance(\''+esc(a.id)+'\')">'+esc(t('advance'))+'</button></div></div>'}
+function appsPage(){return '<section class="section"><div class="section-head"><h2>'+esc(t('incomingTitle'))+'</h2><span>'+incoming.length+' '+esc(t('demoRecords'))+'</span></div><div class="notice">'+esc(t('appNotice'))+'</div><div class="list" style="margin-top:9px">'+incoming.map(appCard).join('')+'</div></section>'}
 function dataPage(){
-  const demo=school?.verification?.is_demo;
-  return '<section class="section"><div class="section-head"><h2>Public data status</h2><span>'+(demo?'Demo':'Verified')+'</span></div>'+
-  '<div class="card"><div class="row"><div><h3>'+esc(school?.name?.en||'Institution')+'</h3><div class="muted">'+esc([school?.location?.city_en,school?.location?.district_en].filter(Boolean).join(' · '))+'</div></div><span class="status '+(demo?'demo':'good')+'">'+(demo?'DEMO DATA':'VERIFIED')+'</span></div>'+
-  '<div class="detail-grid" style="margin-top:10px"><div class="detail"><small>Verification</small><b>'+esc(school?.verification?.status||'—')+'</b></div><div class="detail"><small>Last updated</small><b>'+esc(school?.verification?.updated_at||'—')+'</b></div><div class="detail"><small>Source</small><b>'+(demo?'Not claimed':'Available')+'</b></div><div class="detail"><small>Public visibility</small><b>Visible</b></div></div></div>'+
-  '<div class="section-head"><h2>Publishing rules</h2><span>Public MVP</span></div><div class="notice">Verified records require an accepted source URL or supplier evidence. Missing facts remain blank. Demo data is always labeled and never presented as a real partnership.</div></section>'
+ const demo=school?.verification?.is_demo;
+ return '<section class="section"><div class="section-head"><h2>'+esc(t('dataStatus'))+'</h2><span>'+esc(demo?t('demo'):t('verified'))+'</span></div><div class="card"><div class="row"><div><h3>'+esc(sname()||'Institution')+'</h3><div class="muted">'+esc(loc())+'</div></div><span class="status '+(demo?'demo':'good')+'">'+esc(demo?t('demo'):t('verified'))+'</span></div><div class="detail-grid" style="margin-top:10px"><div class="detail"><small>'+esc(t('verification'))+'</small><b>'+esc(school?.verification?.status||'—')+'</b></div><div class="detail"><small>'+esc(t('updated'))+'</small><b>'+esc(school?.verification?.updated_at||'—')+'</b></div><div class="detail"><small>'+esc(t('source'))+'</small><b>'+esc(demo?t('notClaimed'):t('available'))+'</b></div><div class="detail"><small>'+esc(t('visibility'))+'</small><b>'+esc(t('visible'))+'</b></div></div></div><div class="section-head"><h2>'+esc(t('publishingRules'))+'</h2><span>'+esc(t('publicMvp'))+'</span></div><div class="notice">'+esc(t('rulesText'))+'</div></section>'
 }
-function programDetail(id){const p=programs.find(x=>x.id===id);openDrawer('Program details','<h3>'+esc(p.name||p.name_zh||p.id)+'</h3><div class="detail-grid"><div class="detail"><small>Stage</small><b>'+esc(p.stage||'—')+'</b></div><div class="detail"><small>Curriculum</small><b>'+esc(p.curriculum||'—')+'</b></div><div class="detail"><small>Duration</small><b>'+esc(p.duration||'—')+'</b></div><div class="detail"><small>Tuition</small><b>'+esc(money(p.tuition,p.currency||school?.fees?.currency))+'</b></div><div class="detail"><small>Start date</small><b>'+esc(p.start_date||'—')+'</b></div><div class="detail"><small>Deadline</small><b>'+esc(p.deadline||'—')+'</b></div></div><div class="notice" style="margin-top:10px">Demonstration program data for product preview only.</div>')}
-function appDetail(id){const a=incoming.find(x=>x.id===id);openDrawer('Application review','<h3>'+esc(a.student)+'</h3><div class="detail-grid"><div class="detail"><small>Application ID</small><b>'+esc(a.id)+'</b></div><div class="detail"><small>Status</small><b>'+esc(a.status)+'</b></div><div class="detail"><small>Program</small><b>'+esc(a.program)+'</b></div><div class="detail"><small>Updated</small><b>'+esc(a.updated)+'</b></div></div><div class="notice" style="margin-top:10px">No real applicant data or uploaded documents are included in this public demo.</div>')}
-function advance(id){const a=incoming.find(x=>x.id===id);const stages=['Received','Documents review','Interview requested','Decision demo'];let i=stages.indexOf(a.status);a.status=stages[Math.min(stages.length-1,i+1)];a.updated='Just now';persist();render()}
-function render(){if(tab==='dash')main.innerHTML=dash();else if(tab==='programs')main.innerHTML=programsPage();else if(tab==='apps')main.innerHTML=appsPage();else main.innerHTML=dataPage()}
+function programDetail(id){const p=programs.find(x=>x.id===id);openDrawer(t('programDetails'),'<h3>'+esc(pname(p))+'</h3><div class="detail-grid"><div class="detail"><small>'+esc(t('stage'))+'</small><b>'+esc(p.stage||'—')+'</b></div><div class="detail"><small>'+esc(t('curriculum'))+'</small><b>'+esc(p.curriculum||'—')+'</b></div><div class="detail"><small>'+esc(t('duration'))+'</small><b>'+esc(p.duration||'—')+'</b></div><div class="detail"><small>'+esc(t('tuition'))+'</small><b>'+esc(money(p.tuition,p.currency||school?.fees?.currency))+'</b></div><div class="detail"><small>'+esc(t('startDate'))+'</small><b>'+esc(p.start_date||'—')+'</b></div><div class="detail"><small>'+esc(t('deadline'))+'</small><b>'+esc(p.deadline||'—')+'</b></div></div><div class="notice" style="margin-top:10px">'+esc(t('demoProgram'))+'</div>')}
+function appDetail(id){const a=incoming.find(x=>x.id===id);openDrawer(t('applicationReview'),'<h3>'+esc(appStudent(a))+'</h3><div class="detail-grid"><div class="detail"><small>'+esc(t('applicationId'))+'</small><b>'+esc(a.id)+'</b></div><div class="detail"><small>'+esc(t('status'))+'</small><b>'+esc(a.status)+'</b></div><div class="detail"><small>'+esc(t('program'))+'</small><b>'+esc(appProgram(a))+'</b></div><div class="detail"><small>'+esc(t('updated'))+'</small><b>'+esc(a.updated)+'</b></div></div><div class="notice" style="margin-top:10px">'+esc(t('noRealApplicant'))+'</div>')}
+function advance(id){const a=incoming.find(x=>x.id===id);const stages=['Received','Documents review','Interview requested','Decision demo'];let i=stages.indexOf(a.status);a.status=stages[Math.min(stages.length-1,i+1)];a.updated=lang==='zh'?'刚刚':'Just now';persist();render()}
+function render(){if(!main)return;if(tab==='dash')main.innerHTML=dash();else if(tab==='programs')main.innerHTML=programsPage();else if(tab==='apps')main.innerHTML=appsPage();else main.innerHTML=dataPage()}
 const main=$('#main');
-(async()=>{
-  const list=(await api('/api/schools?pageSize=50')).data||[];
-  school=list.find(x=>x.id==='SG-DEMO-001')||list[0];
-  if(school){const d=(await api('/api/schools/'+encodeURIComponent(school.id))).data;school=d;programs=d.programs||[]}
-  render()
-})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
+(async()=>{const list=(await api('/api/schools?pageSize=50')).data||[];school=list.find(x=>x.id==='SG-DEMO-001')||list[0];if(school){const d=(await api('/api/schools/'+encodeURIComponent(school.id))).data;school=d;programs=d.programs||[]}applyLang()})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
 </script>
 </body>
 </html>
