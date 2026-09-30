@@ -67,3 +67,29 @@ jobs:
           if [ -f /tmp/globalstudy.pid ]; then
             kill "$(cat /tmp/globalstudy.pid)" || true
           fi
+
+      - name: Start public MVP smoke server
+        run: |
+          PORT=3001 npm run start:public > /tmp/globalstudy-public.log 2>&1 &
+          echo $! > /tmp/globalstudy-public.pid
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:3001/api/health >/tmp/public-health.json; then
+              break
+            fi
+            sleep 1
+          done
+          cat /tmp/public-health.json
+
+      - name: Public MVP isolation smoke
+        run: |
+          curl -fsS http://127.0.0.1:3001/ > /tmp/public-index.html
+          grep -q "Find the right school" /tmp/public-index.html
+          test "$(curl -s -o /tmp/growth.json -w '%{http_code}' http://127.0.0.1:3001/api/growth/leads)" = "404"
+          test "$(curl -s -o /tmp/admin.json -w '%{http_code}' http://127.0.0.1:3001/api/admin/import/preview)" = "404"
+
+      - name: Stop public MVP smoke server
+        if: always()
+        run: |
+          if [ -f /tmp/globalstudy-public.pid ]; then
+            kill "$(cat /tmp/globalstudy-public.pid)" || true
+          fi
