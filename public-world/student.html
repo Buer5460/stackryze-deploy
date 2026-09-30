@@ -1,140 +1,138 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>GlobalStudy — Student / Parent</title>
+<title>GlobalStudy — 学生 / 家长端</title>
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
 <div class="phone">
   <header class="header">
-    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>Student / Parent</small></div></a>
-    <a class="pill" href="/">Switch client</a>
+    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small id="clientName">学生 / 家长端</small></div></a>
+    <div class="header-actions"><button class="lang-btn" id="langBtn">English</button><a class="pill" href="/" id="switchClient">切换客户端</a></div>
   </header>
 
   <section class="hero">
-    <div class="eyebrow">STUDENT CLIENT · LIVE DEMO</div>
-    <h1>Find and shortlist schools</h1>
-    <p>Search by location, stage and curriculum. Compare schools and create a demo application draft from your shortlist.</p>
+    <div class="eyebrow" id="heroEyebrow">学生端 · 在线演示</div>
+    <h1 id="heroTitle">找学校并建立自己的候选清单</h1>
+    <p id="heroText">按地区、学段和课程体系搜索学校，查看详情、收藏，并创建演示申请草稿。</p>
   </section>
 
   <div class="tabs">
-    <button id="tabExplore" class="active" onclick="showTab('explore')">Explore</button>
-    <button id="tabShortlist" onclick="showTab('shortlist')">Shortlist</button>
-    <button id="tabApps" onclick="showTab('apps')">Applications</button>
+    <button id="tabExplore" class="active" onclick="showTab('explore')">找学校</button>
+    <button id="tabShortlist" onclick="showTab('shortlist')">收藏</button>
+    <button id="tabApps" onclick="showTab('apps')">申请</button>
   </div>
 
   <main id="main"></main>
 
   <nav class="bottom">
-    <button class="active" id="navExplore" onclick="showTab('explore')"><b>⌕</b>Explore</button>
-    <button id="navShortlist" onclick="showTab('shortlist')"><b>♡</b>Shortlist</button>
-    <button id="navApps" onclick="showTab('apps')"><b>◎</b>Applications</button>
-    <button onclick="location.href='/'"><b>↔</b>Clients</button>
+    <button class="active" id="navExplore" onclick="showTab('explore')"><b>⌕</b><span id="navExploreText">找学校</span></button>
+    <button id="navShortlist" onclick="showTab('shortlist')"><b>♡</b><span id="navShortlistText">收藏</span></button>
+    <button id="navApps" onclick="showTab('apps')"><b>◎</b><span id="navAppsText">申请</span></button>
+    <button onclick="location.href='/'"><b>↔</b><span id="navClientsText">客户端</span></button>
   </nav>
 </div>
 
 <div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>
 <section class="drawer" id="drawer">
   <div class="handle"></div>
-  <div class="drawer-head"><b id="drawerTitle">Details</b><button onclick="closeDrawer()">Close</button></div>
+  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="closeDrawer()">关闭</button></div>
   <div id="drawerBody"></div>
 </section>
 
 <script>
 const $=s=>document.querySelector(s);
+let lang=localStorage.getItem('gs-world-lang')||'zh';
 let ref=null, schools=[], tab='explore';
 let saved=JSON.parse(localStorage.getItem('gs-student-saved')||'[]');
 let applications=JSON.parse(localStorage.getItem('gs-student-apps')||'[]');
 
+const T={
+zh:{
+ client:'学生 / 家长端',switch:'切换客户端',heroEyebrow:'学生端 · 在线演示',heroTitle:'找学校并建立自己的候选清单',heroText:'按地区、学段和课程体系搜索学校，查看详情、收藏，并创建演示申请草稿。',
+ explore:'找学校',shortlist:'收藏',apps:'申请',clients:'客户端',close:'关闭',keyword:'学校、地区或课程体系',allCountries:'全部国家',allCities:'全部城市',allStages:'全部学段',allCurricula:'全部课程',
+ search:'搜索学校',scholarships:'有奖学金',boarding:'有住宿',results:'学校结果',schools:'所学校',demo:'演示',verified:'已核验',tuition:'年学费',transit:'最近交通',details:'详情',save:'收藏',saved:'已收藏',apply:'申请',
+ noMatch:'没有符合条件的学校。',schoolDetails:'学校详情',loading:'加载中…',schoolType:'学校类型',teachingLanguage:'教学语言',firstYear:'首年费用',yes:'有',no:'无',source:'来源：',demoSource:'演示数据，不代表真实学校或合作关系。',
+ createDraft:'创建申请草稿',already:'该学校已经有申请草稿。',yourShortlist:'我的收藏',savedCount:'已收藏',noneSaved:'还没有收藏学校。',applicationDrafts:'申请草稿',demoWorkflow:'演示流程',
+ appNotice:'此公网演示只把申请草稿保存在你的浏览器中，不会提交给任何真实学校。',progress:'进度',nextStep:'下一步',completeProfile:'完善学生档案',noApps:'还没有申请草稿。',page:'GlobalStudy — 学生 / 家长端',langBtn:'English'
+},
+en:{
+ client:'Student / Parent',switch:'Switch client',heroEyebrow:'STUDENT CLIENT · LIVE DEMO',heroTitle:'Find and shortlist schools',heroText:'Search by location, stage and curriculum. View details, save schools and create a demo application draft.',
+ explore:'Explore',shortlist:'Shortlist',apps:'Applications',clients:'Clients',close:'Close',keyword:'School, area or curriculum',allCountries:'All countries',allCities:'All cities',allStages:'All stages',allCurricula:'All curricula',
+ search:'Search schools',scholarships:'Scholarships',boarding:'Boarding',results:'School results',schools:'schools',demo:'DEMO',verified:'VERIFIED',tuition:'Tuition / year',transit:'Nearest transit',details:'Details',save:'Save',saved:'Saved',apply:'Apply',
+ noMatch:'No matching schools.',schoolDetails:'School details',loading:'Loading…',schoolType:'School type',teachingLanguage:'Teaching language',firstYear:'First-year cost',yes:'Yes',no:'No',source:'Source: ',demoSource:'Demonstration record. No real school or partnership is claimed.',
+ createDraft:'Create application draft',already:'Application draft already exists.',yourShortlist:'Your shortlist',savedCount:'saved',noneSaved:'No schools saved yet.',applicationDrafts:'Application drafts',demoWorkflow:'Demo workflow',
+ appNotice:'This public demo stores application drafts only in your browser. It does not submit anything to a real institution.',progress:'Progress',nextStep:'Next step',completeProfile:'Complete profile',noApps:'No application drafts yet.',page:'GlobalStudy — Student / Parent',langBtn:'中文'
+}};
+function t(k){return T[lang][k]||k}
 async function api(url){const r=await fetch(url);const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||'Request failed');return j}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
-function label(s){return s?.en||s?.zh||s?.id||s||'—'}
-function loc(s){return [s.location?.country_en,s.location?.city_en,s.location?.district_en].filter(Boolean).join(' · ')}
-function openDrawer(t,h){$('#drawerTitle').textContent=t;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
+function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat(lang==='zh'?'zh-CN':'en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
+function name(s){return lang==='zh'?(s?.name?.zh||s?.name?.en):(s?.name?.en||s?.name?.zh)}
+function label(s){return lang==='zh'?(s?.zh||s?.en||s?.id||s):(s?.en||s?.zh||s?.id||s)||'—'}
+function loc(s){return [lang==='zh'?s.location?.country_zh:s.location?.country_en,lang==='zh'?s.location?.city_zh:s.location?.city_en,lang==='zh'?s.location?.district_zh:s.location?.district_en].filter(Boolean).join(' · ')}
+function transit(s){return lang==='zh'?(s.transit?.name_zh||s.transit?.name_en):(s.transit?.name_en||s.transit?.name_zh)||'—'}
+function openDrawer(title,h){$('#drawerTitle').textContent=title;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
 function closeDrawer(){$('#drawer').classList.remove('open');$('#mask').classList.remove('open')}
 
-function setActive(name){
-  ['Explore','Shortlist','Apps'].forEach(x=>{
-    const a=$('#tab'+x),b=$('#nav'+x);if(a)a.classList.toggle('active',x.toLowerCase()===name);if(b)b.classList.toggle('active',x.toLowerCase()===name)
-  })
+function applyLang(){
+ document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.title=t('page');
+ $('#clientName').textContent=t('client');$('#switchClient').textContent=t('switch');$('#heroEyebrow').textContent=t('heroEyebrow');$('#heroTitle').textContent=t('heroTitle');$('#heroText').textContent=t('heroText');
+ $('#tabExplore').textContent=t('explore');$('#tabShortlist').textContent=t('shortlist');$('#tabApps').textContent=t('apps');
+ $('#navExploreText').textContent=t('explore');$('#navShortlistText').textContent=t('shortlist');$('#navAppsText').textContent=t('apps');$('#navClientsText').textContent=t('clients');$('#drawerClose').textContent=t('close');$('#langBtn').textContent=t('langBtn');render()
 }
-function showTab(name){tab=name;setActive(name);render()}
+$('#langBtn').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('gs-world-lang',lang);applyLang()};
 
-function searchUI(){
-  return '<section class="section"><div class="search">'+
-  '<input id="q" class="wide" placeholder="School, area or curriculum">'+
-  '<select id="country"></select><select id="city"></select>'+
-  '<select id="stage"></select><select id="curriculum"></select>'+
-  '<button class="btn primary wide" onclick="runSearch()">Search schools</button></div>'+
-  '<div class="quick"><button onclick="quick(\'IB\')">IB</button><button onclick="quick(\'Cambridge\')">Cambridge</button><button onclick="runSearch({scholarship:true})">Scholarships</button><button onclick="runSearch({boarding:true})">Boarding</button></div>'+
-  '<div class="section-head"><h2>School results</h2><span id="resultCount">—</span></div><div id="schoolList" class="list"></div></section>'
-}
-function fillSelect(id,items,all,labelFn,valueFn){
-  const el=$(id);if(!el)return;const old=el.value;el.innerHTML='<option value="">'+all+'</option>'+items.map(x=>'<option value="'+esc(valueFn(x))+'">'+esc(labelFn(x))+'</option>').join('');if([...el.options].some(o=>o.value===old))el.value=old
-}
+function setActive(n){['Explore','Shortlist','Apps'].forEach(x=>{const a=$('#tab'+x),b=$('#nav'+x);if(a)a.classList.toggle('active',x.toLowerCase()===n);if(b)b.classList.toggle('active',x.toLowerCase()===n)})}
+function showTab(n){tab=n;setActive(n);render()}
+
+function searchUI(){return '<section class="section"><div class="search"><input id="q" class="wide" placeholder="'+esc(t('keyword'))+'"><select id="country"></select><select id="city"></select><select id="stage"></select><select id="curriculum"></select><button class="btn primary wide" onclick="runSearch()">'+esc(t('search'))+'</button></div><div class="quick"><button onclick="quick(\'IB\')">IB</button><button onclick="quick(\'Cambridge\')">Cambridge</button><button onclick="runSearch({scholarship:true})">'+esc(t('scholarships'))+'</button><button onclick="runSearch({boarding:true})">'+esc(t('boarding'))+'</button></div><div class="section-head"><h2>'+esc(t('results'))+'</h2><span id="resultCount">—</span></div><div id="schoolList" class="list"></div></section>'}
+function fillSelect(id,items,all,labelFn,valueFn){const el=$(id);if(!el)return;const old=el.value;el.innerHTML='<option value="">'+esc(all)+'</option>'+items.map(x=>'<option value="'+esc(valueFn(x))+'">'+esc(labelFn(x))+'</option>').join('');if([...el.options].some(o=>o.value===old))el.value=old}
 function fillFilters(){
-  if(!ref)return;
-  fillSelect('#country',ref.countries,'All countries',x=>x.en,x=>x.id);
-  const c=$('#country')?.value||'';
-  fillSelect('#city',ref.cities.filter(x=>!c||x.country_id===c),'All cities',x=>x.en,x=>x.id);
-  fillSelect('#stage',ref.stages,'All stages',x=>x.en,x=>x.id);
-  fillSelect('#curriculum',ref.curricula,'All curricula',x=>x.en,x=>x.en);
-  if($('#country'))$('#country').onchange=()=>{fillFilters();runSearch()};
-  if($('#city'))$('#city').onchange=()=>runSearch();
-  if($('#stage'))$('#stage').onchange=()=>runSearch();
-  if($('#curriculum'))$('#curriculum').onchange=()=>runSearch();
-  if($('#q'))$('#q').onkeydown=e=>{if(e.key==='Enter')runSearch()}
+ if(!ref)return;
+ fillSelect('#country',ref.countries,t('allCountries'),x=>lang==='zh'?(x.zh||x.en):x.en,x=>x.id);const c=$('#country')?.value||'';
+ fillSelect('#city',ref.cities.filter(x=>!c||x.country_id===c),t('allCities'),x=>lang==='zh'?(x.zh||x.en):x.en,x=>x.id);
+ fillSelect('#stage',ref.stages,t('allStages'),x=>lang==='zh'?(x.zh||x.en):x.en,x=>x.id);
+ fillSelect('#curriculum',ref.curricula,t('allCurricula'),x=>lang==='zh'?(x.zh||x.en):x.en,x=>x.en);
+ if($('#country'))$('#country').onchange=()=>{fillFilters();runSearch()};if($('#city'))$('#city').onchange=()=>runSearch();if($('#stage'))$('#stage').onchange=()=>runSearch();if($('#curriculum'))$('#curriculum').onchange=()=>runSearch();if($('#q'))$('#q').onkeydown=e=>{if(e.key==='Enter')runSearch()}
 }
-
 function schoolCard(s){
-  const isSaved=saved.includes(s.id),demo=s.verification?.is_demo;
-  return '<article class="card"><div class="row"><div class="school"><div class="schoolmark">'+esc((s.name?.en||'G').slice(0,1))+'</div><div><h3>'+esc(s.name?.en)+'</h3><div class="muted">'+esc(loc(s))+'</div></div></div><span class="status '+(demo?'demo':'good')+'">'+(demo?'DEMO':'VERIFIED')+'</span></div>'+
-  '<div class="tags">'+(s.stages||[]).slice(0,3).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).slice(0,2).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div>'+
-  '<div class="split"><div><small>Tuition / year</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div><small>Nearest transit</small><b>'+esc(s.transit?.name_en||'—')+'</b></div></div>'+
-  '<div class="actions"><button class="btn ghost" onclick="details(\''+esc(s.id)+'\')">Details</button><button class="btn '+(isSaved?'soft':'ghost')+'" onclick="toggleSave(\''+esc(s.id)+'\')">'+(isSaved?'Saved':'Save')+'</button><button class="btn primary" onclick="startApplication(\''+esc(s.id)+'\')">Apply</button></div></article>'
+ const isSaved=saved.includes(s.id),demo=s.verification?.is_demo;
+ return '<article class="card"><div class="row"><div class="school"><div class="schoolmark">'+esc((name(s)||'G').slice(0,1))+'</div><div><h3>'+esc(name(s))+'</h3><div class="muted">'+esc(loc(s))+'</div></div></div><span class="status '+(demo?'demo':'good')+'">'+esc(demo?t('demo'):t('verified'))+'</span></div>'+
+ '<div class="tags">'+(s.stages||[]).slice(0,3).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).slice(0,2).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div>'+
+ '<div class="split"><div><small>'+esc(t('tuition'))+'</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div><small>'+esc(t('transit'))+'</small><b>'+esc(transit(s))+'</b></div></div>'+
+ '<div class="actions"><button class="btn ghost" onclick="details(\''+esc(s.id)+'\')">'+esc(t('details'))+'</button><button class="btn '+(isSaved?'soft':'ghost')+'" onclick="toggleSave(\''+esc(s.id)+'\')">'+esc(isSaved?t('saved'):t('save'))+'</button><button class="btn primary" onclick="startApplication(\''+esc(s.id)+'\')">'+esc(t('apply'))+'</button></div></article>'
 }
-function renderSchools(){const box=$('#schoolList');if(!box)return;box.innerHTML=schools.length?schools.map(schoolCard).join(''):'<div class="empty">No matching schools.</div>'}
-
-async function runSearch(extra={}){
-  const p=new URLSearchParams();[['q','#q'],['country','#country'],['city','#city'],['stage','#stage'],['curriculum','#curriculum']].forEach(([k,id])=>{const el=$(id);if(el&&el.value)p.set(k,el.value)});
-  Object.entries(extra).forEach(([k,v])=>p.set(k,String(v)));p.set('pageSize','50');
-  const j=await api('/api/schools?'+p.toString());schools=j.data||[];renderSchools();if($('#resultCount'))$('#resultCount').textContent=j.meta.total+' schools'
-}
+function renderSchools(){const box=$('#schoolList');if(!box)return;box.innerHTML=schools.length?schools.map(schoolCard).join(''):'<div class="empty">'+esc(t('noMatch'))+'</div>'}
+async function runSearch(extra={}){const p=new URLSearchParams();[['q','#q'],['country','#country'],['city','#city'],['stage','#stage'],['curriculum','#curriculum']].forEach(([k,id])=>{const el=$(id);if(el&&el.value)p.set(k,el.value)});Object.entries(extra).forEach(([k,v])=>p.set(k,String(v)));p.set('pageSize','50');const j=await api('/api/schools?'+p.toString());schools=j.data||[];renderSchools();if($('#resultCount'))$('#resultCount').textContent=j.meta.total+' '+t('schools')}
 function quick(v){const el=$('#curriculum');if(!el)return;const opt=[...el.options].find(o=>o.value.includes(v));if(opt)el.value=opt.value;runSearch()}
-
 function toggleSave(id){const i=saved.indexOf(id);if(i>=0)saved.splice(i,1);else saved.push(id);localStorage.setItem('gs-student-saved',JSON.stringify(saved));render()}
 async function details(id){
-  openDrawer('School details','<div class="empty">Loading…</div>');
-  try{const s=(await api('/api/schools/'+encodeURIComponent(id))).data;
-    $('#drawerBody').innerHTML='<div class="row"><div><h3>'+esc(s.name?.en)+'</h3><div class="muted">'+esc(loc(s))+'</div></div><span class="status '+(s.verification?.is_demo?'demo':'good')+'">'+(s.verification?.is_demo?'DEMO':'VERIFIED')+'</span></div>'+
-    '<div class="tags">'+(s.stages||[]).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div>'+
-    '<div class="detail-grid"><div class="detail"><small>School type</small><b>'+esc(s.institution_type||'—')+'</b></div><div class="detail"><small>Teaching language</small><b>'+esc(s.languages?.primary||'—')+'</b></div><div class="detail"><small>Tuition</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div class="detail"><small>First-year cost</small><b>'+esc(money(s.fees?.first_year_cost_min,s.fees?.currency))+'</b></div><div class="detail"><small>Boarding</small><b>'+(s.boarding?'Yes':'No')+'</b></div><div class="detail"><small>Scholarships</small><b>'+(s.scholarships?'Yes':'No')+'</b></div></div>'+
-    '<div class="notice" style="margin-top:10px">'+(s.source?.source_url?'Source: '+esc(s.source.source_url):'Demonstration record. No public source is claimed.')+'</div>'+
-    '<div class="actions"><button class="btn primary" onclick="startApplication(\''+esc(s.id)+'\');closeDrawer()">Create application draft</button></div>'
-  }catch(e){$('#drawerBody').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
+ openDrawer(t('schoolDetails'),'<div class="empty">'+esc(t('loading'))+'</div>');
+ try{const s=(await api('/api/schools/'+encodeURIComponent(id))).data;
+ $('#drawerBody').innerHTML='<div class="row"><div><h3>'+esc(name(s))+'</h3><div class="muted">'+esc(loc(s))+'</div></div><span class="status '+(s.verification?.is_demo?'demo':'good')+'">'+esc(s.verification?.is_demo?t('demo'):t('verified'))+'</span></div>'+
+ '<div class="tags">'+(s.stages||[]).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div>'+
+ '<div class="detail-grid"><div class="detail"><small>'+esc(t('schoolType'))+'</small><b>'+esc(s.institution_type||'—')+'</b></div><div class="detail"><small>'+esc(t('teachingLanguage'))+'</small><b>'+esc(s.languages?.primary||'—')+'</b></div><div class="detail"><small>'+esc(t('tuition'))+'</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div class="detail"><small>'+esc(t('firstYear'))+'</small><b>'+esc(money(s.fees?.first_year_cost_min,s.fees?.currency))+'</b></div><div class="detail"><small>'+esc(t('boarding'))+'</small><b>'+esc(s.boarding?t('yes'):t('no'))+'</b></div><div class="detail"><small>'+esc(t('scholarships'))+'</small><b>'+esc(s.scholarships?t('yes'):t('no'))+'</b></div></div>'+
+ '<div class="notice" style="margin-top:10px">'+(s.source?.source_url?esc(t('source'))+esc(s.source.source_url):esc(t('demoSource')))+'</div><div class="actions"><button class="btn primary" onclick="startApplication(\''+esc(s.id)+'\');closeDrawer()">'+esc(t('createDraft'))+'</button></div>'
+ }catch(e){$('#drawerBody').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}
 }
 async function startApplication(id){
-  const s=schools.find(x=>x.id===id)||((await api('/api/schools/'+encodeURIComponent(id))).data);
-  if(applications.some(x=>x.school_id===id)){alert('Application draft already exists.');showTab('apps');return}
-  applications.unshift({id:'APP-'+Date.now().toString().slice(-6),school_id:id,school_name:s.name?.en||id,status:'Draft',progress:15,created_at:new Date().toLocaleDateString()});
-  localStorage.setItem('gs-student-apps',JSON.stringify(applications));showTab('apps')
+ const s=schools.find(x=>x.id===id)||((await api('/api/schools/'+encodeURIComponent(id))).data);
+ if(applications.some(x=>x.school_id===id)){alert(t('already'));showTab('apps');return}
+ applications.unshift({id:'APP-'+Date.now().toString().slice(-6),school_id:id,school_name_en:s.name?.en||id,school_name_zh:s.name?.zh||s.name?.en||id,status:'Draft',progress:15,created_at:new Date().toLocaleDateString(lang==='zh'?'zh-CN':'en-US')});
+ localStorage.setItem('gs-student-apps',JSON.stringify(applications));showTab('apps')
 }
-
 async function render(){
-  if(tab==='explore'){main.innerHTML=searchUI();fillFilters();await runSearch();return}
-  if(tab==='shortlist'){
-    const items=[];for(const id of saved){try{items.push((await api('/api/schools/'+encodeURIComponent(id))).data)}catch{}}
-    main.innerHTML='<section class="section"><div class="section-head"><h2>Your shortlist</h2><span>'+items.length+' saved</span></div><div class="list">'+(items.length?items.map(schoolCard).join(''):'<div class="empty">No schools saved yet.</div>')+'</div></section>';return
-  }
-  main.innerHTML='<section class="section"><div class="section-head"><h2>Application drafts</h2><span>Demo workflow</span></div><div class="notice">This public demo stores application drafts only in your browser. It does not submit anything to a real institution.</div><div class="list" style="margin-top:9px">'+(applications.length?applications.map(a=>'<div class="card"><div class="row"><div><h3>'+esc(a.school_name)+'</h3><div class="muted">'+esc(a.id)+' · '+esc(a.created_at)+'</div></div><span class="status blue">'+esc(a.status)+'</span></div><div class="split"><div><small>Progress</small><b>'+a.progress+'%</b></div><div><small>Next step</small><b>Complete profile</b></div></div></div>').join(''):'<div class="empty">No application drafts yet.</div>')+'</div></section>'
+ if(!main)return;
+ if(tab==='explore'){main.innerHTML=searchUI();fillFilters();await runSearch();return}
+ if(tab==='shortlist'){const items=[];for(const id of saved){try{items.push((await api('/api/schools/'+encodeURIComponent(id))).data)}catch{}}main.innerHTML='<section class="section"><div class="section-head"><h2>'+esc(t('yourShortlist'))+'</h2><span>'+items.length+' '+esc(t('savedCount'))+'</span></div><div class="list">'+(items.length?items.map(schoolCard).join(''):'<div class="empty">'+esc(t('noneSaved'))+'</div>')+'</div></section>';return}
+ main.innerHTML='<section class="section"><div class="section-head"><h2>'+esc(t('applicationDrafts'))+'</h2><span>'+esc(t('demoWorkflow'))+'</span></div><div class="notice">'+esc(t('appNotice'))+'</div><div class="list" style="margin-top:9px">'+(applications.length?applications.map(a=>'<div class="card"><div class="row"><div><h3>'+esc(lang==='zh'?(a.school_name_zh||a.school_name||a.school_name_en):(a.school_name_en||a.school_name))+'</h3><div class="muted">'+esc(a.id)+' · '+esc(a.created_at)+'</div></div><span class="status blue">'+esc(a.status)+'</span></div><div class="split"><div><small>'+esc(t('progress'))+'</small><b>'+a.progress+'%</b></div><div><small>'+esc(t('nextStep'))+'</small><b>'+esc(t('completeProfile'))+'</b></div></div></div>').join(''):'<div class="empty">'+esc(t('noApps'))+'</div>')+'</div></section>'
 }
-
 const main=$('#main');
-(async()=>{const [r,s]=await Promise.all([api('/api/reference'),api('/api/schools?pageSize=50')]);ref=r.data;schools=s.data;render()})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
+(async()=>{const [r,s]=await Promise.all([api('/api/reference'),api('/api/schools?pageSize=50')]);ref=r.data;schools=s.data;applyLang()})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
 </script>
 </body>
 </html>
