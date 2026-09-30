@@ -77,13 +77,28 @@ async function run() {
     {
       const { res, body } = await get('/');
       assert.equal(res.status, 200);
-      assert.match(body, /GlobalStudy/);
-      assert.match(body, /Find the right school/);
+      assert.match(body, /Choose a client to open/);
+      assert.match(body, /student\.html/);
+      assert.match(body, /agent\.html/);
+      assert.match(body, /institution\.html/);
       assert.doesNotMatch(body, /Growth Center/);
       assert.doesNotMatch(body, /线索池/);
-      const script = body.match(/<script>([\s\S]*?)<\/script>/);
-      assert.ok(script && script[1], 'public MVP inline script must exist');
-      assert.doesNotThrow(() => new Function(script[1]), 'public MVP inline script must parse');
+    }
+
+    for (const [path, marker] of [
+      ['/student.html', /Student \/ Parent/],
+      ['/agent.html', /Education Agent/],
+      ['/institution.html', /Institution \/ Supplier/]
+    ]) {
+      const { res, body } = await get(path);
+      assert.equal(res.status, 200);
+      assert.match(body, marker);
+      assert.match(body, /app\.css/);
+      assert.doesNotMatch(body, /Growth Center/);
+      assert.doesNotMatch(body, /线索池/);
+      const scripts = [...body.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+      assert.ok(scripts.length > 0, path + ' inline script must exist');
+      for (const s of scripts) assert.doesNotThrow(() => new Function(s[1]), path + ' inline script must parse');
     }
 
     console.log('Public MVP tests passed');
