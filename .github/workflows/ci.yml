@@ -83,10 +83,10 @@ jobs:
       - name: Public MVP isolation smoke
         run: |
           curl -fsS http://127.0.0.1:3001/ > /tmp/public-index.html
-          grep -q "Choose a client to open" /tmp/public-index.html
-          curl -fsS http://127.0.0.1:3001/student.html | grep -q "Student / Parent"
-          curl -fsS http://127.0.0.1:3001/agent.html | grep -q "Education Agent"
-          curl -fsS http://127.0.0.1:3001/institution.html | grep -q "Institution / Supplier"
+          grep -q "请选择要打开的客户端" /tmp/public-index.html
+          curl -fsS http://127.0.0.1:3001/student.html | grep -q "学生 / 家长端"
+          curl -fsS http://127.0.0.1:3001/agent.html | grep -q "留学机构端"
+          curl -fsS http://127.0.0.1:3001/institution.html | grep -q "院校 / 供应商端"
           test "$(curl -s -o /tmp/growth.json -w '%{http_code}' http://127.0.0.1:3001/api/growth/leads)" = "404"
           test "$(curl -s -o /tmp/admin.json -w '%{http_code}' http://127.0.0.1:3001/api/admin/import/preview)" = "404"
           test "$(curl -s -o /tmp/b2b.json -w '%{http_code}' http://127.0.0.1:3001/api/b2b/schools)" = "404"
