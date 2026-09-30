@@ -77,7 +77,9 @@ async function run() {
     {
       const { res, body } = await get('/');
       assert.equal(res.status, 200);
-      assert.match(body, /Choose a client to open/);
+      assert.match(body, /请选择要打开的客户端/);
+      assert.match(body, /English/);
+      assert.match(body, /<html lang="zh-CN">/);
       assert.match(body, /student\.html/);
       assert.match(body, /agent\.html/);
       assert.match(body, /institution\.html/);
@@ -86,14 +88,16 @@ async function run() {
     }
 
     for (const [path, marker] of [
-      ['/student.html', /Student \/ Parent/],
-      ['/agent.html', /Education Agent/],
-      ['/institution.html', /Institution \/ Supplier/]
+      ['/student.html', /学生 \/ 家长端/],
+      ['/agent.html', /留学机构端/],
+      ['/institution.html', /院校 \/ 供应商端/]
     ]) {
       const { res, body } = await get(path);
       assert.equal(res.status, 200);
       assert.match(body, marker);
       assert.match(body, /app\.css/);
+      assert.match(body, /English/);
+      assert.match(body, /<html lang="zh-CN">/);
       assert.doesNotMatch(body, /Growth Center/);
       assert.doesNotMatch(body, /线索池/);
       const scripts = [...body.matchAll(/<script>([\s\S]*?)<\/script>/g)];
