@@ -1,125 +1,129 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#ffffff">
-<title>GlobalStudy — Education Agent</title>
+<title>GlobalStudy — 留学机构端</title>
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
 <div class="phone">
   <header class="header">
-    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>Education Agent</small></div></a>
-    <a class="pill" href="/">Switch client</a>
+    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small id="clientName">留学机构端</small></div></a>
+    <div class="header-actions"><button class="lang-btn" id="langBtn">English</button><a class="pill" href="/" id="switchClient">切换客户端</a></div>
   </header>
 
   <section class="hero">
-    <div class="eyebrow">AGENT CLIENT · LIVE DEMO</div>
-    <h1>Students, schools and application drafts</h1>
-    <p>A mobile agency workspace for managing prospects, finding suitable schools and creating application drafts.</p>
+    <div class="eyebrow" id="heroEyebrow">机构端 · 在线演示</div>
+    <h1 id="heroTitle">学生、学校资源与申请协同</h1>
+    <p id="heroText">用手机管理学生，搜索学校资源，并为学生创建和推进演示申请草稿。</p>
   </section>
 
   <div class="tabs">
-    <button id="tabDash" class="active" onclick="showTab('dash')">Dashboard</button>
-    <button id="tabStudents" onclick="showTab('students')">Students</button>
-    <button id="tabSchools" onclick="showTab('schools')">Schools</button>
-    <button id="tabApps" onclick="showTab('apps')">Applications</button>
+    <button id="tabDash" class="active" onclick="showTab('dash')">工作台</button>
+    <button id="tabStudents" onclick="showTab('students')">学生</button>
+    <button id="tabSchools" onclick="showTab('schools')">学校库</button>
+    <button id="tabApps" onclick="showTab('apps')">申请</button>
   </div>
 
   <main id="main"></main>
 
   <nav class="bottom">
-    <button id="navDash" class="active" onclick="showTab('dash')"><b>⌂</b>Dashboard</button>
-    <button id="navStudents" onclick="showTab('students')"><b>♙</b>Students</button>
-    <button id="navSchools" onclick="showTab('schools')"><b>⌕</b>Schools</button>
-    <button id="navApps" onclick="showTab('apps')"><b>◎</b>Applications</button>
+    <button id="navDash" class="active" onclick="showTab('dash')"><b>⌂</b><span id="navDashText">工作台</span></button>
+    <button id="navStudents" onclick="showTab('students')"><b>♙</b><span id="navStudentsText">学生</span></button>
+    <button id="navSchools" onclick="showTab('schools')"><b>⌕</b><span id="navSchoolsText">学校库</span></button>
+    <button id="navApps" onclick="showTab('apps')"><b>◎</b><span id="navAppsText">申请</span></button>
   </nav>
 </div>
 
 <div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>
 <section class="drawer" id="drawer">
   <div class="handle"></div>
-  <div class="drawer-head"><b id="drawerTitle">Details</b><button onclick="closeDrawer()">Close</button></div>
+  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="closeDrawer()">关闭</button></div>
   <div id="drawerBody"></div>
 </section>
 
 <script>
 const $=s=>document.querySelector(s);
+let lang=localStorage.getItem('gs-world-lang')||'zh';
 let tab='dash',ref=null,schools=[];
 let students=JSON.parse(localStorage.getItem('gs-agent-students')||'null')||[
-  {id:'STU-001',name:'Demo Student A',target:'Singapore · Primary',owner:'Alex',stage:'Matching',completion:72},
-  {id:'STU-002',name:'Demo Student B',target:'Singapore · Secondary',owner:'Mia',stage:'Documents',completion:84},
-  {id:'STU-003',name:'Demo Student C',target:'Shanghai · International',owner:'Alex',stage:'New lead',completion:38}
+  {id:'STU-001',name:'演示学生 A',name_en:'Demo Student A',target_zh:'新加坡 · 小学',target_en:'Singapore · Primary',owner:'Alex',stage:'Matching',completion:72},
+  {id:'STU-002',name:'演示学生 B',name_en:'Demo Student B',target_zh:'新加坡 · 中学',target_en:'Singapore · Secondary',owner:'Mia',stage:'Documents',completion:84},
+  {id:'STU-003',name:'演示学生 C',name_en:'Demo Student C',target_zh:'上海 · 国际学校',target_en:'Shanghai · International',owner:'Alex',stage:'New lead',completion:38}
 ];
 let apps=JSON.parse(localStorage.getItem('gs-agent-apps')||'[]');
 
+const T={
+zh:{
+ client:'留学机构端',switch:'切换客户端',heroEyebrow:'机构端 · 在线演示',heroTitle:'学生、学校资源与申请协同',heroText:'用手机管理学生，搜索学校资源，并为学生创建和推进演示申请草稿。',
+ dash:'工作台',students:'学生',schools:'学校库',apps:'申请',close:'关闭',studentCount:'学生数',activeApps:'进行中申请',schoolResources:'学校资源',completedProfiles:'完整档案',attention:'需要关注',demoWorkflow:'机构端演示流程',
+ owner:'负责人',profile:'档案',nextAction:'下一步',completeProfile:'完善档案',selectSchool:'选择学校',open:'打开',findSchool:'找学校',addStudent:'+ 添加演示学生',
+ studentNotice:'公网演示仅使用浏览器本地的演示学生数据，不会上传真实个人信息。',schoolSearch:'搜索学校、地区或课程体系',allCountries:'全部国家',allStages:'全部学段',searchResources:'搜索学校资源',
+ tuition:'年学费',agentCommission:'机构佣金',notPublic:'公网不展示',details:'详情',createDraft:'创建申请草稿',applicationDrafts:'申请草稿',total:'条',appNotice:'演示申请记录仅保存在浏览器本地，不会提交给真实学校。',
+ noApps:'还没有申请草稿。',advance:'推进演示阶段',student:'学生',target:'目标',stage:'阶段',schoolDetails:'学校详情',loading:'加载中…',demoSource:'演示记录，不代表真实学校或合作关系。',source:'来源：',
+ noMatches:'没有符合条件的学校。',schoolsUnit:'所学校',page:'GlobalStudy — 留学机构端',langBtn:'English',demo:'演示',verified:'已核验'
+},
+en:{
+ client:'Education Agent',switch:'Switch client',heroEyebrow:'AGENT CLIENT · LIVE DEMO',heroTitle:'Students, schools and application drafts',heroText:'A mobile agency workspace for managing students, finding suitable schools and creating application drafts.',
+ dash:'Dashboard',students:'Students',schools:'Schools',apps:'Applications',close:'Close',studentCount:'Students',activeApps:'Active applications',schoolResources:'School resources',completedProfiles:'Completed profiles',attention:'Needs attention',demoWorkflow:'Demo agency workflow',
+ owner:'Owner',profile:'Profile',nextAction:'Next action',completeProfile:'Complete profile',selectSchool:'Select school',open:'Open',findSchool:'Find school',addStudent:'+ Add demo student',
+ studentNotice:'This public client uses local demo students only. No personal data is sent to the platform.',schoolSearch:'Search school, area or curriculum',allCountries:'All countries',allStages:'All stages',searchResources:'Search resources',
+ tuition:'Tuition / year',agentCommission:'Agent commission',notPublic:'Not public',details:'Details',createDraft:'Create draft',applicationDrafts:'Application drafts',total:'total',appNotice:'Demo-only application records are stored in your browser. Nothing is sent to a real school.',
+ noApps:'No application drafts yet.',advance:'Advance demo stage',student:'Student',target:'Target',stage:'Stage',schoolDetails:'School details',loading:'Loading…',demoSource:'Demo record. No real school or partnership is claimed.',source:'Source: ',
+ noMatches:'No matches.',schoolsUnit:'schools',page:'GlobalStudy — Education Agent',langBtn:'中文',demo:'DEMO',verified:'VERIFIED'
+}};
+function t(k){return T[lang][k]||k}
 async function api(url){const r=await fetch(url);const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||'Request failed');return j}
 function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat('en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
-function label(s){return s?.en||s?.zh||s?.id||s||'—'}
-function loc(s){return [s.location?.country_en,s.location?.city_en,s.location?.district_en].filter(Boolean).join(' · ')}
-function openDrawer(t,h){$('#drawerTitle').textContent=t;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
+function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat(lang==='zh'?'zh-CN':'en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
+function sname(s){return lang==='zh'?(s.name||s.name_en):s.name_en||s.name}
+function starget(s){return lang==='zh'?(s.target_zh||s.target_en||s.target):(s.target_en||s.target_zh||s.target)}
+function schoolName(s){return lang==='zh'?(s?.name?.zh||s?.name?.en):(s?.name?.en||s?.name?.zh)}
+function label(s){return lang==='zh'?(s?.zh||s?.en||s?.id||s):(s?.en||s?.zh||s?.id||s)||'—'}
+function loc(s){return [lang==='zh'?s.location?.country_zh:s.location?.country_en,lang==='zh'?s.location?.city_zh:s.location?.city_en,lang==='zh'?s.location?.district_zh:s.location?.district_en].filter(Boolean).join(' · ')}
+function openDrawer(title,h){$('#drawerTitle').textContent=title;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
 function closeDrawer(){$('#drawer').classList.remove('open');$('#mask').classList.remove('open')}
 function persist(){localStorage.setItem('gs-agent-students',JSON.stringify(students));localStorage.setItem('gs-agent-apps',JSON.stringify(apps))}
+function applyLang(){
+ document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.title=t('page');$('#clientName').textContent=t('client');$('#switchClient').textContent=t('switch');$('#heroEyebrow').textContent=t('heroEyebrow');$('#heroTitle').textContent=t('heroTitle');$('#heroText').textContent=t('heroText');
+ $('#tabDash').textContent=t('dash');$('#tabStudents').textContent=t('students');$('#tabSchools').textContent=t('schools');$('#tabApps').textContent=t('apps');
+ $('#navDashText').textContent=t('dash');$('#navStudentsText').textContent=t('students');$('#navSchoolsText').textContent=t('schools');$('#navAppsText').textContent=t('apps');$('#drawerClose').textContent=t('close');$('#langBtn').textContent=t('langBtn');render()
+}
+$('#langBtn').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('gs-world-lang',lang);applyLang()};
 function setActive(name){['Dash','Students','Schools','Apps'].forEach(x=>{const a=$('#tab'+x),b=$('#nav'+x);if(a)a.classList.toggle('active',x.toLowerCase()===name);if(b)b.classList.toggle('active',x.toLowerCase()===name)})}
 function showTab(name){tab=name;setActive(name);render()}
 
 function dashboard(){
-  const active=apps.filter(a=>a.status!=='Enrolled').length;
-  return '<section class="section"><div class="metrics">'+
-    '<div class="metric"><small>Students</small><b>'+students.length+'</b></div>'+
-    '<div class="metric"><small>Active applications</small><b>'+active+'</b></div>'+
-    '<div class="metric"><small>Shortlisted schools</small><b>'+schools.length+'</b></div>'+
-    '<div class="metric"><small>Completed profiles</small><b>'+students.filter(s=>s.completion>=80).length+'</b></div>'+
-  '</div><div class="section-head"><h2>Needs attention</h2><span>Demo agency workflow</span></div>'+
-  '<div class="list">'+students.filter(s=>s.completion<80).map(s=>studentCard(s)).join('')+'</div></section>'
+ const active=apps.filter(a=>a.status!=='Enrolled').length;
+ return '<section class="section"><div class="metrics"><div class="metric"><small>'+esc(t('studentCount'))+'</small><b>'+students.length+'</b></div><div class="metric"><small>'+esc(t('activeApps'))+'</small><b>'+active+'</b></div><div class="metric"><small>'+esc(t('schoolResources'))+'</small><b>'+schools.length+'</b></div><div class="metric"><small>'+esc(t('completedProfiles'))+'</small><b>'+students.filter(s=>s.completion>=80).length+'</b></div></div><div class="section-head"><h2>'+esc(t('attention'))+'</h2><span>'+esc(t('demoWorkflow'))+'</span></div><div class="list">'+students.filter(s=>s.completion<80).map(studentCard).join('')+'</div></section>'
 }
 function studentCard(s){
-  return '<div class="card"><div class="row"><div><h3>'+esc(s.name)+'</h3><div class="muted">'+esc(s.target)+' · Owner '+esc(s.owner)+'</div></div><span class="status '+(s.stage==='Documents'?'warn':'blue')+'">'+esc(s.stage)+'</span></div>'+
-    '<div class="split"><div><small>Profile</small><b>'+s.completion+'%</b></div><div><small>Next action</small><b>'+(s.completion<80?'Complete profile':'Select school')+'</b></div></div>'+
-    '<div class="actions"><button class="btn ghost" onclick="studentDetail(\''+esc(s.id)+'\')">Open</button><button class="btn soft" onclick="startForStudent(\''+esc(s.id)+'\')">Find school</button></div></div>'
+ return '<div class="card"><div class="row"><div><h3>'+esc(sname(s))+'</h3><div class="muted">'+esc(starget(s))+' · '+esc(t('owner'))+' '+esc(s.owner)+'</div></div><span class="status '+(s.stage==='Documents'?'warn':'blue')+'">'+esc(s.stage)+'</span></div><div class="split"><div><small>'+esc(t('profile'))+'</small><b>'+s.completion+'%</b></div><div><small>'+esc(t('nextAction'))+'</small><b>'+esc(s.completion<80?t('completeProfile'):t('selectSchool'))+'</b></div></div><div class="actions"><button class="btn ghost" onclick="studentDetail(\''+esc(s.id)+'\')">'+esc(t('open'))+'</button><button class="btn soft" onclick="startForStudent(\''+esc(s.id)+'\')">'+esc(t('findSchool'))+'</button></div></div>'
 }
-function studentsPage(){
-  return '<section class="section"><div class="section-head"><h2>Students</h2><button class="btn primary" onclick="newStudent()">+ Add demo student</button></div><div class="notice">This public client uses local demo students only. No personal data is sent to the platform.</div><div class="list" style="margin-top:9px">'+students.map(studentCard).join('')+'</div></section>'
-}
+function studentsPage(){return '<section class="section"><div class="section-head"><h2>'+esc(t('students'))+'</h2><button class="btn primary" onclick="newStudent()">'+esc(t('addStudent'))+'</button></div><div class="notice">'+esc(t('studentNotice'))+'</div><div class="list" style="margin-top:9px">'+students.map(studentCard).join('')+'</div></section>'}
 function schoolCard(s){
-  return '<div class="card"><div class="row"><div class="school"><div class="schoolmark">'+esc((s.name?.en||'G').slice(0,1))+'</div><div><h3>'+esc(s.name?.en)+'</h3><div class="muted">'+esc(loc(s))+'</div></div></div><span class="status '+(s.verification?.is_demo?'demo':'good')+'">'+(s.verification?.is_demo?'DEMO':'VERIFIED')+'</span></div>'+
-  '<div class="tags">'+(s.stages||[]).slice(0,2).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).slice(0,2).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div>'+
-  '<div class="split"><div><small>Tuition / year</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div><small>Agent commission</small><b>Not public</b></div></div>'+
-  '<div class="actions"><button class="btn ghost" onclick="schoolDetail(\''+esc(s.id)+'\')">Details</button><button class="btn primary" onclick="createAppFromSchool(\''+esc(s.id)+'\')">Create draft</button></div></div>'
+ return '<div class="card"><div class="row"><div class="school"><div class="schoolmark">'+esc((schoolName(s)||'G').slice(0,1))+'</div><div><h3>'+esc(schoolName(s))+'</h3><div class="muted">'+esc(loc(s))+'</div></div></div><span class="status '+(s.verification?.is_demo?'demo':'good')+'">'+esc(s.verification?.is_demo?t('demo'):t('verified'))+'</span></div><div class="tags">'+(s.stages||[]).slice(0,2).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).slice(0,2).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div><div class="split"><div><small>'+esc(t('tuition'))+'</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div><small>'+esc(t('agentCommission'))+'</small><b>'+esc(t('notPublic'))+'</b></div></div><div class="actions"><button class="btn ghost" onclick="schoolDetail(\''+esc(s.id)+'\')">'+esc(t('details'))+'</button><button class="btn primary" onclick="createAppFromSchool(\''+esc(s.id)+'\')">'+esc(t('createDraft'))+'</button></div></div>'
 }
-function schoolsPage(){
-  return '<section class="section"><div class="search"><input id="q" class="wide" placeholder="Search school, area or curriculum"><select id="country"></select><select id="stage"></select><button class="btn primary wide" onclick="runSearch()">Search resources</button></div><div class="section-head"><h2>School resources</h2><span id="schoolCount">'+schools.length+' schools</span></div><div id="schoolList" class="list">'+schools.map(schoolCard).join('')+'</div></section>'
-}
-function appsPage(){
-  return '<section class="section"><div class="section-head"><h2>Application drafts</h2><span>'+apps.length+' total</span></div><div class="notice">Demo-only application records are stored in your browser. Nothing is sent to a real school.</div><div class="list" style="margin-top:9px">'+(apps.length?apps.map(a=>'<div class="card"><div class="row"><div><h3>'+esc(a.student_name)+' → '+esc(a.school_name)+'</h3><div class="muted">'+esc(a.id)+' · '+esc(a.created_at)+'</div></div><span class="status blue">'+esc(a.status)+'</span></div><div class="actions"><button class="btn ghost" onclick="advanceApp(\''+esc(a.id)+'\')">Advance demo stage</button></div></div>').join(''):'<div class="empty">No application drafts yet.</div>')+'</div></section>'
-}
-
+function schoolsPage(){return '<section class="section"><div class="search"><input id="q" class="wide" placeholder="'+esc(t('schoolSearch'))+'"><select id="country"></select><select id="stage"></select><button class="btn primary wide" onclick="runSearch()">'+esc(t('searchResources'))+'</button></div><div class="section-head"><h2>'+esc(t('schoolResources'))+'</h2><span id="schoolCount">'+schools.length+' '+esc(t('schoolsUnit'))+'</span></div><div id="schoolList" class="list">'+schools.map(schoolCard).join('')+'</div></section>'}
+function appsPage(){return '<section class="section"><div class="section-head"><h2>'+esc(t('applicationDrafts'))+'</h2><span>'+apps.length+' '+esc(t('total'))+'</span></div><div class="notice">'+esc(t('appNotice'))+'</div><div class="list" style="margin-top:9px">'+(apps.length?apps.map(a=>'<div class="card"><div class="row"><div><h3>'+esc(a.student_name)+' → '+esc(lang==='zh'?(a.school_name_zh||a.school_name||a.school_name_en):(a.school_name_en||a.school_name))+'</h3><div class="muted">'+esc(a.id)+' · '+esc(a.created_at)+'</div></div><span class="status blue">'+esc(a.status)+'</span></div><div class="actions"><button class="btn ghost" onclick="advanceApp(\''+esc(a.id)+'\')">'+esc(t('advance'))+'</button></div></div>').join(''):'<div class="empty">'+esc(t('noApps'))+'</div>')+'</div></section>'}
 function fillFilters(){
-  const c=$('#country'),s=$('#stage');if(!c||!s||!ref)return;
-  c.innerHTML='<option value="">All countries</option>'+ref.countries.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.en)+'</option>').join('');
-  s.innerHTML='<option value="">All stages</option>'+ref.stages.map(x=>'<option value="'+esc(x.id)+'">'+esc(x.en)+'</option>').join('');
-  c.onchange=()=>runSearch();s.onchange=()=>runSearch();$('#q').onkeydown=e=>{if(e.key==='Enter')runSearch()}
+ const c=$('#country'),s=$('#stage');if(!c||!s||!ref)return;
+ c.innerHTML='<option value="">'+esc(t('allCountries'))+'</option>'+ref.countries.map(x=>'<option value="'+esc(x.id)+'">'+esc(lang==='zh'?(x.zh||x.en):x.en)+'</option>').join('');
+ s.innerHTML='<option value="">'+esc(t('allStages'))+'</option>'+ref.stages.map(x=>'<option value="'+esc(x.id)+'">'+esc(lang==='zh'?(x.zh||x.en):x.en)+'</option>').join('');
+ c.onchange=()=>runSearch();s.onchange=()=>runSearch();$('#q').onkeydown=e=>{if(e.key==='Enter')runSearch()}
 }
-async function runSearch(){
-  const p=new URLSearchParams({pageSize:'50'});[['q','#q'],['country','#country'],['stage','#stage']].forEach(([k,id])=>{const el=$(id);if(el&&el.value)p.set(k,el.value)});
-  const j=await api('/api/schools?'+p.toString());schools=j.data||[];$('#schoolList').innerHTML=schools.map(schoolCard).join('')||'<div class="empty">No matches.</div>';$('#schoolCount').textContent=j.meta.total+' schools'
-}
-function newStudent(){
-  const id='STU-'+Date.now().toString().slice(-4);students.unshift({id,name:'Demo Student '+String.fromCharCode(65+students.length),target:'Singapore · Undecided',owner:'Alex',stage:'New lead',completion:20});persist();render()
-}
-function studentDetail(id){const s=students.find(x=>x.id===id);openDrawer('Student', '<h3>'+esc(s.name)+'</h3><div class="detail-grid"><div class="detail"><small>Target</small><b>'+esc(s.target)+'</b></div><div class="detail"><small>Owner</small><b>'+esc(s.owner)+'</b></div><div class="detail"><small>Stage</small><b>'+esc(s.stage)+'</b></div><div class="detail"><small>Profile</small><b>'+s.completion+'%</b></div></div><div class="notice" style="margin-top:10px">Demo profile only. No real personal data is collected in this public client.</div>')}
+async function runSearch(){const p=new URLSearchParams({pageSize:'50'});[['q','#q'],['country','#country'],['stage','#stage']].forEach(([k,id])=>{const el=$(id);if(el&&el.value)p.set(k,el.value)});const j=await api('/api/schools?'+p.toString());schools=j.data||[];$('#schoolList').innerHTML=schools.map(schoolCard).join('')||'<div class="empty">'+esc(t('noMatches'))+'</div>';$('#schoolCount').textContent=j.meta.total+' '+t('schoolsUnit')}
+function newStudent(){const id='STU-'+Date.now().toString().slice(-4);const n=students.length+1;students.unshift({id,name:'演示学生 '+n,name_en:'Demo Student '+n,target_zh:'新加坡 · 待确定',target_en:'Singapore · Undecided',owner:'Alex',stage:'New lead',completion:20});persist();render()}
+function studentDetail(id){const s=students.find(x=>x.id===id);openDrawer(t('student'),'<h3>'+esc(sname(s))+'</h3><div class="detail-grid"><div class="detail"><small>'+esc(t('target'))+'</small><b>'+esc(starget(s))+'</b></div><div class="detail"><small>'+esc(t('owner'))+'</small><b>'+esc(s.owner)+'</b></div><div class="detail"><small>'+esc(t('stage'))+'</small><b>'+esc(s.stage)+'</b></div><div class="detail"><small>'+esc(t('profile'))+'</small><b>'+s.completion+'%</b></div></div><div class="notice" style="margin-top:10px">'+esc(t('studentNotice'))+'</div>')}
 function startForStudent(id){localStorage.setItem('gs-agent-selected-student',id);showTab('schools')}
-async function schoolDetail(id){openDrawer('School details','<div class="empty">Loading…</div>');try{const s=(await api('/api/schools/'+encodeURIComponent(id))).data;$('#drawerBody').innerHTML='<h3>'+esc(s.name?.en)+'</h3><div class="muted">'+esc(loc(s))+'</div><div class="tags">'+(s.curricula||[]).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div><div class="notice">'+(s.source?.source_url?'Source: '+esc(s.source.source_url):'Demo record. No public source is claimed.')+'</div>'}catch(e){$('#drawerBody').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}}
-function createAppFromSchool(id){
-  const selected=localStorage.getItem('gs-agent-selected-student')||students[0]?.id;const st=students.find(x=>x.id===selected)||students[0];const sc=schools.find(x=>x.id===id);if(!st||!sc)return;
-  apps.unshift({id:'APP-'+Date.now().toString().slice(-6),student_id:st.id,student_name:st.name,school_id:sc.id,school_name:sc.name?.en||sc.id,status:'Draft',created_at:new Date().toLocaleDateString()});persist();showTab('apps')
-}
+async function schoolDetail(id){openDrawer(t('schoolDetails'),'<div class="empty">'+esc(t('loading'))+'</div>');try{const s=(await api('/api/schools/'+encodeURIComponent(id))).data;$('#drawerBody').innerHTML='<h3>'+esc(schoolName(s))+'</h3><div class="muted">'+esc(loc(s))+'</div><div class="tags">'+(s.curricula||[]).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div><div class="notice">'+(s.source?.source_url?esc(t('source'))+esc(s.source.source_url):esc(t('demoSource')))+'</div>'}catch(e){$('#drawerBody').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}}
+function createAppFromSchool(id){const selected=localStorage.getItem('gs-agent-selected-student')||students[0]?.id;const st=students.find(x=>x.id===selected)||students[0];const sc=schools.find(x=>x.id===id);if(!st||!sc)return;apps.unshift({id:'APP-'+Date.now().toString().slice(-6),student_id:st.id,student_name:sname(st),school_id:sc.id,school_name_en:sc.name?.en||sc.id,school_name_zh:sc.name?.zh||sc.name?.en||sc.id,status:'Draft',created_at:new Date().toLocaleDateString(lang==='zh'?'zh-CN':'en-US')});persist();showTab('apps')}
 function advanceApp(id){const a=apps.find(x=>x.id===id);const stages=['Draft','Documents','Ready to submit','Submitted demo'];const i=stages.indexOf(a.status);a.status=stages[Math.min(stages.length-1,i+1)];persist();render()}
-async function render(){if(tab==='dash')main.innerHTML=dashboard();else if(tab==='students')main.innerHTML=studentsPage();else if(tab==='schools'){main.innerHTML=schoolsPage();fillFilters()}else main.innerHTML=appsPage()}
+async function render(){if(!main)return;if(tab==='dash')main.innerHTML=dashboard();else if(tab==='students')main.innerHTML=studentsPage();else if(tab==='schools'){main.innerHTML=schoolsPage();fillFilters()}else main.innerHTML=appsPage()}
 const main=$('#main');
-(async()=>{const [r,s]=await Promise.all([api('/api/reference'),api('/api/schools?pageSize=50')]);ref=r.data;schools=s.data;render()})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
+(async()=>{const [r,s]=await Promise.all([api('/api/reference'),api('/api/schools?pageSize=50')]);ref=r.data;schools=s.data;applyLang()})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
 </script>
 </body>
 </html>
