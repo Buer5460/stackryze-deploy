@@ -140,11 +140,14 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id, b_profile_id: b.profile.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    const signed = binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id, b_profile_id: b.profile.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    const signed = await binding.signBinding(created.binding.id, 'B', null);
     assert.equal(signed.binding.status, 'active');
+    // Fix 4: full-service requires binding + dual signature + activated seat.
+    const verification = binding.fullBindingVerification(c.id);
+    assert.equal(verification.fully_bound, true, JSON.stringify(verification));
     const caps = binding.cCapabilities('active');
     assert.equal(caps.bound, true);
     assert.equal(caps.can_order, true);
@@ -259,8 +262,8 @@ async function main() {
     const b = makeB({ level: 'LEVEL_2', daily_order_cap: 1, monthly_order_cap: 1 });
     const c1 = makeC();
     const c2 = makeC();
-    const first = binding.createBindingRequest({ c_profile_id: c1.id, b_organization_id: b.organization.id });
-    binding.bRespond(first.binding.id, 'accept', null);
+    const first = await binding.createBindingRequest({ c_profile_id: c1.id, b_organization_id: b.organization.id });
+    await binding.bRespond(first.binding.id, 'accept', null);
     const capacity = recommendation.orderCapacity(b.organization.id);
     assert.equal(capacity.daily_ok, false, 'cap should be consumed');
     const rec = recommendation.recommend({ id: 'r', target_countries: ['SG'] });
@@ -410,7 +413,7 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const r = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    const r = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
     assert.equal(r.ok, true);
     assert.equal(r.binding.status, 'pending_b_request');
   });
@@ -419,8 +422,8 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    const r = binding.bRespond(created.binding.id, 'accept', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    const r = await binding.bRespond(created.binding.id, 'accept', null);
     assert.equal(r.binding.status, 'pending_contract');
     assert.ok(r.contract);
     assert.equal(r.contract.kind, 'B_C');
@@ -430,8 +433,8 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    const r = binding.bRespond(created.binding.id, 'reject', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    const r = await binding.bRespond(created.binding.id, 'reject', null);
     assert.equal(r.binding.status, 'rejected_by_b');
   });
 
@@ -439,11 +442,11 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    const afterC = binding.signBinding(created.binding.id, 'C', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    const afterC = await binding.signBinding(created.binding.id, 'C', null);
     assert.equal(afterC.binding.status, 'pending_b_signature');
-    const afterB = binding.signBinding(created.binding.id, 'B', null);
+    const afterB = await binding.signBinding(created.binding.id, 'B', null);
     assert.equal(afterB.binding.status, 'active');
     assert.equal(afterB.contract.status, 'active');
     const seat = db.stores.service_scopes.all().find((s) => s.kind === 'C_SEAT');
@@ -455,8 +458,8 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    const r = binding.bRespond(created.binding.id, 'accept', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    const r = await binding.bRespond(created.binding.id, 'accept', null);
     const view = { kind: r.contract.kind, title: r.contract.title };
     assert.equal(view.kind, 'B_C');
     assert.match(r.contract.body, /平台不作为业务一方/);
@@ -466,10 +469,10 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    const dup = binding.signBinding(created.binding.id, 'C', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    const dup = await binding.signBinding(created.binding.id, 'C', null);
     assert.equal(dup.ok, false);
   });
 
@@ -701,7 +704,7 @@ async function main() {
     config.set('first_binding_protection_months', 6);
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const r = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    const r = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
     assert.equal(r.binding.protection_months, 6);
   });
 
@@ -710,15 +713,15 @@ async function main() {
     const b1 = makeB({ level: 'LEVEL_2' });
     const b2 = makeB({ level: 'LEVEL_2', name: 'B2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b1.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b1.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
 
     const check = binding.rebindingCheck(c.id);
     assert.equal(check.protected, true);
 
-    const req = binding.requestRebinding({ c_profile_id: c.id, new_b_organization_id: b2.organization.id });
+    const req = await binding.requestRebinding({ c_profile_id: c.id, new_b_organization_id: b2.organization.id });
     assert.equal(req.ok, true);
     assert.equal(req.binding.is_rebinding, true);
 
@@ -726,9 +729,9 @@ async function main() {
     const early = binding.platformReviewRebinding(req.binding.id, 'approve', null);
     assert.equal(early.ok, false);
 
-    binding.recordRebindingConsent(req.binding.id, 'original_b', null);
+    await binding.recordRebindingConsent(req.binding.id, 'original_b', null);
     assert.equal(binding.platformReviewRebinding(req.binding.id, 'approve', null).ok, false);
-    binding.recordRebindingConsent(req.binding.id, 'new_b', null);
+    await binding.recordRebindingConsent(req.binding.id, 'new_b', null);
     const reviewed = binding.platformReviewRebinding(req.binding.id, 'approve', null);
     assert.equal(reviewed.ok, true);
   });
@@ -738,17 +741,17 @@ async function main() {
     const b1 = makeB({ level: 'LEVEL_2' });
     const b2 = makeB({ level: 'LEVEL_2', name: 'B2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b1.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
-    const req = binding.requestRebinding({ c_profile_id: c.id, new_b_organization_id: b2.organization.id });
-    binding.recordRebindingConsent(req.binding.id, 'original_b', null);
-    binding.recordRebindingConsent(req.binding.id, 'new_b', null);
-    binding.platformReviewRebinding(req.binding.id, 'approve', null);
-    binding.bRespond(req.binding.id, 'accept', null);
-    binding.signBinding(req.binding.id, 'C', null);
-    binding.signBinding(req.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b1.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
+    const req = await binding.requestRebinding({ c_profile_id: c.id, new_b_organization_id: b2.organization.id });
+    await binding.recordRebindingConsent(req.binding.id, 'original_b', null);
+    await binding.recordRebindingConsent(req.binding.id, 'new_b', null);
+    await binding.platformReviewRebinding(req.binding.id, 'approve', null);
+    await binding.bRespond(req.binding.id, 'accept', null);
+    await binding.signBinding(req.binding.id, 'C', null);
+    await binding.signBinding(req.binding.id, 'B', null);
     const logs = audit.query({ action: 'binding:commission_ownership_transfer' });
     assert.ok(logs.length >= 1, 'ownership transfer not audited');
   });
@@ -788,10 +791,10 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const transferred = binding.handleBMembershipExpiry(b.organization.id, null);
     assert.equal(transferred, 1);
     assert.equal(binding.cProfileById(c.id).binding_state, 'platform_service');
@@ -836,10 +839,10 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const app = applications.createApplication({ c_profile_id: c.id, title: 'T' });
     assert.equal(app.ok, true);
     const detail = applications.applicationDetail(app.application.id);
@@ -851,10 +854,10 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const app = applications.createApplication({ c_profile_id: c.id });
     const blocked = applications.transition(app.application.id, 'S1', null);
     assert.equal(blocked.ok, false);
@@ -868,10 +871,10 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const app = applications.createApplication({ c_profile_id: c.id });
     const board = applications.kanban({ b_organization_id: b.organization.id });
     assert.ok(Array.isArray(board));
@@ -884,10 +887,10 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const app = applications.createApplication({ c_profile_id: c.id });
     for (const stage of ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10']) {
       for (const t of applications.listTodos({ application_id: app.application.id }).filter((x) => x.status !== 'done' && String(x.stage).toUpperCase() === applications.applicationById(app.application.id).current_stage)) {
@@ -908,10 +911,10 @@ async function main() {
     const b = makeB({ level: 'LEVEL_2' });
     const s = suppliers.createSupplier({ type: 'EDUCATION', name: 'S', public_visible: true });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const app = applications.createApplication({ c_profile_id: c.id, supplier_id: s.supplier.id });
     const up = applications.uploadDocument(app.application.id, { type: 'passport' }, null);
     assert.equal(up.document.status, 'uploaded');
@@ -929,10 +932,10 @@ async function main() {
     const s = suppliers.createSupplier({ type: 'EDUCATION', name: 'S', public_visible: true });
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const app = applications.createApplication({ c_profile_id: c.id, supplier_id: s.supplier.id });
     const up = applications.uploadDocument(app.application.id, { type: 'passport' }, null);
     assert.equal(applications.canReadDocument(up.document.id, 'S', s.supplier.id), false);
@@ -946,10 +949,10 @@ async function main() {
     const s = suppliers.createSupplier({ type: 'EDUCATION', name: 'S', public_visible: true });
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const app = applications.createApplication({ c_profile_id: c.id, supplier_id: s.supplier.id });
     const up = applications.uploadDocument(app.application.id, { type: 'passport' }, null);
     const authRec = applications.authorizeDocument(up.document.id, { type: 'S', id: s.supplier.id }, 'read', null, 30);
@@ -961,10 +964,10 @@ async function main() {
     await fresh();
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    const created = binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
-    binding.bRespond(created.binding.id, 'accept', null);
-    binding.signBinding(created.binding.id, 'C', null);
-    binding.signBinding(created.binding.id, 'B', null);
+    const created = await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.bRespond(created.binding.id, 'accept', null);
+    await binding.signBinding(created.binding.id, 'C', null);
+    await binding.signBinding(created.binding.id, 'B', null);
     const app1 = applications.createApplication({ c_profile_id: c.id, title: 'A1' });
     const app2 = applications.createApplication({ c_profile_id: c.id, title: 'A2' });
     applications.uploadDocument(app1.application.id, { type: 'transcript' }, null);
@@ -1161,10 +1164,11 @@ async function main() {
     const s = suppliers.createSupplier({ type: 'EDUCATION', name: 'S', public_visible: true });
     const bad = suppliers.verifySupplier(s.supplier.id, 'approve', null);
     assert.equal(bad.ok, false);
-    suppliers.supplierById(s.supplier.id).source_url = 'https://example.com/x';
-    const good = suppliers.verifySupplier(s.supplier.id, 'approve', null);
-    assert.equal(good.ok, true);
-    assert.equal(good.supplier.verification, 'verified');
+    // Fix 6: placeholder hosts are rejected; a plausible source URL verifies.
+    suppliers.supplierById(s.supplier.id).source_url = 'https://www.moe.gov.sg/school-directory/listing-' + Date.now();
+    const bad2 = suppliers.verifySupplier(s.supplier.id, 'approve', null);
+    assert.equal(bad2.ok, true, 'plausible source should verify');
+    assert.equal(bad2.supplier.verification, 'verified');
   });
 
   await test('AI may not invent tuition / admission rate / ranking etc.', async () => {
@@ -1189,7 +1193,7 @@ async function main() {
     const before = audit.query({}).length;
     const b = makeB({ level: 'LEVEL_2' });
     const c = makeC();
-    binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
+    await binding.createBindingRequest({ c_profile_id: c.id, b_organization_id: b.organization.id });
     const after = audit.query({}).length;
     assert.ok(after > before, 'binding request not audited');
     const logs = audit.query({ action: 'binding:request' });

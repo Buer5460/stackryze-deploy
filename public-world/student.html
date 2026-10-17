@@ -7,7 +7,7 @@
 <title>GlobalStudy — 学生 / 家长端</title>
 <link rel="stylesheet" href="/app.css">
 </head>
-<body>
+<body data-audience="C">
 <div class="phone" id="app">
   <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
 </div>
@@ -298,12 +298,35 @@ function showRecommendations(rec) {
   GS.openDrawer(zh ? '推荐的服务机构' : 'Recommended agencies', html);
 }
 
+// Fix 4: binding request has loading + double-submit protection, success shows
+// the binding number, failures show the real reason with a retry — no more
+// silent "click does nothing".
+var chooseInFlight = false;
 function chooseAgency(bOrgId) {
-  GS.closeDrawer();
-  GS.post('/api/c/bindings', { b_organization_id: bOrgId }).then(function () {
-    alert(GS.lang === 'zh' ? '绑定申请已提交，等待服务机构确认。' : 'Binding request sent — waiting for the agency.');
+  if (chooseInFlight) return; // double-tap guard
+  chooseInFlight = true;
+  var zh = GS.lang === 'zh';
+  GS.openDrawer(zh ? '绑定服务机构' : 'Bind agency', '<div class="notice">' + GS.esc(zh ? '正在提交绑定申请…' : 'Submitting binding request…') + '</div>');
+  GS.post('/api/c/bindings', { b_organization_id: bOrgId }).then(function (r) {
+    chooseInFlight = false;
+    var b = r.data || {};
+    GS.closeDrawer();
+    GS.openDrawer(zh ? '绑定申请已提交' : 'Binding request sent',
+      '<div class="banner ok">' + GS.esc(zh ? '绑定申请已提交，等待服务机构确认。' : 'Binding request sent. Waiting for the agency to confirm.') + '</div>' +
+      '<div class="kv"><div><small>' + GS.esc(zh ? 'Binding 编号' : 'Binding No.') + '</small><b>' + GS.esc(b.id || b.binding_id || '—') + '</b></div>' +
+      '<div><small>' + GS.esc(GS.t('status')) + '</small><b>' + GS.esc(b.status || 'pending_b_request') + '</b></div></div>' +
+      (b.duplicate ? '<div class="notice" style="margin-top:9px">' + GS.esc(zh ? '检测到重复提交，已返回已有申请（未重复创建）。' : 'Duplicate submit detected — the existing request was returned (not duplicated).') + '</div>' : ''));
     refresh();
-  }).catch(function (e) { alert(e.message); });
+  }).catch(function (e) {
+    chooseInFlight = false;
+    var zh2 = GS.lang === 'zh';
+    var detail = (e.payload && e.payload.failures && e.payload.failures.length)
+      ? '<div class="notice">' + GS.esc(zh2 ? '该机构未通过平台准入：' : 'The agency failed platform admission: ') + GS.esc(e.payload.failures.join(', ')) + '</div>' : '';
+    GS.openDrawer(zh2 ? '绑定失败' : 'Binding failed',
+      '<div class="banner err">' + GS.esc(e.message) + '</div>' + detail +
+      '<div class="form-actions"><button class="btn ghost" onclick="GS.closeDrawer()">' + GS.esc(GS.t('cancel')) + '</button>' +
+      '<button class="btn primary" onclick="chooseAgency(\'' + GS.esc(bOrgId) + '\')">' + GS.esc(zh2 ? '重试' : 'Retry') + '</button></div>');
+  });
 }
 
 function renderApply(main) {
@@ -490,30 +513,39 @@ async function loadBrief() {
   } catch (_) { /* brief is optional */ }
 }
 
+// Fix 3: identity is verified server-side on every boot. 401 → login panel;
+// 403 audience mismatch → explicit wrong-identity panel. Endpoint failures are
+// surfaced as errors, never disguised as empty lists.
 async function refresh() {
   try {
-    me = (await GS.get('/api/auth/me')).data;
-    caps = me.capabilities;
-    var results = await Promise.all([
-      GS.get('/api/c/applications').catch(function () { return { data: [] }; }),
-      GS.get('/api/c/documents').catch(function () { return { data: [] }; }),
-      GS.get('/api/c/payments').catch(function () { return { data: [] }; }),
-      GS.get('/api/c/messages').catch(function () { return { data: [] }; }),
-      GS.get('/api/c/todos').catch(function () { return { data: [] }; })
-    ]);
-    state.applications = results[0].data || [];
-    state.documents = results[1].data || [];
-    state.payments = results[2].data || [];
-    state.messages = results[3].data || [];
-    state.todos = results[4].data || [];
+    me = (await GS.verifyIdentity('C')).data || (await GS.get('/api/auth/me')).data;
   } catch (e) {
-    if (e.status === 401) { GS.clearSession(); return showLogin(); }
-    me = null;
+    if (e.code === 'AUDIENCE_MISMATCH') {
+      document.getElementById('app').innerHTML = '<div class="phone">' + GS.identityMismatchPanel(e.actor) + '</div>';
+      GS.bindIdentityPanels();
+      return;
+    }
+    GS.clearSession();
+    return showLogin();
   }
+  caps = me.capabilities;
+  var results = await Promise.all([
+    GS.get('/api/c/applications'),
+    GS.get('/api/c/documents'),
+    GS.get('/api/c/payments'),
+    GS.get('/api/c/messages'),
+    GS.get('/api/c/todos')
+  ]);
+  state.applications = results[0].data || [];
+  state.documents = results[1].data || [];
+  state.payments = results[2].data || [];
+  state.messages = results[3].data || [];
+  state.todos = results[4].data || [];
   renderShell();
 }
 
 function showLogin() {
+  window.renderLogin = function () { showLogin(); };
   document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel([]) + '</div>';
   GS.get('/api/auth/demo-accounts').then(function (r) {
     document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel(r.data) + '</div>';

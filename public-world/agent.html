@@ -7,7 +7,7 @@
 <title>GlobalStudy — 留学机构端</title>
 <link rel="stylesheet" href="/app.css">
 </head>
-<body>
+<body data-audience="B">
 <div class="phone" id="app">
   <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
 </div>
@@ -444,34 +444,44 @@ function renderMoney(main) {
     '</section>';
 }
 
+// Fix 3: server-verified identity for the B client; failures surface, no empty
+// workspaces from swallowed errors.
 async function refresh() {
   try {
-    var results = await Promise.all([
-      GS.get('/api/b/me').catch(function () { return { data: null }; }),
-      GS.get('/api/b/binding-requests').catch(function () { return { data: [] }; }),
-      GS.get('/api/b/applications').catch(function () { return { data: [] }; }),
-      GS.get('/api/b/todos').catch(function () { return { data: [] }; }),
-      GS.get('/api/b/commission').catch(function () { return { data: {} }; }),
-      GS.get('/api/b/settlements').catch(function () { return { data: [] }; }),
-      GS.get('/api/b/clients').catch(function () { return { data: null }; }),
-      GS.get('/api/b/performance').catch(function () { return { data: null }; })
-    ]);
-    me = results[0].data;
-    state.requests = results[1].data || [];
-    state.applications = results[2].data || [];
-    state.todos = results[3].data || [];
-    state.commission = results[4].data || {};
-    state.settlements = results[5].data || [];
-    state.clients = results[6].data;
-    state.performance = results[7].data;
+    await GS.verifyIdentity('B');
   } catch (e) {
-    if (e.status === 401) { GS.clearSession(); return showLogin(); }
+    if (e.code === 'AUDIENCE_MISMATCH') {
+      document.getElementById('app').innerHTML = '<div class="phone">' + GS.identityMismatchPanel(e.actor) + '</div>';
+      GS.bindIdentityPanels();
+      return;
+    }
+    GS.clearSession();
+    return showLogin();
   }
+  var results = await Promise.all([
+    GS.get('/api/b/me'),
+    GS.get('/api/b/binding-requests'),
+    GS.get('/api/b/applications'),
+    GS.get('/api/b/todos'),
+    GS.get('/api/b/commission'),
+    GS.get('/api/b/settlements'),
+    GS.get('/api/b/clients'),
+    GS.get('/api/b/performance')
+  ]);
+  me = results[0].data;
+  state.requests = results[1].data || [];
+  state.applications = results[2].data || [];
+  state.todos = results[3].data || [];
+  state.commission = results[4].data || {};
+  state.settlements = results[5].data || [];
+  state.clients = results[6].data;
+  state.performance = results[7].data;
   renderShell();
   if (tab === 'board') renderBoardBox();
 }
 
 function showLogin() {
+  window.renderLogin = function () { showLogin(); };
   document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel([]) + '</div>';
   GS.get('/api/auth/demo-accounts').then(function (r) {
     document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel(r.data) + '</div>';

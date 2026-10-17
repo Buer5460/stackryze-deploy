@@ -5,8 +5,14 @@
   'use strict';
 
   var STORAGE_LANG = 'gs-lang';
+  // Fix 3: sessions are isolated per client audience so switching clients in
+  // the same browser never carries the wrong identity. Non-session data
+  // (language, shortlist) stays in global keys and is never cleared.
   var STORAGE_SESSION = 'gs-session';
   var STORAGE_ACTOR = 'gs-actor';
+  var CLIENT_AUDIENCE = (document.body && document.body.getAttribute('data-audience')) || null;
+  var sessionKey = function () { return CLIENT_AUDIENCE ? STORAGE_SESSION + ':' + CLIENT_AUDIENCE : STORAGE_SESSION; };
+  var actorKey = function () { return CLIENT_AUDIENCE ? STORAGE_ACTOR + ':' + CLIENT_AUDIENCE : STORAGE_ACTOR; };
 
   // -------------------------------------------------------------------------
   // i18n — Chinese by default, English switch, persisted in localStorage.
@@ -26,6 +32,7 @@
       error: '出错了，请重试',
       networkError: '网络请求失败',
       loginDemo: '一键体验 Demo',
+      identityMismatch: '当前登录身份不适用于本客户端，请切换对应角色的账号。',
       loginReal: '真实账号登录',
       logout: '退出登录',
       email: '邮箱',
@@ -70,6 +77,7 @@
       error: 'Something went wrong',
       networkError: 'Network request failed',
       loginDemo: 'One-click demo',
+      identityMismatch: 'The signed-in identity does not match this client. Sign in with the matching role.',
       loginReal: 'Sign in',
       logout: 'Sign out',
       email: 'Email',
@@ -137,20 +145,22 @@
   // -------------------------------------------------------------------------
   // HTTP helpers
   // -------------------------------------------------------------------------
-  function sessionToken() { return localStorage.getItem(STORAGE_SESSION) || ''; }
+  function sessionToken() { return localStorage.getItem(sessionKey()) || ''; }
 
   function saveSession(token, actor) {
-    if (token) localStorage.setItem(STORAGE_SESSION, token);
-    if (actor) localStorage.setItem(STORAGE_ACTOR, JSON.stringify(actor));
+    if (token) localStorage.setItem(sessionKey(), token);
+    if (actor) localStorage.setItem(actorKey(), JSON.stringify(actor));
   }
 
+  // Clears ONLY this client's session keys. Language / shortlist / theme and
+  // other clients' sessions are untouched (Fix 3 regression requirement).
   function clearSession() {
-    localStorage.removeItem(STORAGE_SESSION);
-    localStorage.removeItem(STORAGE_ACTOR);
+    localStorage.removeItem(sessionKey());
+    localStorage.removeItem(actorKey());
   }
 
   function currentActor() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_ACTOR) || 'null'); }
+    try { return JSON.parse(localStorage.getItem(actorKey()) || 'null'); }
     catch (_) { return null; }
   }
 
@@ -321,8 +331,90 @@
     return !sessionToken();
   }
 
+  // Fix 3: a local token says nothing about whether it is still valid or
+  // belongs to THIS client's audience. /api/auth/me is the source of truth.
+  // Resolves to the verified user, or throws an Error with .status:
+  //   401 → session expired/invalid → caller must show the login panel.
+  //   403 → identity does not belong to this client (audience mismatch) →
+  //         caller must show an explicit "wrong identity" panel, not hide data.
+  function verifyIdentity(expectedAudience) {
+    if (!sessionToken()) {
+      var err = new Error(t('login'));
+      err.status = 401;
+      err.code = 'NO_SESSION';
+      return Promise.reject(err);
+    }
+    return get('/api/auth/me').then(function (r) {
+      var user = r.data && r.data.user;
+      if (!user) {
+        var noUser = new Error(t('error'));
+        noUser.status = 401;
+        noUser.code = 'NO_SESSION';
+        throw noUser;
+      }
+      var want = expectedAudience || CLIENT_AUDIENCE;
+      if (want && String(want).toUpperCase() !== 'ANY' && String(user.audience).toUpperCase() !== String(want).toUpperCase()) {
+        var mismatch = new Error(t('identityMismatch'));
+        mismatch.status = 403;
+        mismatch.code = 'AUDIENCE_MISMATCH';
+        mismatch.actor = user;
+        throw mismatch;
+      }
+      return r.data;
+    });
+  }
+
+  // 401 → session gone: show the login panel for THIS client.
+  function sessionExpiredPanel() {
+    return '<section class="section">' +
+      '<div class="banner warn">' + esc(t('sandboxNotice')) + '</div>' +
+      '<div class="banner err">' + esc(lang === 'zh' ? '登录已过期或无效，请重新登录。' : 'Your session has expired or is invalid. Please sign in again.') + '</div>' +
+      '</section>' + loginPanel([]);
+  }
+
+  // 403 audience mismatch → explicit wrong-identity panel with a way out.
+  // Never auto-clears other clients' sessions; never auto-escalates.
+  function identityMismatchPanel(mismatchActor) {
+    var who = mismatchActor && (mismatchActor.display_name || mismatchActor.role) ? (mismatchActor.display_name || mismatchActor.role) : '';
+    var roleLabel = mismatchActor && mismatchActor.role ? mismatchActor.role : '';
+    var zh = lang === 'zh';
+    var routeByAudience = { C: '/student', B: '/agent', S: '/institution', DBC: '/dbc', ADMIN: '/admin' };
+    var rightRoute = mismatchActor && routeByAudience[String(mismatchActor.audience).toUpperCase()];
+    return '<section class="section">' +
+      '<div class="banner err">' + esc(t('identityMismatch')) + '</div>' +
+      (who ? '<div class="notice">' + esc(zh ? '当前身份：' : 'Current identity: ') + esc(who) + (roleLabel ? ' · ' + esc(roleLabel) : '') + '</div>' : '') +
+      '<div class="form-actions">' +
+      (rightRoute && rightRoute !== location.pathname
+        ? '<a class="btn primary" href="' + esc(rightRoute) + '">' + esc(zh ? '前往对应客户端' : 'Open the matching client') + '</a>' : '') +
+      '<button class="btn ghost" id="switchAccountBtn">' + esc(zh ? '切换账号' : 'Switch account') + '</button>' +
+      '</div></section>' + loginPanel([]);
+  }
+
+  // Clients register their own boot via onReady; this shared hook lets any
+  // panel ask the page to re-render its login surface after a switch.
+  function renderLoginSurface() {
+    if (typeof window.renderLogin === 'function') return window.renderLogin();
+    location.reload();
+  }
+
+  function bindIdentityPanels() {
+    var btn = document.getElementById('switchAccountBtn');
+    if (btn) btn.onclick = function () { clearSession(); renderLoginSurface(); };
+    bindLogin();
+  }
+
   function loginPanel(demoAccounts) {
-    var accounts = (demoAccounts || []).map(function (a) {
+    var accounts = (demoAccounts || [])
+      .filter(function (a) {
+        // Fix 3: only offer identities this client accepts. S clients must also
+        // match the supplier type carried by the page attribute.
+        if (!CLIENT_AUDIENCE) return true;
+        if (String(a.audience).toUpperCase() !== String(CLIENT_AUDIENCE).toUpperCase()) return false;
+        var pageType = document.body.getAttribute('data-supplier-type');
+        if (pageType && a.supplier_type && String(a.supplier_type).toUpperCase() !== String(pageType).toUpperCase()) return false;
+        return true;
+      })
+      .map(function (a) {
       return '<button class="btn primary wide" data-demo="' + esc(a.token) + '">' +
         esc(t('loginDemo')) + ' · ' + esc(a.display_name || a.token) + '</button>';
     }).join('');
@@ -428,7 +520,11 @@
     emptyState: emptyState, errorState: errorState, metrics: metrics,
     sectionHead: sectionHead, card: card, notice: notice, sandboxNote: sandboxNote,
     openDrawer: openDrawer, closeDrawer: closeDrawer, showTab: showTab,
-    requireAuth: requireAuth, loginPanel: loginPanel, bindLogin: bindLogin, logout: logout,
+    requireAuth: requireAuth, verifyIdentity: verifyIdentity,
+    sessionExpiredPanel: sessionExpiredPanel, identityMismatchPanel: identityMismatchPanel,
+    bindIdentityPanels: bindIdentityPanels,
+    loginPanel: loginPanel, bindLogin: bindLogin, logout: logout,
+    clearSession: clearSession,
     footer: footer, shell: shell,
     applyLangToDom: applyLangToDom
   };

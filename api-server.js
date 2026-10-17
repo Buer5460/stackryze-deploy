@@ -32,7 +32,7 @@ const seed = require('./lib/seed');
 const audit = require('./lib/audit');
 const { lower, upper, asNumber, round2, id: makeId } = require('./lib/util');
 
-const VERSION = '3.0.0';
+const VERSION = '3.0.1';
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '2mb' }));
@@ -287,10 +287,20 @@ app.get('/api/public/accommodation', (req, res) => {
 // ===========================================================================
 // AUTH
 // ===========================================================================
+// Admin demo accounts are never public (Fix 5). PUBLIC_ADMIN_DEMO=false keeps
+// the platform-admin role off the public demo surface entirely; the only
+// legitimate admin path is the real login on /admin.
+const PUBLIC_ADMIN_DEMO = () => String(process.env.PUBLIC_ADMIN_DEMO || 'false').toLowerCase() === 'true';
+const isAdminRole = (roleId) => {
+  const role = auth.ROLES[String(roleId || '').toUpperCase()];
+  return Boolean(role && role.audience === 'ADMIN');
+};
+
 app.get('/api/auth/demo-accounts', (req, res) => {
   if (!config.get('demo_login_enabled', true)) return fail(res, 404, 'Demo 登录已关闭');
   const accounts = db.stores.users.all()
     .filter((u) => u.is_demo && u.demo_token)
+    .filter((u) => PUBLIC_ADMIN_DEMO() || !isAdminRole(u.role))
     .map((u) => ({
       token: u.demo_token,
       route: auth.AUDIENCE_ROUTES[auth.ROLES[u.role].audience],
@@ -303,7 +313,7 @@ app.get('/api/auth/demo-accounts', (req, res) => {
         return s ? s.type : null;
       })()
     }));
-  res.json(ok(accounts, { note: 'Demo 一键体验账号；真实注册入口同样开放。' }));
+  res.json(ok(accounts, { note: 'Demo 一键体验账号；真实注册入口同样开放。管理员不提供公开 Demo 凭证。' }));
 });
 
 app.post('/api/auth/demo-login', (req, res) => {
@@ -312,6 +322,10 @@ app.post('/api/auth/demo-login', (req, res) => {
   if (!token) return fail(res, 400, 'token 必填');
   const user = db.stores.users.all().find((u) => u.is_demo && String(u.demo_token) === String(token));
   if (!user) return fail(res, 404, 'Demo 账号不存在');
+  // Server-side admin demo gate (Fix 5): not just a hidden button.
+  if (isAdminRole(user.role) && !PUBLIC_ADMIN_DEMO()) {
+    return fail(res, 403, '管理员不提供公开 Demo 登录');
+  }
   const session = auth.createSession(user.id, { is_demo: true, ip: req.ip });
   res.status(201).json(ok({ token: session.token, user: auth.userPublic(user) }));
 });
@@ -323,11 +337,15 @@ app.post('/api/auth/register', (req, res) => {
   if (body.email && auth.findUserByEmail(body.email)) return fail(res, 409, '该邮箱已注册');
   const role = String(body.role || 'C_STUDENT').toUpperCase();
   if (!auth.ROLES[role]) return fail(res, 400, '未知角色');
+  if (auth.ROLES[role].audience === 'ADMIN') {
+    return fail(res, 403, '公开注册不能创建管理员账号');
+  }
 
   const user = auth.createUser({
     email: body.email, phone: body.phone, password: body.password,
     display_name: body.display_name || body.name || body.email || body.phone,
-    role, language: body.language || 'zh', status: 'active'
+    role, language: body.language || 'zh', status: 'active',
+    from_public_registration: true
   });
 
   // Rule 2: a self-registered C starts Unbound.
@@ -428,15 +446,27 @@ cRouter.get('/recommendations', (req, res) => {
 });
 
 // C picks a B → binding request.
-cRouter.post('/bindings', (req, res) => {
-  const result = binding.createBindingRequest({
+cRouter.post('/bindings', async (req, res) => {
+  const result = await binding.createBindingRequest({
     c_profile_id: req.cProfile.id,
     b_organization_id: req.body && req.body.b_organization_id,
     b_profile_id: req.body && req.body.b_profile_id,
     recommendation_id: req.body && req.body.recommendation_id
   }, actorOf(req));
-  if (!result.ok) return fail(res, 400, result.error, result.binding ? { binding: result.binding } : undefined);
-  res.status(201).json(ok(result.binding));
+  if (!result.ok) {
+    const statusByCode = { B_NOT_ELIGIBLE: 409, B_NOT_FOUND: 404, BINDING_CONFLICT: 409 };
+    const status = statusByCode[result.code] || 400;
+    return fail(res, status, result.error, {
+      code: result.code,
+      failures: result.failures,
+      binding: result.binding
+    });
+  }
+  res.status(result.duplicate ? 200 : 201).json(ok({
+    ...result.binding,
+    duplicate: Boolean(result.duplicate),
+    binding_id: result.binding.id
+  }));
 });
 
 cRouter.get('/bindings', (req, res) => {
@@ -450,8 +480,8 @@ cRouter.get('/bindings/:id', (req, res) => {
   res.json(ok(bindingView(b)));
 });
 
-cRouter.post('/bindings/:id/sign', (req, res) => {
-  const result = binding.signBinding(req.params.id, 'C', actorOf(req));
+cRouter.post('/bindings/:id/sign', async (req, res) => {
+  const result = await binding.signBinding(req.params.id, 'C', actorOf(req));
   if (!result.ok) return fail(res, 400, result.error);
   res.json(ok({ binding: bindingView(result.binding), contract: contractView(result.contract) }));
 });
@@ -747,14 +777,14 @@ bRouter.get('/binding-requests', (req, res) => {
   res.json(ok(list.map((b) => bindingRequestViewForB(b))));
 });
 
-bRouter.post('/binding-requests/:id/respond', (req, res) => {
-  const result = binding.bRespond(req.params.id, req.body && req.body.response, actorOf(req), { note: req.body && req.body.note });
+bRouter.post('/binding-requests/:id/respond', async (req, res) => {
+  const result = await binding.bRespond(req.params.id, req.body && req.body.response, actorOf(req), { note: req.body && req.body.note });
   if (!result.ok) return fail(res, 400, result.error, result.capacity ? { capacity: result.capacity } : undefined);
   res.json(ok({ binding: bindingView(result.binding), contract: result.contract ? contractView(result.contract) : null }));
 });
 
-bRouter.post('/binding-requests/:id/sign', (req, res) => {
-  const result = binding.signBinding(req.params.id, 'B', actorOf(req));
+bRouter.post('/binding-requests/:id/sign', async (req, res) => {
+  const result = await binding.signBinding(req.params.id, 'B', actorOf(req));
   if (!result.ok) return fail(res, 400, result.error);
   res.json(ok({ binding: bindingView(result.binding), contract: contractView(result.contract) }));
 });
@@ -1763,7 +1793,21 @@ adminRouter.patch('/users/:id', (req, res) => {
   if (!user) return fail(res, 404, '用户不存在');
   const before = { status: user.status, role: user.role };
   if (req.body && req.body.status) user.status = req.body.status;
-  if (req.body && req.body.role && auth.ROLES[String(req.body.role).toUpperCase()]) user.role = String(req.body.role).toUpperCase();
+  if (req.body && req.body.role) {
+    const nextRole = auth.ROLES[String(req.body.role).toUpperCase()];
+    if (!nextRole) return fail(res, 400, '未知角色');
+    // Role changes stay within the same audience unless performed by an
+    // ADMIN_SUPER — a lower admin role cannot mint cross-audience identities.
+    const actor = actorOf(req);
+    const isSuper = actor && String(actor.role).toUpperCase() === 'ADMIN_SUPER';
+    if (!isSuper) {
+      const currentAud = auth.ROLES[String(user.role).toUpperCase()].audience;
+      if (nextRole.audience !== currentAud) {
+        return fail(res, 403, '跨端角色变更仅限 ADMIN_SUPER');
+      }
+    }
+    user.role = nextRole.id;
+  }
   if (req.body && req.body.organization_id) user.organization_id = req.body.organization_id;
   audit.record({ actor: actorOf(req), action: 'admin:user_update', entity: 'user', entity_id: user.id, from: before, to: { status: user.status, role: user.role } });
   res.json(ok(auth.userPublic(user)));
@@ -2359,6 +2403,26 @@ app.use((err, req, res, next) => {
 async function boot() {
   await db.ensureLoaded();
   const result = seed.seed();
+  // Fix 5: revoke sessions issued earlier to admin demo accounts so old
+  // public admin-demo tokens stop working after this deploy.
+  if (String(process.env.PUBLIC_ADMIN_DEMO || 'false').toLowerCase() !== 'true') {
+    const adminDemoIds = new Set(db.stores.users.all()
+      .filter((u) => u.is_demo)
+      .filter((u) => { const r = auth.ROLES[String(u.role).toUpperCase()]; return r && r.audience === 'ADMIN'; })
+      .map((u) => u.id));
+    let revoked = 0;
+    for (const session of db.stores.sessions.all()) {
+      if (adminDemoIds.has(String(session.user_id))) {
+        db.stores.sessions.remove(session.id);
+        revoked += 1;
+      }
+    }
+    if (revoked) {
+      await db.flush();
+      // eslint-disable-next-line no-console
+      console.log('[boot] revoked ' + revoked + ' admin demo session(s)');
+    }
+  }
   if (result.seeded) {
     // eslint-disable-next-line no-console
     console.log('[boot] demo data seeded (' + Object.keys(result.suppliers || {}).length + ' supplier types)');

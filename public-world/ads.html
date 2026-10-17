@@ -7,7 +7,7 @@
 <title>GlobalStudy — 广告中心</title>
 <link rel="stylesheet" href="/app.css">
 </head>
-<body>
+<body data-audience="ANY">
 <div class="phone" id="app">
   <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
 </div>
@@ -229,6 +229,9 @@ async function showReport(id) {
 
 async function refresh() {
   try {
+    // Fix 3: server-verified identity for this client; 401 → re-login, 403 →
+    // explicit wrong-identity panel. Failures surface, never fake empty data.
+    await GS.verifyIdentity();
     var results = await Promise.all([
       GS.get(API + '/me').catch(function () { return { data: null }; }),
       GS.get(API + '/products').catch(function () { return { data: [], meta: {} }; }),
@@ -240,12 +243,19 @@ async function refresh() {
     state.inventory = results[2].data || [];
     state.orders = results[3].data || [];
   } catch (e) {
-    if (e.status === 401) { GS.clearSession(); return showLogin(); }
+    if (e.code === 'AUDIENCE_MISMATCH') {
+      document.getElementById('app').innerHTML = '<div class="phone">' + GS.identityMismatchPanel(e.actor) + '</div>';
+      GS.bindIdentityPanels();
+      return;
+    }
+    if (e.status === 401 || e.code === 'NO_SESSION') { GS.clearSession(); return showLogin(); }
+    throw e;
   }
   renderShell();
 }
 
 function showLogin() {
+  window.renderLogin = function () { showLogin(); };
   document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel([]) + '</div>';
   GS.get('/api/auth/demo-accounts').then(function (r) {
     document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel(r.data) + '</div>';
