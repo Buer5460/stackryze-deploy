@@ -31,7 +31,8 @@ function resetInstance(dir) {
   SHARED_DIR = dir;
   process.env.GS_DB_DIR = dir;
   for (const k of Object.keys(require.cache)) {
-    if ((k.includes('/lib/') || k.endsWith('api-server.js')) && k.includes('留学项目')) delete require.cache[k];
+    const repoRoot = path.resolve(__dirname, '..');
+    if ((k.includes(path.join(repoRoot, 'lib')) || k.startsWith(path.join(repoRoot, 'api-server.js'))) && !k.includes('node_modules')) delete require.cache[k];
   }
   return require('../api-server');
 }
