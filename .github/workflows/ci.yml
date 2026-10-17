@@ -34,10 +34,10 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Test
+      - name: Unit + integration tests
         run: npm test
 
-      - name: Start smoke server
+      - name: Start MVP server
         run: |
           npm start > /tmp/globalstudy.log 2>&1 &
           echo $! > /tmp/globalstudy.pid
@@ -52,48 +52,73 @@ jobs:
       - name: API health smoke
         run: |
           curl -fsS http://127.0.0.1:3000/api/health | grep '"ok":true'
+          curl -fsS http://127.0.0.1:3000/api/health | grep '"version":"3.0.0"'
 
-      - name: H5 four-role smoke
+      - name: Public clients are reachable
         run: |
-          curl -fsS http://127.0.0.1:3000/ > /tmp/index.html
-          grep -q "学生" /tmp/index.html
-          grep -q "机构" /tmp/index.html
-          grep -q "院校" /tmp/index.html
-          grep -q "平台" /tmp/index.html
+          for path in / /student /agent /dbc /supplier/education /supplier/medical \
+                     /supplier/certification /supplier/visa /supplier/accommodation \
+                     /supplier/finance /ads /admin /institution; do
+            code=$(curl -s -o /tmp/page.html -w '%{http_code}' "http://127.0.0.1:3000$path")
+            echo "$path -> $code"
+            test "$code" = "200"
+            grep -q "GlobalStudy" /tmp/page.html
+          done
 
-      - name: Stop smoke server
+      - name: Chinese default with English switch on every client
+        run: |
+          for path in / /student /agent /dbc /supplier/education /supplier/medical \
+                     /supplier/certification /supplier/visa /supplier/accommodation \
+                     /supplier/finance /ads /admin /institution; do
+            curl -fsS "http://127.0.0.1:3000$path" > /tmp/page.html
+            grep -q 'lang="zh-CN"' /tmp/page.html || { echo "$path is not Chinese by default"; exit 1; }
+            grep -q "English" /tmp/page.html || { echo "$path has no English switch"; exit 1; }
+            grep -q "Powered by Aethel Edu\|由安世达教育提供核心动力" /tmp/page.html || { echo "$path missing operator credit"; exit 1; }
+          done
+
+      - name: Internal APIs are not publicly readable
+        run: |
+          for path in /api/admin/dashboard /api/b/me /api/c/me /api/dbc/me \
+                     /api/admin/import/preview /api/admin/queue; do
+            code=$(curl -s -o /tmp/api.json -w '%{http_code}' "http://127.0.0.1:3000$path")
+            echo "$path -> $code"
+            test "$code" = "401"
+          done
+          for path in /api/growth/leads /api/b2b/schools /api/b2b/programs; do
+            code=$(curl -s -o /tmp/api.json -w '%{http_code}' "http://127.0.0.1:3000$path")
+            echo "$path -> $code (removed route)"
+            test "$code" = "404"
+          done
+
+      - name: Public API hides commission and private contact
+        run: |
+          curl -fsS http://127.0.0.1:3000/api/public/suppliers > /tmp/suppliers.json
+          ! grep -q "commission_value" /tmp/suppliers.json
+          ! grep -q "contact_phone" /tmp/suppliers.json
+          ! grep -q "contact_whatsapp" /tmp/suppliers.json
+
+      - name: Demo login works end to end
+        run: |
+          TOKEN=$(curl -fsS -X POST http://127.0.0.1:3000/api/auth/demo-login \
+            -H 'Content-Type: application/json' \
+            -d '{"token":"demo-student-01"}' | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+          test -n "$TOKEN"
+          curl -fsS http://127.0.0.1:3000/api/auth/me -H "Authorization: Bearer $TOKEN" | grep '"ok":true'
+
+      - name: Finance feature is off by default
+        run: |
+          code=$(curl -s -o /tmp/finance.json -w '%{http_code}' http://127.0.0.1:3000/api/s/finance/me)
+          echo "finance -> $code"
+          test "$code" = "403"
+          grep -q "FINANCE_DISABLED" /tmp/finance.json
+
+      - name: Persistence backend is reported honestly
+        run: |
+          curl -fsS http://127.0.0.1:3000/api/health | grep -E '"backend":"(postgresql|json-file|memory)"'
+
+      - name: Stop MVP server
         if: always()
         run: |
           if [ -f /tmp/globalstudy.pid ]; then
             kill "$(cat /tmp/globalstudy.pid)" || true
-          fi
-
-      - name: Start public MVP smoke server
-        run: |
-          PORT=3001 npm run start:public > /tmp/globalstudy-public.log 2>&1 &
-          echo $! > /tmp/globalstudy-public.pid
-          for i in {1..30}; do
-            if curl -fsS http://127.0.0.1:3001/api/health >/tmp/public-health.json; then
-              break
-            fi
-            sleep 1
-          done
-          cat /tmp/public-health.json
-
-      - name: Public MVP isolation smoke
-        run: |
-          curl -fsS http://127.0.0.1:3001/ > /tmp/public-index.html
-          grep -q "请选择要打开的客户端" /tmp/public-index.html
-          curl -fsS http://127.0.0.1:3001/student.html | grep -q "学生 / 家长端"
-          curl -fsS http://127.0.0.1:3001/agent.html | grep -q "留学机构端"
-          curl -fsS http://127.0.0.1:3001/institution.html | grep -q "院校 / 供应商端"
-          test "$(curl -s -o /tmp/growth.json -w '%{http_code}' http://127.0.0.1:3001/api/growth/leads)" = "404"
-          test "$(curl -s -o /tmp/admin.json -w '%{http_code}' http://127.0.0.1:3001/api/admin/import/preview)" = "404"
-          test "$(curl -s -o /tmp/b2b.json -w '%{http_code}' http://127.0.0.1:3001/api/b2b/schools)" = "404"
-
-      - name: Stop public MVP smoke server
-        if: always()
-        run: |
-          if [ -f /tmp/globalstudy-public.pid ]; then
-            kill "$(cat /tmp/globalstudy-public.pid)" || true
           fi

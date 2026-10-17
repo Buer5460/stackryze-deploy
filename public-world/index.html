@@ -11,57 +11,64 @@
 <main class="portal">
   <div class="portal-inner">
     <div class="portal-brand" style="justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:11px"><div class="logo">G</div><div><b>GlobalStudy</b><small style="display:block;color:#bcd4e0" id="subTitle">公网 MVP</small></div></div>
+      <div style="display:flex;align-items:center;gap:11px">
+        <div class="logo">G</div>
+        <div><b>GlobalStudy</b><small style="display:block;color:#bcd4e0" id="subTitle">公网 MVP · 选择客户端</small></div>
+      </div>
       <button class="lang-btn" id="langBtn">English</button>
     </div>
     <h1 id="title">请选择要打开的客户端</h1>
-    <p class="portal-lead" id="lead">三个独立的手机端客户端，可以直接进入使用；没有宣传介绍页，也不暴露内部管理工具。</p>
-    <div class="client-grid">
-      <a class="client-card" href="/student.html">
-        <div class="icon">🎓</div>
-        <h2 id="studentTitle">学生 / 家长端</h2>
-        <p id="studentText">搜索学校、筛选、收藏、对比并创建演示申请草稿。</p>
-        <div class="open" id="studentOpen">打开学生端 →</div>
-      </a>
-      <a class="client-card" href="/agent.html">
-        <div class="icon">🤝</div>
-        <h2 id="agentTitle">留学机构端</h2>
-        <p id="agentText">管理学生、搜索学校资源并创建申请草稿。</p>
-        <div class="open" id="agentOpen">打开机构端 →</div>
-      </a>
-      <a class="client-card" href="/institution.html">
-        <div class="icon">🏫</div>
-        <h2 id="instTitle">院校 / 供应商端</h2>
-        <p id="instText">查看课程、申请记录与公开数据核验状态。</p>
-        <div class="open" id="instOpen">打开院校端 →</div>
-      </a>
-    </div>
-    <div class="portal-note" id="note">演示数据会明确标识；内部 Growth、Admin 和佣金接口不会在公网开放。</div>
+    <p class="portal-lead" id="lead">五个角色的独立客户端，可直接进入使用。没有宣传介绍页，也不暴露内部管理工具。</p>
+    <div class="client-grid" id="clientGrid"></div>
+    <div class="portal-note" id="note">演示数据会明确标识；所有外部能力均标注 Demo / Sandbox。</div>
+    <footer class="footer" style="color:#bcd4e0;border-top:1px solid rgba(255,255,255,.14)">
+      <b style="color:#fff">GlobalStudy</b> · <span id="footerText">由安世达教育提供核心动力</span>
+      <span class="footer-powered" id="footerPowered" style="color:#8fb3c4">Powered by Aethel Edu</span>
+    </footer>
   </div>
 </main>
+
+<script src="/js/gs.js"></script>
 <script>
-const I18N={
-  zh:{subTitle:'公网 MVP',title:'请选择要打开的客户端',lead:'三个独立的手机端客户端，可以直接进入使用；没有宣传介绍页，也不暴露内部管理工具。',
-      studentTitle:'学生 / 家长端',studentText:'搜索学校、筛选、收藏、对比并创建演示申请草稿。',studentOpen:'打开学生端 →',
-      agentTitle:'留学机构端',agentText:'管理学生、搜索学校资源并创建申请草稿。',agentOpen:'打开机构端 →',
-      instTitle:'院校 / 供应商端',instText:'查看课程、申请记录与公开数据核验状态。',instOpen:'打开院校端 →',
-      note:'演示数据会明确标识；内部 Growth、Admin 和佣金接口不会在公网开放。',btn:'English',html:'zh-CN',page:'GlobalStudy — 选择客户端'},
-  en:{subTitle:'Public MVP',title:'Choose a client to open',lead:'Three separate mobile clients. Open any one directly — no marketing page, no internal admin tools.',
-      studentTitle:'Student / Parent',studentText:'Search schools, compare options, save a shortlist and create a demo application.',studentOpen:'Open student client →',
-      agentTitle:'Education Agent',agentText:'Manage students, search school resources and create application drafts.',agentOpen:'Open agent client →',
-      instTitle:'Institution / Supplier',instText:'Review programs, incoming applications and public data verification status.',instOpen:'Open institution client →',
-      note:'Demo data is clearly labeled. Internal Growth, Admin and commission APIs are not exposed by this public service.',btn:'中文',html:'en',page:'GlobalStudy — Choose a client'}
-};
-let lang=localStorage.getItem('gs-world-lang')||'zh';
-function apply(){
-  const t=I18N[lang];document.documentElement.lang=t.html;document.title=t.page;
-  for(const k of ['subTitle','title','lead','studentTitle','studentText','studentOpen','agentTitle','agentText','agentOpen','instTitle','instText','instOpen','note']){
-    document.getElementById(k).textContent=t[k];
-  }
-  document.getElementById('langBtn').textContent=t.btn;
+var CLIENTS = [
+  { route: '/student', icon: '🎓', zh: ['学生 / 家长端', '搜索学校、提交需求、绑定服务机构、申请、材料、支付。'], en: ['Student / Parent', 'Search schools, submit a requirement, bind an agency, apply, upload documents and pay.'] },
+  { route: '/agent', icon: '🤝', zh: ['留学机构端', '客户池、绑定处理、S0–S10 看板、资源中心、佣金结算。'], en: ['Education Agent', 'Client pool, binding handling, the S0–S10 board, the resource centre and commission settlement.'] },
+  { route: '/dbc', icon: '📜', zh: ['DBC 招生牌照', '状态 A 协议、供应商管理、招生申请与对账。'], en: ['DBC', 'State A agreements, supplier management, admissions and reconciliation.'] },
+  { route: '/supplier/education', icon: '🏫', zh: ['教育机构', '课程发布、招生申请、录取流程、S0–S10 看板。'], en: ['Education', 'Program publishing, admissions, the offer workflow and the S0–S10 board.'] },
+  { route: '/supplier/medical', icon: '🩺', zh: ['体检机构', '体检委托、预约、状态与报告文件。'], en: ['Medical', 'Check-up orders, appointments, status and report files.'] },
+  { route: '/supplier/certification', icon: '📄', zh: ['文件认证', '学历 / 成绩 / 公证 / 翻译认证流程。'], en: ['Certification', 'Degree, transcript, notarisation and translation certification.'] },
+  { route: '/supplier/visa', icon: '🛂', zh: ['签证代办', '签证服务产品、委托、材料、预约与结果。'], en: ['Visa Agency', 'Visa products, orders, materials, appointments and results.'] },
+  { route: '/supplier/accommodation', icon: '🏠', zh: ['学生住宿', '房型 / 房间 / 床位库存、预订、入住与退宿。'], en: ['Accommodation', 'Room types, rooms, bed inventory, bookings, check-in and check-out.'] },
+  { route: '/supplier/finance', icon: '💰', zh: ['教育金融（默认关闭）', '功能暂未开放 / Coming soon。'], en: ['Education Finance (off)', 'Feature not open yet / Coming soon.'] },
+  { route: '/ads', icon: '📣', zh: ['广告中心', '充值、选位、素材、审核、排期、投放与报表。'], en: ['Ads Centre', 'Top-up, slot selection, creative, review, scheduling, delivery and reporting.'] },
+  { route: '/admin', icon: '🛠️', zh: ['平台管理端', '需登录。统一用户、审核、推荐、合同、佣金与支付编排。'], en: ['Platform Admin', 'Login required. Unified users, verification, recommendation, contracts, commission and payment orchestration.'] },
+  { route: '/institution', icon: '🗂️', zh: ['院校 / 供应商入口', '六类供应商统一入口，按类型进入对应客户端。'], en: ['Institution / Supplier entry', 'One entry for all six supplier types.'] }
+];
+
+function render() {
+  var zh = GS.lang === 'zh';
+  document.getElementById('subTitle').textContent = zh ? '公网 MVP · 选择客户端' : 'Public MVP · Choose a client';
+  document.getElementById('title').textContent = zh ? '请选择要打开的客户端' : 'Choose a client to open';
+  document.getElementById('lead').textContent = zh
+    ? '五个角色的独立客户端，可直接进入使用。没有宣传介绍页，也不暴露内部管理工具。'
+    : 'Five separate role clients. Open any one directly — no marketing page, no internal admin tools.';
+  document.getElementById('note').textContent = zh
+    ? '演示数据会明确标识；所有外部能力均标注 Demo / Sandbox。'
+    : 'Demo data is clearly labelled; every external capability is marked Demo / Sandbox.';
+
+  document.getElementById('clientGrid').innerHTML = CLIENTS.map(function (c) {
+    var pair = zh ? c.zh : c.en;
+    return '<a class="client-card" href="' + c.route + '">' +
+      '<div class="icon">' + c.icon + '</div>' +
+      '<h2>' + GS.esc(pair[0]) + '</h2>' +
+      '<p>' + GS.esc(pair[1]) + '</p>' +
+      '<div class="open">' + (zh ? '打开 →' : 'Open →') + '</div></a>';
+  }).join('');
 }
-document.getElementById('langBtn').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('gs-world-lang',lang);apply()};
-apply();
+
+window.onLangChange = render;
+window.onReady = render;
+render();
 </script>
 </body>
 </html>

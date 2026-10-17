@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>GlobalStudy — 广告中心</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="phone" id="app">
+  <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
+</div>
+<div class="drawer-mask" id="mask" onclick="GS.closeDrawer()"></div>
+<section class="drawer" id="drawer"><div class="handle"></div>
+  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="GS.closeDrawer()">关闭</button></div>
+  <div id="drawerBody"></div></section>
+
+<script src="/js/gs.js"></script>
+<script>
+var API = '/api/ads';
+var TAB_NAMES = ['Home', 'Slots', 'Orders', 'Reports'];
+var tab = 'home';
+var me = null;
+var state = { products: [], inventory: [], orders: [], report: null };
+
+function tabs() {
+  var zh = GS.lang === 'zh';
+  return [
+    { key: 'Home', icon: '⌂', label: zh ? '工作台' : 'Home' },
+    { key: 'Slots', icon: '▤', label: zh ? '广告位' : 'Slots' },
+    { key: 'Orders', icon: '🧾', label: zh ? '订单' : 'Orders' },
+    { key: 'Reports', icon: '📈', label: zh ? '报表' : 'Reports' }
+  ];
+}
+
+function renderShell() {
+  var zh = GS.lang === 'zh';
+  var items = tabs();
+  var active = items.filter(function (i) { return i.key.toLowerCase() === tab; })[0] || items[0];
+  var hero = {
+    Home: { eyebrow: zh ? '广告中心 · Sandbox' : 'ADS CENTRE · SANDBOX', title: zh ? '广告投放' : 'Advertising', lead: zh ? '充值 → 选位 → 订单 → 付款 → 素材 → 审核 → 排期 → 投放 → 报表。' : 'Top-up → slot → order → payment → creative → review → schedule → delivery → report.' },
+    Slots: { eyebrow: zh ? '广告位' : 'SLOTS', title: zh ? '选择广告位' : 'Choose a slot', lead: zh ? '搜索赞助位、横幅、推荐位、开屏。' : 'Search sponsored slot, banner, recommended slot and splash.' },
+    Orders: { eyebrow: zh ? '订单' : 'ORDERS', title: zh ? '我的订单' : 'My orders', lead: zh ? '走 AETHEL X Sandbox 支付，不涉及真实资金。' : 'Paid through the AETHEL X sandbox — no real funds.' },
+    Reports: { eyebrow: zh ? '报表' : 'REPORTS', title: zh ? '投放报表' : 'Delivery report', lead: zh ? '曝光、点击、CTR、转化、CVR 与 ROI。' : 'Impressions, clicks, CTR, conversions, CVR and ROI.' }
+  }[active.key] || {};
+
+  document.getElementById('app').innerHTML = GS.shell({
+    title: 'GlobalStudy',
+    subtitle: zh ? '广告中心' : 'Ads Centre',
+    eyebrow: hero.eyebrow, headline: hero.title, lead: hero.lead,
+    tabs: items.map(function (i) { return { key: i.key, label: i.label, icon: i.icon, active: i.key.toLowerCase() === tab }; })
+  });
+  renderTab(tab);
+}
+
+window.renderTab = function (name) {
+  tab = name;
+  var main = document.getElementById('main');
+  if (!main) return;
+  try {
+    if (name === 'home') renderHome(main);
+    else if (name === 'slots') renderSlots(main);
+    else if (name === 'orders') renderOrders(main);
+    else renderReports(main);
+  } catch (e) { main.innerHTML = GS.errorState(e.message); }
+};
+
+function renderHome(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' + GS.metrics([
+    [zh ? '订单' : 'Orders', state.orders.length],
+    [zh ? '已付款' : 'Paid', state.orders.filter(function (o) { return o.status === 'paid' || o.status === 'scheduled'; }).length],
+    [zh ? '可续费' : 'Renewable', state.orders.filter(function (o) { return o.renewals < o.max_renewals; }).length]
+  ]) +
+    '<div class="banner warn">' + GS.esc(zh
+      ? '所有素材与投放数据均为演示；金额与续费上限是后台可配置的演示默认值，不是写死的商业条款。'
+      : 'All creatives and delivery data are demo. Amounts and renewal caps are configurable demo defaults, not hard-coded commercial terms.') + '</div>' +
+    '<div class="banner info">' + GS.esc(zh
+      ? '广告预算不影响自然搜索、自然推荐 B 与自然 S 排名。'
+      : 'Ad budget never affects natural search, natural B recommendation or natural S ranking.') + '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '演示默认值' : 'Demo defaults') + '</h2></div><div id="defaultsBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    '<div style="margin-top:12px">' + GS.sandboxNote() + '</div>' +
+    '</section>';
+  loadDefaults();
+}
+
+async function loadDefaults() {
+  try {
+    var r = await GS.get(API + '/products');
+    var box = document.getElementById('defaultsBox');
+    if (!box) return;
+    var d = r.meta.demo_defaults;
+    box.innerHTML = GS.card('<div class="kv">' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '充值金额' : 'Top-up') + '</small><b>' + GS.esc(GS.money(d.topup_amount, d.currency)) + '</b></div>' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '月费' : 'Monthly price') + '</small><b>' + GS.esc(GS.money(d.monthly_price, d.currency)) + '</b></div>' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '最大续费' : 'Max renewals') + '</small><b>' + GS.esc(d.max_renewals) + '</b></div>' +
+      '<div><small>' + GS.esc(GS.t('currency')) + '</small><b>' + GS.esc(d.currency) + '</b></div>' +
+      '</div>');
+  } catch (_) { /* ignore */ }
+}
+
+function renderSlots(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '广告位库存' : 'Slot inventory', state.inventory.length + '') +
+    (state.inventory.length
+      ? '<div class="rows">' + state.inventory.map(function (s) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.label(s.label_zh || s.label_en)) + '</h4>' +
+            '<div class="muted">' + GS.esc(s.slot_type) + ' · ' + GS.esc(zh ? '剩余 ' : 'Left ') + GS.esc(s.total - s.reserved) + '/' + GS.esc(s.total) + ' · ' + GS.esc(GS.money(s.monthly_price, s.currency)) + '</div></div>' +
+            '<button class="btn primary" onclick="createOrder(\'' + GS.esc(s.id) + '\')">' + GS.esc(zh ? '选购' : 'Buy') + '</button></div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无可用广告位' : 'No available slots')) +
+    '</section>';
+}
+
+async function createOrder(slotId) {
+  try {
+    await GS.post(API + '/orders', { inventory_id: slotId });
+    alert(GS.lang === 'zh' ? '已加入订单（购物车）。' : 'Added to the order (cart).');
+    await refresh();
+    showTab('orders', TAB_NAMES);
+  } catch (e) { alert(e.message); }
+}
+
+function renderOrders(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '我的订单' : 'My orders', state.orders.length + '') +
+    (state.orders.length
+      ? '<div class="list">' + state.orders.map(orderCard).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无订单' : 'No orders')) +
+    '</section>';
+}
+
+function orderCard(o) {
+  var zh = GS.lang === 'zh';
+  var actions = [];
+  if (o.status === 'cart') actions.push('<button class="btn primary" onclick="payOrder(\'' + GS.esc(o.id) + '\')">' + GS.esc(zh ? 'Sandbox 付款' : 'Sandbox pay') + '</button>');
+  if (o.status === 'paid') actions.push('<button class="btn soft" onclick="uploadCreative(\'' + GS.esc(o.id) + '\')">' + GS.esc(zh ? '上传素材' : 'Creative') + '</button>');
+  if (o.status === 'creative_uploaded') actions.push('<span class="status demo">' + GS.esc(zh ? '待审核' : 'Pending review') + '</span>');
+  if (o.status === 'approved') actions.push('<button class="btn soft" onclick="scheduleOrder(\'' + GS.esc(o.id) + '\')">' + GS.esc(zh ? '排期' : 'Schedule') + '</button>');
+  if (['paid', 'approved', 'scheduled'].indexOf(o.status) >= 0 && o.renewals < o.max_renewals) {
+    actions.push('<button class="btn ghost" onclick="renewOrder(\'' + GS.esc(o.id) + '\')">' + GS.esc(zh ? '续费 (' : 'Renew (') + GS.esc(o.renewals) + '/' + GS.esc(o.max_renewals) + ')</button>');
+  }
+  return GS.card('<div class="row"><div><h3>' + GS.esc(o.slot_type) + '</h3>' +
+    '<div class="muted">' + GS.esc(GS.money(o.amount, o.currency)) + ' · ' + GS.esc(GS.date(o.created_at)) + '</div></div>' + GS.statusTag(o.status) + '</div>' +
+    '<div class="actions">' + actions.join('') + '</div>');
+}
+
+async function payOrder(id) {
+  try {
+    await GS.post(API + '/orders/' + encodeURIComponent(id) + '/pay', {});
+    alert(GS.lang === 'zh' ? 'Sandbox 付款成功，已预留库存。' : 'Sandbox payment succeeded; inventory reserved.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+async function uploadCreative(id) {
+  var zh = GS.lang === 'zh';
+  GS.openDrawer(zh ? '上传素材' : 'Upload creative',
+    '<div class="field"><label>' + GS.esc(zh ? '标题' : 'Title') + '</label><input id="adTitle" value="Demo Ad"></div>' +
+    '<div class="field"><label>' + GS.esc(zh ? '正文' : 'Body') + '</label><input id="adBody" value="Demo body"></div>' +
+    '<div class="field"><label>' + GS.esc(zh ? '素材 URL' : 'Asset URL') + '</label><input id="adAsset" value="https://example.com/asset.png"></div>' +
+    '<div class="notice">' + GS.esc(zh ? '素材会标注“广告 / 推广”。' : 'Creatives are labelled “广告 / 推广”.') + '</div>' +
+    '<div class="form-actions"><button class="btn primary" onclick="submitCreative(\'' + GS.esc(id) + '\')">' + GS.esc(GS.t('submit')) + '</button></div>');
+}
+
+async function submitCreative(id) {
+  try {
+    await GS.post(API + '/orders/' + encodeURIComponent(id) + '/creative', {
+      title: document.getElementById('adTitle').value,
+      body: document.getElementById('adBody').value,
+      asset_url: document.getElementById('adAsset').value
+    });
+    GS.closeDrawer();
+    alert(GS.lang === 'zh' ? '素材已上传，等待平台审核。' : 'Creative uploaded; awaiting platform review.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+async function scheduleOrder(id) {
+  try {
+    await GS.post(API + '/orders/' + encodeURIComponent(id) + '/schedule', {});
+    alert(GS.lang === 'zh' ? '已排期，广告开始投放。' : 'Scheduled; the ad is now live.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+async function renewOrder(id) {
+  try {
+    await GS.post(API + '/orders/' + encodeURIComponent(id) + '/renew', {});
+    alert(GS.lang === 'zh' ? '已续费。' : 'Renewed.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function renderReports(main) {
+  var zh = GS.lang === 'zh';
+  var scheduled = state.orders.filter(function (o) { return o.status === 'scheduled'; });
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '投放中的广告' : 'Live ads', scheduled.length + '') +
+    (scheduled.length
+      ? '<div class="rows">' + scheduled.map(function (o) {
+          return '<div class="row-item" onclick="showReport(\'' + GS.esc(o.id) + '\')"><div class="grow"><h4>' + GS.esc(o.slot_type) + '</h4>' +
+            '<div class="muted">' + GS.esc(zh ? '点击查看报表' : 'Tap for the report') + '</div></div><span class="chip">›</span></div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无投放中的广告' : 'No live ads')) +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '报表指标：曝光、点击、CTR、转化、CVR、ROI。演示数据。' : 'Report metrics: impressions, clicks, CTR, conversions, CVR, ROI. Demo data.') + '</div>' +
+    '</section>';
+}
+
+async function showReport(id) {
+  var zh = GS.lang === 'zh';
+  GS.openDrawer(zh ? '投放报表' : 'Delivery report', GS.emptyState(GS.t('loading')));
+  try {
+    var r = await GS.get(API + '/orders/' + encodeURIComponent(id) + '/report');
+    var d = r.data;
+    GS.openDrawer(zh ? '投放报表' : 'Delivery report',
+      '<div class="metrics"><div class="metric"><small>' + GS.esc(zh ? '曝光' : 'Impressions') + '</small><b>' + GS.esc(d.impressions) + '</b></div>' +
+      '<div class="metric"><small>' + GS.esc(zh ? '点击' : 'Clicks') + '</small><b>' + GS.esc(d.clicks) + '</b></div>' +
+      '<div class="metric"><small>CTR</small><b>' + GS.esc(d.ctr) + '%</b></div>' +
+      '<div class="metric"><small>' + GS.esc(zh ? '转化' : 'Conversions') + '</small><b>' + GS.esc(d.conversions) + '</b></div>' +
+      '<div class="metric"><small>CVR</small><b>' + GS.esc(d.cvr) + '%</b></div>' +
+      '<div class="metric"><small>ROI</small><b>' + GS.esc(d.roi) + '</b></div></div>' +
+      '<div class="notice" style="margin-top:10px">' + GS.esc(d.ranking_impact) + '</div>');
+  } catch (e) { GS.openDrawer(zh ? '投放报表' : 'Delivery report', GS.errorState(e.message)); }
+}
+
+async function refresh() {
+  try {
+    var results = await Promise.all([
+      GS.get(API + '/me').catch(function () { return { data: null }; }),
+      GS.get(API + '/products').catch(function () { return { data: [], meta: {} }; }),
+      GS.get(API + '/inventory').catch(function () { return { data: [] }; }),
+      GS.get(API + '/my-orders').catch(function () { return { data: [] }; })
+    ]);
+    me = results[0].data;
+    state.products = results[1].data || [];
+    state.inventory = results[2].data || [];
+    state.orders = results[3].data || [];
+  } catch (e) {
+    if (e.status === 401) { GS.clearSession(); return showLogin(); }
+  }
+  renderShell();
+}
+
+function showLogin() {
+  document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel([]) + '</div>';
+  GS.get('/api/auth/demo-accounts').then(function (r) {
+    document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel(r.data) + '</div>';
+    GS.bindLogin();
+  }).catch(function () { GS.bindLogin(); });
+}
+
+window.onLangChange = function () { renderShell(); };
+
+(async function boot() {
+  if (GS.requireAuth()) { showLogin(); return; }
+  await refresh();
+})();
+</script>
+</body>
+</html>

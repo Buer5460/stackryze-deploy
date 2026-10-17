@@ -8,122 +8,483 @@
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<div class="phone">
-  <header class="header">
-    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small id="clientName">留学机构端</small></div></a>
-    <div class="header-actions"><button class="lang-btn" id="langBtn">English</button><a class="pill" href="/" id="switchClient">切换客户端</a></div>
-  </header>
-
-  <section class="hero">
-    <div class="eyebrow" id="heroEyebrow">机构端 · 在线演示</div>
-    <h1 id="heroTitle">学生、学校资源与申请协同</h1>
-    <p id="heroText">用手机管理学生，搜索学校资源，并为学生创建和推进演示申请草稿。</p>
-  </section>
-
-  <div class="tabs">
-    <button id="tabDash" class="active" onclick="showTab('dash')">工作台</button>
-    <button id="tabStudents" onclick="showTab('students')">学生</button>
-    <button id="tabSchools" onclick="showTab('schools')">学校库</button>
-    <button id="tabApps" onclick="showTab('apps')">申请</button>
-  </div>
-
-  <main id="main"></main>
-
-  <nav class="bottom">
-    <button id="navDash" class="active" onclick="showTab('dash')"><b>⌂</b><span id="navDashText">工作台</span></button>
-    <button id="navStudents" onclick="showTab('students')"><b>♙</b><span id="navStudentsText">学生</span></button>
-    <button id="navSchools" onclick="showTab('schools')"><b>⌕</b><span id="navSchoolsText">学校库</span></button>
-    <button id="navApps" onclick="showTab('apps')"><b>◎</b><span id="navAppsText">申请</span></button>
-  </nav>
+<div class="phone" id="app">
+  <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
 </div>
+<div class="drawer-mask" id="mask" onclick="GS.closeDrawer()"></div>
+<section class="drawer" id="drawer"><div class="handle"></div>
+  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="GS.closeDrawer()">关闭</button></div>
+  <div id="drawerBody"></div></section>
 
-<div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>
-<section class="drawer" id="drawer">
-  <div class="handle"></div>
-  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="closeDrawer()">关闭</button></div>
-  <div id="drawerBody"></div>
-</section>
-
+<script src="/js/gs.js"></script>
 <script>
-const $=s=>document.querySelector(s);
-let lang=localStorage.getItem('gs-world-lang')||'zh';
-let tab='dash',ref=null,schools=[];
-let students=JSON.parse(localStorage.getItem('gs-agent-students')||'null')||[
-  {id:'STU-001',name:'演示学生 A',name_en:'Demo Student A',target_zh:'新加坡 · 小学',target_en:'Singapore · Primary',owner:'Alex',stage:'Matching',completion:72},
-  {id:'STU-002',name:'演示学生 B',name_en:'Demo Student B',target_zh:'新加坡 · 中学',target_en:'Singapore · Secondary',owner:'Mia',stage:'Documents',completion:84},
-  {id:'STU-003',name:'演示学生 C',name_en:'Demo Student C',target_zh:'上海 · 国际学校',target_en:'Shanghai · International',owner:'Alex',stage:'New lead',completion:38}
-];
-let apps=JSON.parse(localStorage.getItem('gs-agent-apps')||'[]');
+var TAB_NAMES = ['Home', 'Clients', 'Board', 'Resource', 'Money'];
+var tab = 'home';
+var me = null;
+var state = { clients: null, requests: [], applications: [], todos: [], commission: null, settlements: [], suppliers: [], performance: null };
 
-const T={
-zh:{
- client:'留学机构端',switch:'切换客户端',heroEyebrow:'机构端 · 在线演示',heroTitle:'学生、学校资源与申请协同',heroText:'用手机管理学生，搜索学校资源，并为学生创建和推进演示申请草稿。',
- dash:'工作台',students:'学生',schools:'学校库',apps:'申请',close:'关闭',studentCount:'学生数',activeApps:'进行中申请',schoolResources:'学校资源',completedProfiles:'完整档案',attention:'需要关注',demoWorkflow:'机构端演示流程',
- owner:'负责人',profile:'档案',nextAction:'下一步',completeProfile:'完善档案',selectSchool:'选择学校',open:'打开',findSchool:'找学校',addStudent:'+ 添加演示学生',
- studentNotice:'公网演示仅使用浏览器本地的演示学生数据，不会上传真实个人信息。',schoolSearch:'搜索学校、地区或课程体系',allCountries:'全部国家',allStages:'全部学段',searchResources:'搜索学校资源',
- tuition:'年学费',agentCommission:'机构佣金',notPublic:'公网不展示',details:'详情',createDraft:'创建申请草稿',applicationDrafts:'申请草稿',total:'条',appNotice:'演示申请记录仅保存在浏览器本地，不会提交给真实学校。',
- noApps:'还没有申请草稿。',advance:'推进演示阶段',student:'学生',target:'目标',stage:'阶段',schoolDetails:'学校详情',loading:'加载中…',demoSource:'演示记录，不代表真实学校或合作关系。',source:'来源：',
- noMatches:'没有符合条件的学校。',schoolsUnit:'所学校',page:'GlobalStudy — 留学机构端',langBtn:'English',demo:'演示',verified:'已核验'
-},
-en:{
- client:'Education Agent',switch:'Switch client',heroEyebrow:'AGENT CLIENT · LIVE DEMO',heroTitle:'Students, schools and application drafts',heroText:'A mobile agency workspace for managing students, finding suitable schools and creating application drafts.',
- dash:'Dashboard',students:'Students',schools:'Schools',apps:'Applications',close:'Close',studentCount:'Students',activeApps:'Active applications',schoolResources:'School resources',completedProfiles:'Completed profiles',attention:'Needs attention',demoWorkflow:'Demo agency workflow',
- owner:'Owner',profile:'Profile',nextAction:'Next action',completeProfile:'Complete profile',selectSchool:'Select school',open:'Open',findSchool:'Find school',addStudent:'+ Add demo student',
- studentNotice:'This public client uses local demo students only. No personal data is sent to the platform.',schoolSearch:'Search school, area or curriculum',allCountries:'All countries',allStages:'All stages',searchResources:'Search resources',
- tuition:'Tuition / year',agentCommission:'Agent commission',notPublic:'Not public',details:'Details',createDraft:'Create draft',applicationDrafts:'Application drafts',total:'total',appNotice:'Demo-only application records are stored in your browser. Nothing is sent to a real school.',
- noApps:'No application drafts yet.',advance:'Advance demo stage',student:'Student',target:'Target',stage:'Stage',schoolDetails:'School details',loading:'Loading…',demoSource:'Demo record. No real school or partnership is claimed.',source:'Source: ',
- noMatches:'No matches.',schoolsUnit:'schools',page:'GlobalStudy — Education Agent',langBtn:'中文',demo:'DEMO',verified:'VERIFIED'
-}};
-function t(k){return T[lang][k]||k}
-async function api(url){const r=await fetch(url);const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||'Request failed');return j}
-function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat(lang==='zh'?'zh-CN':'en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
-function sname(s){return lang==='zh'?(s.name||s.name_en):s.name_en||s.name}
-function starget(s){return lang==='zh'?(s.target_zh||s.target_en||s.target):(s.target_en||s.target_zh||s.target)}
-function schoolName(s){return lang==='zh'?(s?.name?.zh||s?.name?.en):(s?.name?.en||s?.name?.zh)}
-function label(s){return lang==='zh'?(s?.zh||s?.en||s?.id||s):(s?.en||s?.zh||s?.id||s)||'—'}
-function loc(s){return [lang==='zh'?s.location?.country_zh:s.location?.country_en,lang==='zh'?s.location?.city_zh:s.location?.city_en,lang==='zh'?s.location?.district_zh:s.location?.district_en].filter(Boolean).join(' · ')}
-function openDrawer(title,h){$('#drawerTitle').textContent=title;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
-function closeDrawer(){$('#drawer').classList.remove('open');$('#mask').classList.remove('open')}
-function persist(){localStorage.setItem('gs-agent-students',JSON.stringify(students));localStorage.setItem('gs-agent-apps',JSON.stringify(apps))}
-function applyLang(){
- document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.title=t('page');$('#clientName').textContent=t('client');$('#switchClient').textContent=t('switch');$('#heroEyebrow').textContent=t('heroEyebrow');$('#heroTitle').textContent=t('heroTitle');$('#heroText').textContent=t('heroText');
- $('#tabDash').textContent=t('dash');$('#tabStudents').textContent=t('students');$('#tabSchools').textContent=t('schools');$('#tabApps').textContent=t('apps');
- $('#navDashText').textContent=t('dash');$('#navStudentsText').textContent=t('students');$('#navSchoolsText').textContent=t('schools');$('#navAppsText').textContent=t('apps');$('#drawerClose').textContent=t('close');$('#langBtn').textContent=t('langBtn');render()
+function tabs() {
+  var zh = GS.lang === 'zh';
+  return [
+    { key: 'Home', icon: '⌂', label: zh ? '工作台' : 'Home' },
+    { key: 'Clients', icon: '♙', label: zh ? '客户' : 'Clients' },
+    { key: 'Board', icon: '▦', label: zh ? '看板' : 'Board' },
+    { key: 'Resource', icon: '⌕', label: zh ? '资源' : 'Resource' },
+    { key: 'Money', icon: '¥', label: zh ? '结算' : 'Money' }
+  ];
 }
-$('#langBtn').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('gs-world-lang',lang);applyLang()};
-function setActive(name){['Dash','Students','Schools','Apps'].forEach(x=>{const a=$('#tab'+x),b=$('#nav'+x);if(a)a.classList.toggle('active',x.toLowerCase()===name);if(b)b.classList.toggle('active',x.toLowerCase()===name)})}
-function showTab(name){tab=name;setActive(name);render()}
 
-function dashboard(){
- const active=apps.filter(a=>a.status!=='Enrolled').length;
- return '<section class="section"><div class="metrics"><div class="metric"><small>'+esc(t('studentCount'))+'</small><b>'+students.length+'</b></div><div class="metric"><small>'+esc(t('activeApps'))+'</small><b>'+active+'</b></div><div class="metric"><small>'+esc(t('schoolResources'))+'</small><b>'+schools.length+'</b></div><div class="metric"><small>'+esc(t('completedProfiles'))+'</small><b>'+students.filter(s=>s.completion>=80).length+'</b></div></div><div class="section-head"><h2>'+esc(t('attention'))+'</h2><span>'+esc(t('demoWorkflow'))+'</span></div><div class="list">'+students.filter(s=>s.completion<80).map(studentCard).join('')+'</div></section>'
+function renderShell() {
+  var zh = GS.lang === 'zh';
+  var items = tabs();
+  var active = items.filter(function (i) { return i.key.toLowerCase() === tab; })[0] || items[0];
+  var hero = {
+    Home: { eyebrow: zh ? '机构端 · 在线演示' : 'AGENT CLIENT · LIVE DEMO', title: zh ? '工作台' : 'Dashboard', lead: zh ? '绑定申请、申请看板、目标预警与健康度。' : 'Binding requests, the application board, target warnings and health.' },
+    Clients: { eyebrow: zh ? '客户池' : 'CLIENTS', title: zh ? 'C 端客户池' : 'C client pool', lead: zh ? '来源：平台推荐、B 邀请、自然注册后绑定。' : 'Sources: platform recommendation, agency invitation, natural registration.' },
+    Board: { eyebrow: zh ? 'S0–S10' : 'S0–S10', title: zh ? '申请看板' : 'Application board', lead: zh ? '看板 / 列表两种视图，支持推进阶段。' : 'Kanban and list views with stage advancement.' },
+    Resource: { eyebrow: zh ? '资源中心' : 'RESOURCE', title: zh ? 'S 端资源中心' : 'Supplier resource centre', lead: zh ? '教育机构、住宿、体检、认证、签证；贷款默认关闭。' : 'Education, accommodation, medical, certification and visa. Finance is off by default.' },
+    Money: { eyebrow: zh ? '结算中心' : 'MONEY', title: zh ? '佣金与结算' : 'Commission & settlement', lead: zh ? '预计佣金 → 确认 → 应收 → 已收 → 应付 → 已付 → 扣回。' : 'Projected → Confirmed → Receivable → Received → Payable → Paid → Clawed back.' }
+  }[active.key] || {};
+
+  document.getElementById('app').innerHTML = GS.shell({
+    title: 'GlobalStudy',
+    subtitle: zh ? '留学机构端' : 'Education Agent',
+    eyebrow: hero.eyebrow, headline: hero.title, lead: hero.lead,
+    tabs: items.map(function (i) { return { key: i.key, label: i.label, icon: i.icon, active: i.key.toLowerCase() === tab }; })
+  });
+  renderTab(tab);
 }
-function studentCard(s){
- return '<div class="card"><div class="row"><div><h3>'+esc(sname(s))+'</h3><div class="muted">'+esc(starget(s))+' · '+esc(t('owner'))+' '+esc(s.owner)+'</div></div><span class="status '+(s.stage==='Documents'?'warn':'blue')+'">'+esc(s.stage)+'</span></div><div class="split"><div><small>'+esc(t('profile'))+'</small><b>'+s.completion+'%</b></div><div><small>'+esc(t('nextAction'))+'</small><b>'+esc(s.completion<80?t('completeProfile'):t('selectSchool'))+'</b></div></div><div class="actions"><button class="btn ghost" onclick="studentDetail(\''+esc(s.id)+'\')">'+esc(t('open'))+'</button><button class="btn soft" onclick="startForStudent(\''+esc(s.id)+'\')">'+esc(t('findSchool'))+'</button></div></div>'
+
+window.renderTab = function (name) {
+  tab = name;
+  var main = document.getElementById('main');
+  if (!main) return;
+  try {
+    if (name === 'home') renderHome(main);
+    else if (name === 'clients') renderClients(main);
+    else if (name === 'board') renderBoard(main);
+    else if (name === 'resource') renderResource(main);
+    else renderMoney(main);
+  } catch (e) { main.innerHTML = GS.errorState(e.message); }
+};
+
+function renderHome(main) {
+  var zh = GS.lang === 'zh';
+  var pending = state.requests.length;
+  var activeApps = state.applications.filter(function (a) { return a.status === 'active'; }).length;
+  main.innerHTML = '<section class="section">' + GS.metrics([
+    [zh ? '待处理绑定' : 'Pending bindings', pending],
+    [zh ? '进行中申请' : 'Active applications', activeApps],
+    [zh ? '客户数' : 'Clients', (state.clients && state.clients.active ? state.clients.active.length : 0)],
+    [zh ? '待办' : 'Todos', state.todos.filter(function (t) { return t.status !== 'done'; }).length]
+  ]) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '会员与准入' : 'Membership & admission') + '</h2></div><div id="membershipBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '健康度' : 'Health') + '</h2></div><div id="healthBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    (state.performance && state.performance.warnings && state.performance.warnings.length
+      ? '<div class="section-head"><h2>' + GS.esc(zh ? '目标预警' : 'Target warnings') + '</h2></div>' +
+        state.performance.warnings.map(function (w) { return '<div class="banner warn">' + GS.esc(w.message) + '</div>'; }).join('')
+      : '') +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '每日简报' : 'Daily brief') + '</h2></div><div id="briefBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    (pending ? '<div class="section-head"><h2>' + GS.esc(zh ? '绑定申请' : 'Binding requests') + '</h2><span>' + pending + '</span></div>' +
+      '<div class="rows">' + state.requests.map(requestRow).join('') + '</div>' : '') +
+    '</section>';
+  loadMembership();
+  loadHealth();
+  loadBrief();
 }
-function studentsPage(){return '<section class="section"><div class="section-head"><h2>'+esc(t('students'))+'</h2><button class="btn primary" onclick="newStudent()">'+esc(t('addStudent'))+'</button></div><div class="notice">'+esc(t('studentNotice'))+'</div><div class="list" style="margin-top:9px">'+students.map(studentCard).join('')+'</div></section>'}
-function schoolCard(s){
- return '<div class="card"><div class="row"><div class="school"><div class="schoolmark">'+esc((schoolName(s)||'G').slice(0,1))+'</div><div><h3>'+esc(schoolName(s))+'</h3><div class="muted">'+esc(loc(s))+'</div></div></div><span class="status '+(s.verification?.is_demo?'demo':'good')+'">'+esc(s.verification?.is_demo?t('demo'):t('verified'))+'</span></div><div class="tags">'+(s.stages||[]).slice(0,2).map(x=>'<span class="tag">'+esc(label(x))+'</span>').join('')+(s.curricula||[]).slice(0,2).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div><div class="split"><div><small>'+esc(t('tuition'))+'</small><b>'+esc(money(s.fees?.tuition_min,s.fees?.currency))+'</b></div><div><small>'+esc(t('agentCommission'))+'</small><b>'+esc(t('notPublic'))+'</b></div></div><div class="actions"><button class="btn ghost" onclick="schoolDetail(\''+esc(s.id)+'\')">'+esc(t('details'))+'</button><button class="btn primary" onclick="createAppFromSchool(\''+esc(s.id)+'\')">'+esc(t('createDraft'))+'</button></div></div>'
+
+function requestRow(b) {
+  var zh = GS.lang === 'zh';
+  var c = b.c_profile || {};
+  return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.label(c.name || c.name_en) || '—') + '</h4>' +
+    '<div class="muted">' + GS.esc((c.target_countries || []).join('/')) + ' · ' + GS.esc(GS.date(b.requested_at)) + '</div></div>' +
+    '<div class="actions"><button class="btn green" onclick="respondBinding(\'' + GS.esc(b.id) + '\',\'accept\')">' + GS.esc(zh ? '接受' : 'Accept') + '</button>' +
+    '<button class="btn ghost" onclick="respondBinding(\'' + GS.esc(b.id) + '\',\'reject\')">' + GS.esc(zh ? '拒绝' : 'Reject') + '</button></div></div>';
 }
-function schoolsPage(){return '<section class="section"><div class="search"><input id="q" class="wide" placeholder="'+esc(t('schoolSearch'))+'"><select id="country"></select><select id="stage"></select><button class="btn primary wide" onclick="runSearch()">'+esc(t('searchResources'))+'</button></div><div class="section-head"><h2>'+esc(t('schoolResources'))+'</h2><span id="schoolCount">'+schools.length+' '+esc(t('schoolsUnit'))+'</span></div><div id="schoolList" class="list">'+schools.map(schoolCard).join('')+'</div></section>'}
-function appsPage(){return '<section class="section"><div class="section-head"><h2>'+esc(t('applicationDrafts'))+'</h2><span>'+apps.length+' '+esc(t('total'))+'</span></div><div class="notice">'+esc(t('appNotice'))+'</div><div class="list" style="margin-top:9px">'+(apps.length?apps.map(a=>'<div class="card"><div class="row"><div><h3>'+esc(a.student_name)+' → '+esc(lang==='zh'?(a.school_name_zh||a.school_name||a.school_name_en):(a.school_name_en||a.school_name))+'</h3><div class="muted">'+esc(a.id)+' · '+esc(a.created_at)+'</div></div><span class="status blue">'+esc(a.status)+'</span></div><div class="actions"><button class="btn ghost" onclick="advanceApp(\''+esc(a.id)+'\')">'+esc(t('advance'))+'</button></div></div>').join(''):'<div class="empty">'+esc(t('noApps'))+'</div>')+'</div></section>'}
-function fillFilters(){
- const c=$('#country'),s=$('#stage');if(!c||!s||!ref)return;
- c.innerHTML='<option value="">'+esc(t('allCountries'))+'</option>'+ref.countries.map(x=>'<option value="'+esc(x.id)+'">'+esc(lang==='zh'?(x.zh||x.en):x.en)+'</option>').join('');
- s.innerHTML='<option value="">'+esc(t('allStages'))+'</option>'+ref.stages.map(x=>'<option value="'+esc(x.id)+'">'+esc(lang==='zh'?(x.zh||x.en):x.en)+'</option>').join('');
- c.onchange=()=>runSearch();s.onchange=()=>runSearch();$('#q').onkeydown=e=>{if(e.key==='Enter')runSearch()}
+
+async function respondBinding(id, response) {
+  try {
+    var r = await GS.post('/api/b/binding-requests/' + encodeURIComponent(id) + '/respond', { response: response });
+    if (response === 'accept') {
+      var contractId = r.data.contract && r.data.contract.id;
+      alert(GS.lang === 'zh' ? '已接受，合同 ' + contractId + ' 待双方签署。' : 'Accepted. Contract ' + contractId + ' awaits both signatures.');
+      await signBindingAsB(id);
+    } else {
+      alert(GS.lang === 'zh' ? '已拒绝。' : 'Rejected.');
+    }
+    await refresh();
+  } catch (e) { alert(e.message); }
 }
-async function runSearch(){const p=new URLSearchParams({pageSize:'50'});[['q','#q'],['country','#country'],['stage','#stage']].forEach(([k,id])=>{const el=$(id);if(el&&el.value)p.set(k,el.value)});const j=await api('/api/schools?'+p.toString());schools=j.data||[];$('#schoolList').innerHTML=schools.map(schoolCard).join('')||'<div class="empty">'+esc(t('noMatches'))+'</div>';$('#schoolCount').textContent=j.meta.total+' '+t('schoolsUnit')}
-function newStudent(){const id='STU-'+Date.now().toString().slice(-4);const n=students.length+1;students.unshift({id,name:'演示学生 '+n,name_en:'Demo Student '+n,target_zh:'新加坡 · 待确定',target_en:'Singapore · Undecided',owner:'Alex',stage:'New lead',completion:20});persist();render()}
-function studentDetail(id){const s=students.find(x=>x.id===id);openDrawer(t('student'),'<h3>'+esc(sname(s))+'</h3><div class="detail-grid"><div class="detail"><small>'+esc(t('target'))+'</small><b>'+esc(starget(s))+'</b></div><div class="detail"><small>'+esc(t('owner'))+'</small><b>'+esc(s.owner)+'</b></div><div class="detail"><small>'+esc(t('stage'))+'</small><b>'+esc(s.stage)+'</b></div><div class="detail"><small>'+esc(t('profile'))+'</small><b>'+s.completion+'%</b></div></div><div class="notice" style="margin-top:10px">'+esc(t('studentNotice'))+'</div>')}
-function startForStudent(id){localStorage.setItem('gs-agent-selected-student',id);showTab('schools')}
-async function schoolDetail(id){openDrawer(t('schoolDetails'),'<div class="empty">'+esc(t('loading'))+'</div>');try{const s=(await api('/api/schools/'+encodeURIComponent(id))).data;$('#drawerBody').innerHTML='<h3>'+esc(schoolName(s))+'</h3><div class="muted">'+esc(loc(s))+'</div><div class="tags">'+(s.curricula||[]).map(x=>'<span class="tag green">'+esc(label(x))+'</span>').join('')+'</div><div class="notice">'+(s.source?.source_url?esc(t('source'))+esc(s.source.source_url):esc(t('demoSource')))+'</div>'}catch(e){$('#drawerBody').innerHTML='<div class="empty">'+esc(e.message)+'</div>'}}
-function createAppFromSchool(id){const selected=localStorage.getItem('gs-agent-selected-student')||students[0]?.id;const st=students.find(x=>x.id===selected)||students[0];const sc=schools.find(x=>x.id===id);if(!st||!sc)return;apps.unshift({id:'APP-'+Date.now().toString().slice(-6),student_id:st.id,student_name:sname(st),school_id:sc.id,school_name_en:sc.name?.en||sc.id,school_name_zh:sc.name?.zh||sc.name?.en||sc.id,status:'Draft',created_at:new Date().toLocaleDateString(lang==='zh'?'zh-CN':'en-US')});persist();showTab('apps')}
-function advanceApp(id){const a=apps.find(x=>x.id===id);const stages=['Draft','Documents','Ready to submit','Submitted demo'];const i=stages.indexOf(a.status);a.status=stages[Math.min(stages.length-1,i+1)];persist();render()}
-async function render(){if(!main)return;if(tab==='dash')main.innerHTML=dashboard();else if(tab==='students')main.innerHTML=studentsPage();else if(tab==='schools'){main.innerHTML=schoolsPage();fillFilters()}else main.innerHTML=appsPage()}
-const main=$('#main');
-(async()=>{const [r,s]=await Promise.all([api('/api/reference'),api('/api/schools?pageSize=50')]);ref=r.data;schools=s.data;applyLang()})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
+
+async function signBindingAsB(id) {
+  try {
+    await GS.post('/api/b/binding-requests/' + encodeURIComponent(id) + '/sign', {});
+    alert(GS.lang === 'zh' ? 'B 端签署完成。' : 'B-side signature complete.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+async function loadMembership() {
+  try {
+    var r = await GS.get('/api/b/me');
+    var box = document.getElementById('membershipBox');
+    if (!box) return;
+    var zh = GS.lang === 'zh';
+    var m = r.data.membership || {};
+    box.innerHTML = GS.card('<div class="row"><div><h4>' + GS.esc(r.data.profile ? r.data.profile.level : '—') + '</h4>' +
+      '<div class="muted">' + GS.esc(m.expires_at ? GS.date(m.expires_at) : '—') + '</div></div>' + GS.statusTag(m.status) + '</div>' +
+      '<div class="split"><div><small>' + GS.esc(zh ? '今日接单' : 'Today’s orders') + '</small><b>' + GS.esc(r.data.order_capacity.daily_used + '/' + r.data.order_capacity.daily_cap) + '</b></div>' +
+      '<div><small>' + GS.esc(zh ? '本月接单' : 'This month') + '</small><b>' + GS.esc(r.data.order_capacity.monthly_used + '/' + r.data.order_capacity.monthly_cap) + '</b></div></div>' +
+      '<div class="actions"><button class="btn ghost" onclick="toggleRecommendation()">' + GS.esc(zh ? '推荐开关' : 'Recommendation switch') + '</button></div>');
+  } catch (_) { /* ignore */ }
+}
+
+async function toggleRecommendation() {
+  var paused = window.confirm(GS.lang === 'zh' ? '暂停平台推荐？确定=暂停，取消=恢复' : 'Pause platform recommendation? OK=pause, Cancel=resume');
+  try {
+    await GS.post('/api/b/recommendation-switch', { paused: paused, accepts_platform_recommendation: !paused });
+    alert(GS.lang === 'zh' ? '已更新推荐开关。' : 'Recommendation switch updated.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+async function loadHealth() {
+  try {
+    var r = await GS.get('/api/b/health');
+    var box = document.getElementById('healthBox');
+    if (!box) return;
+    box.innerHTML = GS.card('<div class="row"><div><h4>' + GS.esc(r.data.score) + ' / 100</h4>' +
+      '<div class="muted">' + GS.esc(r.data.explain) + '</div></div></div>' +
+      '<div class="kv" style="margin-top:8px">' + r.data.factors.map(function (f) {
+        return '<div><small>' + GS.esc(f.label_zh || f.key) + '</small><b>' + GS.esc(f.score) + '</b></div>';
+      }).join('') + '</div>');
+  } catch (_) { /* ignore */ }
+}
+
+async function loadBrief() {
+  try {
+    var r = await GS.get('/api/b/brief');
+    var box = document.getElementById('briefBox');
+    if (!box) return;
+    var b = r.data;
+    box.innerHTML = GS.card('<div class="split">' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '待办' : 'Todos') + '</small><b>' + GS.esc((b.today_todos || []).length) + '</b></div>' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '临近截止' : 'Deadlines') + '</small><b>' + GS.esc((b.upcoming_deadlines || []).length) + '</b></div>' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '材料缺失' : 'Missing docs') + '</small><b>' + GS.esc((b.missing_documents || []).length) + '</b></div>' +
+      '</div>');
+  } catch (_) { /* ignore */ }
+}
+
+function renderClients(main) {
+  var zh = GS.lang === 'zh';
+  if (!state.clients) { main.innerHTML = '<section class="section">' + GS.emptyState(GS.t('loading')) + '</section>'; return; }
+  var active = state.clients.active || [];
+  main.innerHTML = '<section class="section">' +
+    GS.metrics([[zh ? '已绑定' : 'Bound', active.length], [zh ? '待处理' : 'Pending', (state.clients.pending || []).length]]) +
+    GS.sectionHead(zh ? 'C 端客户' : 'C clients', active.length + '') +
+    (active.length
+      ? '<div class="rows">' + active.map(function (row) {
+          var c = row.c_profile || {};
+          return '<div class="row-item" onclick="clientDetail(\'' + GS.esc(c.id) + '\')"><div class="grow"><h4>' + GS.esc(GS.label(c.name || c.name_en) || '—') + '</h4>' +
+            '<div class="muted">' + GS.esc((c.target_countries || []).join('/')) + ' · ' + GS.esc(c.education_stage || '') + '</div></div>' + GS.statusTag(row.binding.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无客户' : 'No clients')) +
+    GS.sectionHead(zh ? '历史与解绑' : 'History & unbound', (state.clients.historical || []).length + '') +
+    ((state.clients.historical || []).length
+      ? '<div class="rows">' + state.clients.historical.map(function (b) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(b.id) + '</h4><div class="muted">' + GS.esc(GS.date(b.requested_at)) + '</div></div>' + GS.statusTag(b.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无历史' : 'No history')) +
+    '</section>';
+}
+
+async function clientDetail(cProfileId) {
+  var zh = GS.lang === 'zh';
+  GS.openDrawer(zh ? '客户详情' : 'Client detail', GS.emptyState(GS.t('loading')));
+  try {
+    var r = await GS.get('/api/b/clients/' + encodeURIComponent(cProfileId));
+    var c = r.data.c_profile || {};
+    var apps = r.data.applications || [];
+    var docs = r.data.documents || [];
+    GS.openDrawer(GS.label(c.name || c.name_en) || 'Client',
+      '<div class="kv">' +
+      '<div><small>' + GS.esc(GS.t('email')) + '</small><b>' + GS.esc(c.email || '—') + '</b></div>' +
+      '<div><small>' + GS.esc(zh ? '国籍' : 'Nationality') + '</small><b>' + GS.esc(c.nationality || '—') + '</b></div>' +
+      '<div><small>' + GS.esc(zh ? '目标国家' : 'Target countries') + '</small><b>' + GS.esc((c.target_countries || []).join(', ')) + '</b></div>' +
+      '<div><small>' + GS.esc(zh ? '绑定状态' : 'Binding') + '</small><b>' + GS.esc(c.binding_state) + '</b></div>' +
+      '</div>' +
+      GS.sectionHead(zh ? '申请' : 'Applications', apps.length + '') +
+      (apps.length ? '<div class="rows">' + apps.map(function (a) {
+        return '<div class="row-item"><div class="grow"><h4>' + GS.esc(a.title || a.id) + '</h4><div class="muted">' + GS.esc(GS.stageLabel(a.current_stage)) + '</div></div>' + GS.statusTag(a.status) + '</div>';
+      }).join('') + '</div>' : GS.emptyState(zh ? '暂无申请' : 'No applications')) +
+      GS.sectionHead(zh ? '家庭材料库' : 'Family document library', docs.length + '') +
+      (docs.length ? '<div class="rows">' + docs.map(function (d) {
+        return '<div class="row-item"><div class="grow"><h4>' + GS.esc(d.type) + '</h4><div class="muted">' + GS.esc(d.file_name || '') + '</div></div>' + GS.statusTag(d.status) + '</div>';
+      }).join('') + '</div>' : GS.emptyState(zh ? '暂无材料' : 'No documents')));
+  } catch (e) { GS.openDrawer(zh ? '客户详情' : 'Client detail', GS.errorState(e.message)); }
+}
+
+function renderBoard(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    '<div class="subtabs"><button id="view-kanban" class="active" onclick="setBoardView(\'kanban\')">' + GS.esc(zh ? '看板' : 'Kanban') + '</button>' +
+    '<button id="view-list" onclick="setBoardView(\'list\')">' + GS.esc(zh ? '列表' : 'List') + '</button></div>' +
+    '<div id="boardBox">' + GS.emptyState(GS.t('loading')) + '</div></section>';
+  setBoardView('kanban');
+}
+
+var boardView = 'kanban';
+function setBoardView(view) {
+  boardView = view;
+  ['kanban', 'list'].forEach(function (v) {
+    var el = document.getElementById('view-' + v);
+    if (el) el.classList.toggle('active', v === view);
+  });
+  renderBoardBox();
+}
+
+function renderBoardBox() {
+  var box = document.getElementById('boardBox');
+  if (!box) return;
+  var zh = GS.lang === 'zh';
+  if (!state.applications.length) { box.innerHTML = GS.emptyState(zh ? '暂无申请' : 'No applications'); return; }
+  if (boardView === 'kanban') {
+    var byStage = {};
+    state.applications.forEach(function (a) { (byStage[a.current_stage] = byStage[a.current_stage] || []).push(a); });
+    box.innerHTML = '<div class="kanban">' + ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10'].map(function (code) {
+      var items = byStage[code] || [];
+      return '<div class="kanban-col"><h4>' + GS.esc(GS.stageLabel(code)) + '<span>' + items.length + '</span></h4>' +
+        (items.length ? items.map(function (a) {
+          return '<div class="kanban-item" onclick="applicationDetail(\'' + GS.esc(a.id) + '\')"><h5>' + GS.esc(a.title || a.id) + '</h5><p>' + GS.esc(GS.date(a.updated_at)) + '</p></div>';
+        }).join('') : '<div class="muted">—</div>') + '</div>';
+    }).join('') + '</div>';
+  } else {
+    box.innerHTML = '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '申请' : 'Application') + '</th><th>' + GS.esc(zh ? '阶段' : 'Stage') + '</th><th>' + GS.esc(GS.t('status')) + '</th><th>' + GS.esc(GS.t('actions')) + '</th></tr></thead><tbody>' +
+      state.applications.map(function (a) {
+        return '<tr><td><b>' + GS.esc(a.title || a.id) + '</b><div class="muted">' + GS.esc(a.id) + '</div></td>' +
+          '<td>' + GS.esc(GS.stageLabel(a.current_stage)) + '</td><td>' + GS.statusTag(a.status) + '</td>' +
+          '<td><button class="btn ghost" onclick="applicationDetail(\'' + GS.esc(a.id) + '\')">' + GS.esc(GS.t('details')) + '</button></td></tr>';
+      }).join('') + '</tbody></table></div>';
+  }
+}
+
+async function applicationDetail(id) {
+  var zh = GS.lang === 'zh';
+  GS.openDrawer(zh ? '申请详情' : 'Application detail', GS.emptyState(GS.t('loading')));
+  try {
+    var r = await GS.get('/api/b/applications');
+    var a = (r.data || []).filter(function (x) { return x.id === id; })[0];
+    if (!a) { GS.openDrawer(GS.t('details'), GS.errorState(zh ? '申请不存在' : 'Application not found')); return; }
+    var html = '<div class="stage-strip">' + (a.stages || []).map(function (s) {
+      var cls = 'stage-pill';
+      if (s.code === a.current_stage) cls += ' current';
+      else if (s.status === 'completed') cls += ' done';
+      return '<span class="' + cls + '">' + GS.esc(GS.stageLabel(s.code)) + '</span>';
+    }).join('') + '</div>';
+    html += '<div class="section-head"><h3>' + GS.esc(zh ? '待办' : 'Todos') + '</h3></div>';
+    html += (a.todos || []).length
+      ? '<div class="rows">' + a.todos.map(function (t) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(t.title) + '</h4><div class="muted">' + GS.esc(t.stage || '') + ' · ' + GS.esc(t.owner) + '</div></div>' +
+            (t.status === 'done' ? GS.statusTag('done') : '<button class="btn soft" onclick="completeTodo(\'' + GS.esc(t.id) + '\')">' + GS.esc(zh ? '完成' : 'Done') + '</button>') + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无待办' : 'No todos');
+    html += '<div class="section-head"><h3>' + GS.esc(zh ? '材料' : 'Documents') + '</h3></div>';
+    html += (a.documents || []).length
+      ? '<div class="rows">' + a.documents.map(function (d) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(d.type) + '</h4><div class="muted">' + GS.esc(d.file_name || '') + '</div></div>' + GS.statusTag(d.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无材料' : 'No documents');
+    var next = nextStage(a.current_stage);
+    if (next) {
+      html += '<div class="form-actions"><button class="btn ghost" onclick="GS.closeDrawer()">' + GS.esc(GS.t('cancel')) + '</button>' +
+        '<button class="btn primary" onclick="advanceStage(\'' + GS.esc(a.id) + '\',\'' + next + '\')">' + GS.esc(zh ? '推进到 ' : 'Advance to ') + GS.esc(GS.stageLabel(next)) + '</button></div>';
+    }
+    GS.openDrawer(zh ? '申请详情' : 'Application detail', html);
+  } catch (e) { GS.openDrawer(GS.t('details'), GS.errorState(e.message)); }
+}
+
+function nextStage(code) {
+  var codes = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10'];
+  var i = codes.indexOf(code);
+  return (i >= 0 && i < codes.length - 1) ? codes[i + 1] : null;
+}
+
+async function completeTodo(id) {
+  try {
+    await GS.post('/api/b/todos/' + encodeURIComponent(id) + '/complete', {});
+    alert(GS.lang === 'zh' ? '待办已完成。' : 'Todo completed.');
+    await refresh();
+    GS.closeDrawer();
+  } catch (e) { alert(e.message); }
+}
+
+async function advanceStage(appId, target) {
+  try {
+    await GS.post('/api/b/applications/' + encodeURIComponent(appId) + '/transition', { target: target });
+    alert(GS.lang === 'zh' ? '已推进到 ' + target : 'Advanced to ' + target);
+    await refresh();
+    GS.closeDrawer();
+  } catch (e) { alert((e.payload && e.payload.blocking ? e.payload.blocking.join(', ') + ' — ' : '') + e.message); }
+}
+
+function renderResource(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    '<div class="search"><input id="sq" class="wide" placeholder="' + GS.esc(zh ? '搜索供应商' : 'Search suppliers') + '">' +
+    '<select id="stype"><option value="">' + GS.esc(GS.t('all')) + '</option>' +
+    ['EDUCATION', 'MEDICAL', 'CERTIFICATION', 'VISA', 'ACCOMMODATION'].map(function (t) {
+      return '<option value="' + t + '">' + t + '</option>';
+    }).join('') + '</select>' +
+    '<button class="btn primary wide" onclick="runResourceSearch()">' + GS.esc(GS.t('search')) + '</button></div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? 'S 端资源' : 'Suppliers') + '</h2><span id="resourceCount">—</span></div>' +
+    '<div id="resourceList" class="list">' + GS.emptyState(GS.t('loading')) + '</div>' +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? 'B 端可见合作条件、协议状态与佣金规则；C 端不可见。贷款功能默认关闭。' : 'B can see cooperation terms, agreement status and commission rules. C cannot. Finance is off by default.') + '</div>' +
+    '</section>';
+  runResourceSearch();
+}
+
+async function runResourceSearch() {
+  var box = document.getElementById('resourceList');
+  if (!box) return;
+  box.innerHTML = GS.emptyState(GS.t('loading'));
+  try {
+    var q = (document.getElementById('sq') || {}).value || '';
+    var type = (document.getElementById('stype') || {}).value || '';
+    var params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (type) params.set('type', type);
+    var r = await GS.get('/api/b/suppliers' + (params.toString() ? '?' + params.toString() : ''));
+    state.suppliers = r.data;
+    box.innerHTML = state.suppliers.length ? state.suppliers.map(supplierRow).join('') : GS.emptyState(GS.t('none'));
+    var c = document.getElementById('resourceCount');
+    if (c) c.textContent = state.suppliers.length + '';
+  } catch (e) { box.innerHTML = GS.errorState(e.message); }
+}
+
+function supplierRow(s) {
+  var zh = GS.lang === 'zh';
+  var coop = s.cooperation || {};
+  return GS.card('<div class="row"><div><h3>' + GS.esc(GS.label(s.name)) + '</h3>' +
+    '<div class="muted">' + GS.esc(s.type) + ' · ' + GS.esc(coop.agreement_status || '—') + '</div></div>' + GS.statusTag(coop.agreement_status) + '</div>' +
+    (coop.commission_rules && coop.commission_rules.length
+      ? '<div class="chips" style="margin:7px 0">' + coop.commission_rules.map(function (r) {
+          return '<span class="chip green">' + GS.esc(r.mode + ' ' + r.value + ' ' + r.currency) + '</span>';
+        }).join('') + '</div>'
+      : '<div class="muted" style="margin:7px 0">' + GS.esc(coop.commission_note || (zh ? '暂无合作协议' : 'No agreement')) + '</div>') +
+    '<div class="actions"><button class="btn ghost" onclick="supplierDetailB(\'' + GS.esc(s.id) + '\')">' + GS.esc(GS.t('details')) + '</button>' +
+    '<button class="btn primary" onclick="delegateApplication(\'' + GS.esc(s.id) + '\')">' + GS.esc(zh ? '委托申请' : 'Delegate') + '</button></div>');
+}
+
+async function supplierDetailB(id) {
+  var zh = GS.lang === 'zh';
+  GS.openDrawer(GS.t('details'), GS.emptyState(GS.t('loading')));
+  try {
+    var r = await GS.get('/api/b/suppliers/' + encodeURIComponent(id));
+    var s = r.data;
+    GS.openDrawer(GS.label(s.name),
+      '<div class="muted">' + GS.esc(GS.label(s.profile && s.profile.description || s.profile && s.profile.description_en)) + '</div>' +
+      '<div class="section-head"><h3>' + GS.esc(zh ? '合作条件' : 'Cooperation') + '</h3></div>' +
+      '<div class="kv">' +
+      '<div><small>' + GS.esc(zh ? '接受 B 下单' : 'Accepts B orders') + '</small><b>' + GS.esc(s.cooperation.accepts_b_orders ? GS.t('yes') : GS.t('no')) + '</b></div>' +
+      '<div><small>' + GS.esc(zh ? '协议状态' : 'Agreement') + '</small><b>' + GS.esc(s.cooperation.agreement_status) + '</b></div>' +
+      '</div>' +
+      (s.cooperation.commission_rules && s.cooperation.commission_rules.length
+        ? '<div class="section-head"><h3>' + GS.esc(zh ? '佣金规则' : 'Commission rules') + '</h3></div>' +
+          '<div class="rows">' + s.cooperation.commission_rules.map(function (r) {
+            return '<div class="row-item"><div class="grow"><h4>' + GS.esc(r.mode) + '</h4><div class="muted">' + GS.esc(GS.money(r.value, r.currency)) + ' · ' + GS.esc(r.trigger_event) + '</div></div></div>';
+          }).join('') + '</div>'
+        : '<div class="notice" style="margin-top:9px">' + GS.esc(zh ? '暂无真实合作协议，不展示佣金数值。' : 'No real agreement — commission values are not shown.') + '</div>'));
+  } catch (e) { GS.openDrawer(GS.t('details'), GS.errorState(e.message)); }
+}
+
+async function delegateApplication(supplierId) {
+  var zh = GS.lang === 'zh';
+  var clients = (state.clients && state.clients.active) || [];
+  if (!clients.length) { alert(zh ? '暂无已绑定客户。' : 'No bound clients.'); return; }
+  GS.openDrawer(zh ? '选择客户' : 'Choose a client',
+    '<div class="rows">' + clients.map(function (row) {
+      var c = row.c_profile || {};
+      return '<div class="row-item" onclick="createDelegated(\'' + GS.esc(supplierId) + '\',\'' + GS.esc(c.id) + '\')"><div class="grow"><h4>' + GS.esc(GS.label(c.name || c.name_en) || '—') + '</h4></div><span class="chip">›</span></div>';
+    }).join('') + '</div>');
+}
+
+async function createDelegated(supplierId, cProfileId) {
+  try {
+    await GS.post('/api/b/applications', { c_profile_id: cProfileId, supplier_id: supplierId, title: 'Delegated application' });
+    GS.closeDrawer();
+    alert(GS.lang === 'zh' ? '委托申请已创建（S0）。' : 'Delegated application created (S0).');
+    await refresh();
+    showTab('board', TAB_NAMES);
+  } catch (e) { alert(e.message); }
+}
+
+function renderMoney(main) {
+  var zh = GS.lang === 'zh';
+  var summary = (state.commission && state.commission.summary) || {};
+  main.innerHTML = '<section class="section">' + GS.metrics([
+    [zh ? '预计' : 'Projected', summary.projected || 0],
+    [zh ? '已确认' : 'Confirmed', summary.confirmed || 0],
+    [zh ? '已付' : 'Paid', summary.paid || 0],
+    [zh ? '已扣回' : 'Clawed back', summary.clawed_back || 0]
+  ]) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '佣金台账' : 'Commission ledger') + '</h2><span>' + ((state.commission && state.commission.ledger) || []).length + '</span></div>' +
+    ((state.commission && state.commission.ledger && state.commission.ledger.length)
+      ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(GS.t('amount')) + '</th><th>' + GS.esc(zh ? '触发事件' : 'Trigger') + '</th><th>' + GS.esc(GS.t('status')) + '</th></tr></thead><tbody>' +
+        state.commission.ledger.map(function (e) {
+          return '<tr><td><b>' + GS.esc(GS.money(e.amount, e.currency)) + '</b></td><td>' + GS.esc(e.trigger_event) + '</td><td>' + GS.statusTag(e.status) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : GS.emptyState(zh ? '暂无佣金记录' : 'No commission records')) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '结算单' : 'Settlements') + '</h2><span>' + state.settlements.length + '</span></div>' +
+    (state.settlements.length
+      ? '<div class="rows">' + state.settlements.map(function (s) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.money(s.total_amount, s.currency)) + '</h4><div class="muted">' + GS.esc(zh ? '到期 ' : 'Due ') + GS.esc(GS.date(s.due_date)) + '</div></div>' + GS.statusTag(s.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无结算单' : 'No settlements')) +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '平台不拥有资金，不参与 B 的净佣金分成。' : 'The platform owns no funds and takes no share of the B net commission.') + '</div>' +
+    '</section>';
+}
+
+async function refresh() {
+  try {
+    var results = await Promise.all([
+      GS.get('/api/b/me').catch(function () { return { data: null }; }),
+      GS.get('/api/b/binding-requests').catch(function () { return { data: [] }; }),
+      GS.get('/api/b/applications').catch(function () { return { data: [] }; }),
+      GS.get('/api/b/todos').catch(function () { return { data: [] }; }),
+      GS.get('/api/b/commission').catch(function () { return { data: {} }; }),
+      GS.get('/api/b/settlements').catch(function () { return { data: [] }; }),
+      GS.get('/api/b/clients').catch(function () { return { data: null }; }),
+      GS.get('/api/b/performance').catch(function () { return { data: null }; })
+    ]);
+    me = results[0].data;
+    state.requests = results[1].data || [];
+    state.applications = results[2].data || [];
+    state.todos = results[3].data || [];
+    state.commission = results[4].data || {};
+    state.settlements = results[5].data || [];
+    state.clients = results[6].data;
+    state.performance = results[7].data;
+  } catch (e) {
+    if (e.status === 401) { GS.clearSession(); return showLogin(); }
+  }
+  renderShell();
+  if (tab === 'board') renderBoardBox();
+}
+
+function showLogin() {
+  document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel([]) + '</div>';
+  GS.get('/api/auth/demo-accounts').then(function (r) {
+    document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel(r.data) + '</div>';
+    GS.bindLogin();
+  }).catch(function () { GS.bindLogin(); });
+}
+
+window.onLangChange = function () { renderShell(); };
+
+(async function boot() {
+  if (GS.requireAuth()) { showLogin(); return; }
+  await refresh();
+})();
 </script>
 </body>
 </html>

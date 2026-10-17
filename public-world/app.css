@@ -31,3 +31,110 @@ body{min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}a{t
 @media(min-width:760px){.portal{padding-top:70px}.client-grid{grid-template-columns:repeat(3,1fr)}.phone{box-shadow:0 0 0 1px #e0e8ee}}
 
 .header-actions{display:flex;align-items:center;gap:6px}.lang-btn{border:1px solid var(--line);background:#eef6fb;color:var(--blue);border-radius:999px;padding:7px 10px;font-size:11px;font-weight:800}
+
+/* ==========================================================================
+   FULL MVP V3 additions — new components for Admin / B / C / S / DBC clients.
+   Visual language stays the same (cards, status tags, bottom sheet, timeline).
+   ========================================================================== */
+
+/* Footer with the operator credit (required on every page) */
+.footer{padding:18px 16px 26px;text-align:center;color:var(--muted);font-size:10px;line-height:1.6;border-top:1px solid var(--line);margin-top:18px}
+.footer b{color:var(--navy)}
+.footer-powered{display:block;margin-top:4px;font-size:9px;color:#9ab0bd}
+
+/* Kanban (S0–S10 board) */
+.kanban{display:flex;gap:10px;overflow-x:auto;padding:2px 14px 14px;scroll-snap-type:x mandatory}
+.kanban-col{min-width:225px;flex:none;background:#f7fafc;border:1px solid var(--line);border-radius:14px;padding:10px;scroll-snap-align:start}
+.kanban-col h4{margin:0 0 8px;font-size:11px;color:var(--navy);display:flex;justify-content:space-between;align-items:center;gap:6px}
+.kanban-col h4 span{font-size:9px;color:var(--muted);font-weight:600}
+.kanban-item{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px;margin-bottom:7px;cursor:pointer}
+.kanban-item h5{margin:0 0 3px;font-size:11px}
+.kanban-item p{margin:0;font-size:9px;color:var(--muted)}
+
+/* Timeline (application history) */
+.timeline{position:relative;padding-left:18px}
+.timeline::before{content:'';position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:var(--line)}
+.timeline-item{position:relative;padding:0 0 12px}
+.timeline-item::before{content:'';position:absolute;left:-16px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--blue);border:2px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.timeline-item.done::before{background:var(--green)}
+.timeline-item h5{margin:0;font-size:11px}
+.timeline-item small{color:var(--muted);font-size:9px}
+
+/* Tables (admin / settlement / commission) */
+.table-wrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:14px}
+table.data{width:100%;border-collapse:collapse;font-size:10px;min-width:520px}
+table.data th,table.data td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table.data th{background:#f7fafc;color:var(--muted);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+table.data tr:last-child td{border-bottom:0}
+table.data td b{font-size:11px}
+
+/* Forms */
+.field{margin-bottom:9px}
+.field label{display:block;font-size:9px;color:var(--muted);margin-bottom:3px}
+.field .hint{font-size:8px;color:#9ab0bd;margin-top:2px}
+.form-actions{display:flex;gap:7px;margin-top:11px}
+.form-actions .btn{flex:1}
+.checkbox{display:flex;align-items:center;gap:6px;font-size:10px;padding:6px 0}
+.checkbox input{width:15px;height:15px}
+
+/* Lists with rows */
+.rows{display:grid;gap:7px}
+.row-item{background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px;display:flex;justify-content:space-between;align-items:center;gap:9px;cursor:pointer}
+.row-item:hover{border-color:#c3d8e6}
+.row-item .grow{flex:1;min-width:0}
+.row-item h4{margin:0 0 3px;font-size:12px}
+.row-item .muted{font-size:9px}
+
+/* Badges / chips */
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:9px;background:#eef5f9;color:#4d6c7f;padding:4px 8px;border-radius:999px;border:1px solid #dde9f0}
+.chip.green{background:#eaf8f3;color:#14765a;border-color:#cdeee0}
+.chip.gold{background:#fdf6e6;color:#8a6418;border-color:#f3e3bd}
+.chip.red{background:#fdeeee;color:#a94343;border-color:#f3d3d3}
+.chip.blue{background:#e9f3fb;color:#17699b;border-color:#d3e7f5}
+
+/* Stage strip S0–S10 */
+.stage-strip{display:flex;gap:4px;overflow-x:auto;padding:8px 0}
+.stage-pill{font-size:8px;padding:5px 7px;border-radius:8px;background:#eef3f7;color:#6d8595;white-space:nowrap;border:1px solid #e0e9ef}
+.stage-pill.active{background:var(--blue);color:#fff;border-color:var(--blue);font-weight:800}
+.stage-pill.done{background:#e9f7f0;color:#14704f;border-color:#cdeee0}
+.stage-pill.current{background:#fff2d6;color:#8a6418;border-color:#f3e3bd;font-weight:800}
+
+/* Progress bar */
+.progress{height:5px;background:#e8eef3;border-radius:99px;overflow:hidden;margin-top:7px}
+.progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan))}
+
+/* Key/value detail grid */
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.kv > div{background:#f7fafc;border:1px solid var(--line);border-radius:10px;padding:8px}
+.kv small{display:block;color:var(--muted);font-size:8px;margin-bottom:2px}
+.kv b{font-size:10px;word-break:break-word}
+
+/* Banner / callout */
+.banner{border-radius:13px;padding:12px;font-size:10px;line-height:1.6;margin:0 14px 12px;border:1px solid}
+.banner.info{background:#edf7fc;border-color:#d4e8f3;color:#46687c}
+.banner.warn{background:#fff6e6;border-color:#f3e3bd;color:#8a6418}
+.banner.ok{background:#eefaf4;border-color:#cdeee0;color:#14704f}
+.banner.err{background:#fdf0f0;border-color:#f3d3d3;color:#a94343}
+
+/* Tab bar for secondary navigation inside a client */
+.subtabs{display:flex;gap:5px;overflow-x:auto;padding:0 14px 10px}
+.subtabs button{white-space:nowrap;border:1px solid var(--line);background:#fff;color:#557083;border-radius:999px;padding:6px 10px;font-size:9px}
+.subtabs button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+
+/* Card grid (2-up on wider phones) */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(min-width:430px){.grid2{grid-template-columns:1fr 1fr}}
+
+/* Money emphasis */
+.amount{font-variant-numeric:tabular-nums;font-weight:800;color:var(--navy)}
+
+/* Mobile-first viewport guard: nothing overflows 375px */
+@media(max-width:375px){
+  .kanban-col{min-width:200px}
+  table.data{min-width:460px}
+  .kv{grid-template-columns:1fr}
+}
+
+/* Print-friendly (admin reports) */
+@media print{.bottom,.header-actions,.tabs,.subtabs{display:none}}

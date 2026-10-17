@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>GlobalStudy — 教育金融（暂未开放）</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="phone">
+  <header class="header">
+    <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small id="clientName">教育金融</small></div></a>
+    <div class="header-actions"><button class="lang-btn" id="langBtn">English</button><a class="pill" href="/" id="switchClient">切换客户端</a></div>
+  </header>
+  <section class="hero">
+    <div class="eyebrow" id="eyebrow">FINANCE · 默认关闭</div>
+    <h1 id="title">功能暂未开放</h1>
+    <p id="lead">Coming soon. 本轮 Full MVP 的合规边界不包含教育金融业务。</p>
+  </section>
+  <main class="section">
+    <div class="banner warn" id="notice"></div>
+    <div class="card">
+      <h4 id="boundaryTitle">合规边界</h4>
+      <div class="muted" id="boundaryText"></div>
+    </div>
+    <div class="card">
+      <h4 id="reservedTitle">已预留的数据模型</h4>
+      <div class="chips" style="margin-top:8px">
+        <span class="chip">FinanceProvider</span><span class="chip">FinanceProduct</span><span class="chip">FinanceReferral</span>
+      </div>
+      <div class="muted" style="margin-top:8px" id="reservedText"></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn ghost wide" onclick="location.href='/'">返回客户端选择</button></div>
+  </main>
+  <footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer>
+</div>
+
+<script src="/js/gs.js"></script>
+<script>
+var TEXT = {
+  zh: {
+    client: '教育金融', eyebrow: 'FINANCE · 默认关闭',
+    title: '功能暂未开放',
+    lead: 'Coming soon. 本轮 Full MVP 的合规边界不包含教育金融业务。',
+    notice: '本轮不实现：信用评分、自动审批、放款、还款、逾期催收以及任何实际金融交易。',
+    boundaryTitle: '合规边界',
+    boundaryText: '入口可以存在，但功能默认关闭（FINANCE_ENABLED=false）。数据库仅建立 FinanceProvider / FinanceProduct / FinanceReferral 三个模型用于结构预留。',
+    reservedTitle: '已预留的数据模型',
+    reservedText: '上述实体已存在于统一数据模型中，开启功能flag后即可扩展，无需重建系统。',
+    back: '返回客户端选择'
+  },
+  en: {
+    client: 'Education Finance', eyebrow: 'FINANCE · OFF BY DEFAULT',
+    title: 'Feature not open yet',
+    lead: 'Coming soon. This Full MVP round deliberately excludes education finance.',
+    notice: 'Not implemented this round: credit scoring, automatic approval, disbursement, repayment, collections or any real financial transaction.',
+    boundaryTitle: 'Compliance boundary',
+    boundaryText: 'The route exists but the feature is off by default (FINANCE_ENABLED=false). Only the FinanceProvider / FinanceProduct / FinanceReferral models are reserved in the data model.',
+    reservedTitle: 'Reserved data models',
+    reservedText: 'These entities already exist in the unified data model, so the feature can be extended without rebuilding the system.',
+    back: 'Back to client selector'
+  }
+};
+
+function render() {
+  var zh = GS.lang === 'zh';
+  var x = zh ? TEXT.zh : TEXT.en;
+  document.getElementById('clientName').textContent = x.client;
+  document.getElementById('eyebrow').textContent = x.eyebrow;
+  document.getElementById('title').textContent = x.title;
+  document.getElementById('lead').textContent = x.lead;
+  document.getElementById('notice').textContent = x.notice;
+  document.getElementById('boundaryTitle').textContent = x.boundaryTitle;
+  document.getElementById('boundaryText').textContent = x.boundaryText;
+  document.getElementById('reservedTitle').textContent = x.reservedTitle;
+  document.getElementById('reservedText').textContent = x.reservedText;
+  document.getElementById('switchClient').textContent = GS.t('switchClient');
+  document.getElementById('langBtn').textContent = GS.t('switchLang');
+}
+window.onLangChange = render;
+window.onReady = render;
+render();
+</script>
+</body>
+</html>

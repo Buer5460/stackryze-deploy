@@ -13,106 +13,65 @@
     <a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small id="clientName">院校 / 供应商端</small></div></a>
     <div class="header-actions"><button class="lang-btn" id="langBtn">English</button><a class="pill" href="/" id="switchClient">切换客户端</a></div>
   </header>
-
   <section class="hero">
-    <div class="eyebrow" id="heroEyebrow">院校端 · 在线演示</div>
-    <h1 id="heroTitle">课程、申请与公开数据状态</h1>
-    <p id="heroText">演示院校工作台：查看课程、处理申请，并查看公开数据的核验状态。</p>
+    <div class="eyebrow" id="eyebrow">SUPPLIER · 在线演示</div>
+    <h1 id="title">请选择供应商类型</h1>
+    <p id="lead">六类供应商共用同一套 Supplier Center，按类型进入对应客户端。</p>
   </section>
-
-  <div class="tabs">
-    <button id="tabDash" class="active" onclick="showTab('dash')">工作台</button>
-    <button id="tabPrograms" onclick="showTab('programs')">课程</button>
-    <button id="tabApps" onclick="showTab('apps')">申请</button>
-    <button id="tabData" onclick="showTab('data')">数据状态</button>
-  </div>
-
-  <main id="main"></main>
-
-  <nav class="bottom">
-    <button id="navDash" class="active" onclick="showTab('dash')"><b>⌂</b><span id="navDashText">工作台</span></button>
-    <button id="navPrograms" onclick="showTab('programs')"><b>▦</b><span id="navProgramsText">课程</span></button>
-    <button id="navApps" onclick="showTab('apps')"><b>◎</b><span id="navAppsText">申请</span></button>
-    <button id="navData" onclick="showTab('data')"><b>✓</b><span id="navDataText">数据</span></button>
-  </nav>
+  <main class="section">
+    <div class="rows" id="typeList"></div>
+    <div class="notice" style="margin-top:12px" id="note"></div>
+  </main>
+  <footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer>
 </div>
 
-<div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>
-<section class="drawer" id="drawer">
-  <div class="handle"></div>
-  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="closeDrawer()">关闭</button></div>
-  <div id="drawerBody"></div>
-</section>
-
+<script src="/js/gs.js"></script>
 <script>
-const $=s=>document.querySelector(s);
-let lang=localStorage.getItem('gs-world-lang')||'zh';
-let tab='dash',school=null,programs=[];
-let incoming=JSON.parse(localStorage.getItem('gs-inst-apps')||'null')||[
-  {id:'IA-1001',student_zh:'演示申请人 A',student_en:'Demo Applicant A',program_zh:'IB 小学项目',program_en:'IB Primary Programme',status:'Received',updated:'Today'},
-  {id:'IA-1002',student_zh:'演示申请人 B',student_en:'Demo Applicant B',program_zh:'IB DP 项目',program_en:'IB Diploma Programme',status:'Documents review',updated:'Yesterday'},
-  {id:'IA-1003',student_zh:'演示申请人 C',student_en:'Demo Applicant C',program_zh:'IB MYP 项目',program_en:'IB Middle Years Programme',status:'Interview requested',updated:'2 days ago'}
+var TYPES = [
+  { route: '/supplier/education', icon: '🏫', zh: '教育机构', en: 'Education', descZh: '课程发布、招生申请、录取流程与看板。', descEn: 'Programs, admissions, the offer workflow and the board.' },
+  { route: '/supplier/medical', icon: '🩺', zh: '体检机构', en: 'Medical', descZh: '体检委托、预约、状态与报告文件。', descEn: 'Check-up orders, appointments, status and report files.' },
+  { route: '/supplier/certification', icon: '📄', zh: '文件认证', en: 'Certification', descZh: '学历、成绩、公证与翻译认证。', descEn: 'Degree, transcript, notarisation and translation.' },
+  { route: '/supplier/visa', icon: '🛂', zh: '签证代办', en: 'Visa Agency', descZh: '签证产品、委托、材料、预约与结果。', descEn: 'Visa products, orders, materials, appointments and results.' },
+  { route: '/supplier/accommodation', icon: '🏠', zh: '学生住宿', en: 'Accommodation', descZh: '房型、房间、床位库存、预订与入住。', descEn: 'Room types, rooms, beds, bookings and check-in.' },
+  { route: '/supplier/finance', icon: '💰', zh: '教育金融（默认关闭）', en: 'Education Finance (off)', descZh: '功能暂未开放 / Coming soon。', descEn: 'Feature not open yet / Coming soon.' }
 ];
 
-const T={
-zh:{
- client:'院校 / 供应商端',switch:'切换客户端',heroEyebrow:'院校端 · 在线演示',heroTitle:'课程、申请与公开数据状态',heroText:'演示院校工作台：查看课程、处理申请，并查看公开数据的核验状态。',
- dash:'工作台',programs:'课程',apps:'申请',data:'数据状态',close:'关闭',programCount:'课程数',incomingApps:'收到申请',needReview:'待审核',publicDataStatus:'公开数据状态',latestApps:'最新申请',institutionDemo:'院校端演示',
- programsListed:'个课程',programNotice:'这里展示的是公网演示学校下的演示课程。真实院校数据在公开前必须完成来源核验。',tuition:'学费',deadline:'截止日期',openProgram:'查看课程',noPrograms:'暂无课程。',
- incomingTitle:'收到的申请',demoRecords:'条演示记录',appNotice:'这些是浏览器本地的演示申请，不包含真实学生材料或个人文件。',review:'查看',advance:'推进演示状态',
- dataStatus:'公开数据状态',demo:'演示',verified:'已核验',verification:'核验状态',updated:'最近更新',source:'来源',notClaimed:'未声明真实来源',available:'可用',visibility:'公开状态',visible:'可见',
- publishingRules:'发布规则',publicMvp:'公网 MVP',rulesText:'已核验记录必须有认可的来源 URL 或供应商证明。缺失的信息保持为空；演示数据始终明确标识，不冒充真实合作关系。',
- programDetails:'课程详情',stage:'学段',curriculum:'课程体系',duration:'学制',startDate:'开学日期',demoProgram:'演示课程数据，仅用于产品预览。',applicationReview:'申请查看',applicationId:'申请编号',status:'状态',program:'课程',noRealApplicant:'公网演示不包含真实申请人数据或上传文件。',
- page:'GlobalStudy — 院校 / 供应商端',langBtn:'English'
-},
-en:{
- client:'Institution / Supplier',switch:'Switch client',heroEyebrow:'INSTITUTION CLIENT · LIVE DEMO',heroTitle:'Programs, applications and data status',heroText:'A public demonstration of the institution workspace: review programs, incoming applications and public data verification status.',
- dash:'Dashboard',programs:'Programs',apps:'Applications',data:'Data status',close:'Close',programCount:'Programs',incomingApps:'Incoming applications',needReview:'Need review',publicDataStatus:'Public data status',latestApps:'Latest applications',institutionDemo:'Institution demo',
- programsListed:'listed',programNotice:'Programs shown here are demonstration records attached to the public demo school. Real institution data requires source verification before publication.',tuition:'Tuition',deadline:'Deadline',openProgram:'Open program',noPrograms:'No programs available.',
- incomingTitle:'Incoming applications',demoRecords:'demo records',appNotice:'These are local demonstration applications only. No real student files or personal documents are exposed in this public client.',review:'Review',advance:'Advance demo status',
- dataStatus:'Public data status',demo:'Demo',verified:'Verified',verification:'Verification',updated:'Last updated',source:'Source',notClaimed:'Not claimed',available:'Available',visibility:'Public visibility',visible:'Visible',
- publishingRules:'Publishing rules',publicMvp:'Public MVP',rulesText:'Verified records require an accepted source URL or supplier evidence. Missing facts remain blank. Demo data is always labeled and never presented as a real partnership.',
- programDetails:'Program details',stage:'Stage',curriculum:'Curriculum',duration:'Duration',startDate:'Start date',demoProgram:'Demonstration program data for product preview only.',applicationReview:'Application review',applicationId:'Application ID',status:'Status',program:'Program',noRealApplicant:'No real applicant data or uploaded documents are included in this public demo.',
- page:'GlobalStudy — Institution / Supplier',langBtn:'中文'
-}};
-function t(k){return T[lang][k]||k}
-async function api(url){const r=await fetch(url);const j=await r.json();if(!r.ok||!j.ok)throw new Error(j.error||'Request failed');return j}
-function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function money(n,c){if(n==null)return '—';try{return new Intl.NumberFormat(lang==='zh'?'zh-CN':'en-US',{style:'currency',currency:c||'USD',maximumFractionDigits:0}).format(n)}catch{return (c||'')+' '+n}}
-function sname(){return lang==='zh'?(school?.name?.zh||school?.name?.en):(school?.name?.en||school?.name?.zh)}
-function appStudent(a){return lang==='zh'?(a.student_zh||a.student_en||a.student):(a.student_en||a.student_zh||a.student)}
-function appProgram(a){return lang==='zh'?(a.program_zh||a.program_en||a.program):(a.program_en||a.program_zh||a.program)}
-function pname(p){return lang==='zh'?(p.name_zh||p.name||p.id):(p.name||p.name_zh||p.id)}
-function loc(){return [lang==='zh'?school?.location?.city_zh:school?.location?.city_en,lang==='zh'?school?.location?.district_zh:school?.location?.district_en].filter(Boolean).join(' · ')}
-function openDrawer(title,h){$('#drawerTitle').textContent=title;$('#drawerBody').innerHTML=h;$('#drawer').classList.add('open');$('#mask').classList.add('open')}
-function closeDrawer(){$('#drawer').classList.remove('open');$('#mask').classList.remove('open')}
-function persist(){localStorage.setItem('gs-inst-apps',JSON.stringify(incoming))}
-function applyLang(){
- document.documentElement.lang=lang==='zh'?'zh-CN':'en';document.title=t('page');$('#clientName').textContent=t('client');$('#switchClient').textContent=t('switch');$('#heroEyebrow').textContent=t('heroEyebrow');$('#heroTitle').textContent=t('heroTitle');$('#heroText').textContent=t('heroText');
- $('#tabDash').textContent=t('dash');$('#tabPrograms').textContent=t('programs');$('#tabApps').textContent=t('apps');$('#tabData').textContent=t('data');
- $('#navDashText').textContent=t('dash');$('#navProgramsText').textContent=t('programs');$('#navAppsText').textContent=t('apps');$('#navDataText').textContent=t('data');$('#drawerClose').textContent=t('close');$('#langBtn').textContent=t('langBtn');render()
-}
-$('#langBtn').onclick=()=>{lang=lang==='zh'?'en':'zh';localStorage.setItem('gs-world-lang',lang);applyLang()};
-function setActive(name){['Dash','Programs','Apps','Data'].forEach(x=>{const a=$('#tab'+x),b=$('#nav'+x);if(a)a.classList.toggle('active',x.toLowerCase()===name);if(b)b.classList.toggle('active',x.toLowerCase()===name)})}
-function showTab(name){tab=name;setActive(name);render()}
+var TEXT = {
+  zh: {
+    client: '院校 / 供应商端', eyebrow: 'SUPPLIER · 在线演示',
+    title: '请选择供应商类型',
+    lead: '六类供应商共用同一套 Supplier Center，按类型进入对应客户端。',
+    note: '统一数据模型：Supplier / Organization / SupplierType / SupplierProfile / Product / Application / Agreement / CommissionRule / Settlement。不同类型通过扩展 Profile 实现，不复制六套系统。',
+    open: '打开 →'
+  },
+  en: {
+    client: 'Institution / Supplier', eyebrow: 'SUPPLIER · LIVE DEMO',
+    title: 'Choose a supplier type',
+    lead: 'All six supplier types share one Supplier Center — open the matching client.',
+    note: 'Unified data model: Supplier / Organization / SupplierType / SupplierProfile / Product / Application / Agreement / CommissionRule / Settlement. Types differ by Profile extension, never by duplicating the system.',
+    open: 'Open →'
+  }
+};
 
-function dash(){
- return '<section class="section"><div class="metrics"><div class="metric"><small>'+esc(t('programCount'))+'</small><b>'+programs.length+'</b></div><div class="metric"><small>'+esc(t('incomingApps'))+'</small><b>'+incoming.length+'</b></div><div class="metric"><small>'+esc(t('needReview'))+'</small><b>'+incoming.filter(x=>x.status==='Documents review').length+'</b></div><div class="metric"><small>'+esc(t('publicDataStatus'))+'</small><b>'+esc(school?.verification?.is_demo?t('demo'):t('verified'))+'</b></div></div><div class="section-head"><h2>'+esc(t('latestApps'))+'</h2><span>'+esc(t('institutionDemo'))+'</span></div><div class="list">'+incoming.slice(0,3).map(appCard).join('')+'</div></section>'
+function render() {
+  var zh = GS.lang === 'zh';
+  var x = zh ? TEXT.zh : TEXT.en;
+  document.getElementById('clientName').textContent = x.client;
+  document.getElementById('eyebrow').textContent = x.eyebrow;
+  document.getElementById('title').textContent = x.title;
+  document.getElementById('lead').textContent = x.lead;
+  document.getElementById('note').textContent = x.note;
+  document.getElementById('switchClient').textContent = GS.t('switchClient');
+  document.getElementById('langBtn').textContent = GS.t('switchLang');
+  document.getElementById('typeList').innerHTML = TYPES.map(function (t) {
+    return '<a class="row-item" href="' + t.route + '"><div class="grow"><h4>' + t.icon + ' ' + GS.esc(zh ? t.zh : t.en) + '</h4>' +
+      '<div class="muted">' + GS.esc(zh ? t.descZh : t.descEn) + '</div></div><span class="chip">' + GS.esc(x.open) + '</span></a>';
+  }).join('');
 }
-function programCard(p){return '<div class="card"><div class="row"><div><h3>'+esc(pname(p))+'</h3><div class="muted">'+esc([p.stage,p.curriculum,p.duration].filter(Boolean).join(' · '))+'</div></div><span class="status demo">'+esc(t('demo'))+'</span></div><div class="split"><div><small>'+esc(t('tuition'))+'</small><b>'+esc(money(p.tuition,p.currency||school?.fees?.currency))+'</b></div><div><small>'+esc(t('deadline'))+'</small><b>'+esc(p.deadline||'—')+'</b></div></div><div class="actions"><button class="btn ghost" onclick="programDetail(\''+esc(p.id)+'\')">'+esc(t('openProgram'))+'</button></div></div>'}
-function programsPage(){return '<section class="section"><div class="section-head"><h2>'+esc(t('programs'))+'</h2><span>'+programs.length+' '+esc(t('programsListed'))+'</span></div><div class="notice">'+esc(t('programNotice'))+'</div><div class="list" style="margin-top:9px">'+(programs.length?programs.map(programCard).join(''):'<div class="empty">'+esc(t('noPrograms'))+'</div>')+'</div></section>'}
-function appCard(a){const cls=a.status==='Received'?'blue':a.status==='Documents review'?'warn':'good';return '<div class="card"><div class="row"><div><h3>'+esc(appStudent(a))+'</h3><div class="muted">'+esc(appProgram(a))+' · '+esc(a.updated)+'</div></div><span class="status '+cls+'">'+esc(a.status)+'</span></div><div class="actions"><button class="btn ghost" onclick="appDetail(\''+esc(a.id)+'\')">'+esc(t('review'))+'</button><button class="btn soft" onclick="advance(\''+esc(a.id)+'\')">'+esc(t('advance'))+'</button></div></div>'}
-function appsPage(){return '<section class="section"><div class="section-head"><h2>'+esc(t('incomingTitle'))+'</h2><span>'+incoming.length+' '+esc(t('demoRecords'))+'</span></div><div class="notice">'+esc(t('appNotice'))+'</div><div class="list" style="margin-top:9px">'+incoming.map(appCard).join('')+'</div></section>'}
-function dataPage(){
- const demo=school?.verification?.is_demo;
- return '<section class="section"><div class="section-head"><h2>'+esc(t('dataStatus'))+'</h2><span>'+esc(demo?t('demo'):t('verified'))+'</span></div><div class="card"><div class="row"><div><h3>'+esc(sname()||'Institution')+'</h3><div class="muted">'+esc(loc())+'</div></div><span class="status '+(demo?'demo':'good')+'">'+esc(demo?t('demo'):t('verified'))+'</span></div><div class="detail-grid" style="margin-top:10px"><div class="detail"><small>'+esc(t('verification'))+'</small><b>'+esc(school?.verification?.status||'—')+'</b></div><div class="detail"><small>'+esc(t('updated'))+'</small><b>'+esc(school?.verification?.updated_at||'—')+'</b></div><div class="detail"><small>'+esc(t('source'))+'</small><b>'+esc(demo?t('notClaimed'):t('available'))+'</b></div><div class="detail"><small>'+esc(t('visibility'))+'</small><b>'+esc(t('visible'))+'</b></div></div></div><div class="section-head"><h2>'+esc(t('publishingRules'))+'</h2><span>'+esc(t('publicMvp'))+'</span></div><div class="notice">'+esc(t('rulesText'))+'</div></section>'
-}
-function programDetail(id){const p=programs.find(x=>x.id===id);openDrawer(t('programDetails'),'<h3>'+esc(pname(p))+'</h3><div class="detail-grid"><div class="detail"><small>'+esc(t('stage'))+'</small><b>'+esc(p.stage||'—')+'</b></div><div class="detail"><small>'+esc(t('curriculum'))+'</small><b>'+esc(p.curriculum||'—')+'</b></div><div class="detail"><small>'+esc(t('duration'))+'</small><b>'+esc(p.duration||'—')+'</b></div><div class="detail"><small>'+esc(t('tuition'))+'</small><b>'+esc(money(p.tuition,p.currency||school?.fees?.currency))+'</b></div><div class="detail"><small>'+esc(t('startDate'))+'</small><b>'+esc(p.start_date||'—')+'</b></div><div class="detail"><small>'+esc(t('deadline'))+'</small><b>'+esc(p.deadline||'—')+'</b></div></div><div class="notice" style="margin-top:10px">'+esc(t('demoProgram'))+'</div>')}
-function appDetail(id){const a=incoming.find(x=>x.id===id);openDrawer(t('applicationReview'),'<h3>'+esc(appStudent(a))+'</h3><div class="detail-grid"><div class="detail"><small>'+esc(t('applicationId'))+'</small><b>'+esc(a.id)+'</b></div><div class="detail"><small>'+esc(t('status'))+'</small><b>'+esc(a.status)+'</b></div><div class="detail"><small>'+esc(t('program'))+'</small><b>'+esc(appProgram(a))+'</b></div><div class="detail"><small>'+esc(t('updated'))+'</small><b>'+esc(a.updated)+'</b></div></div><div class="notice" style="margin-top:10px">'+esc(t('noRealApplicant'))+'</div>')}
-function advance(id){const a=incoming.find(x=>x.id===id);const stages=['Received','Documents review','Interview requested','Decision demo'];let i=stages.indexOf(a.status);a.status=stages[Math.min(stages.length-1,i+1)];a.updated=lang==='zh'?'刚刚':'Just now';persist();render()}
-function render(){if(!main)return;if(tab==='dash')main.innerHTML=dash();else if(tab==='programs')main.innerHTML=programsPage();else if(tab==='apps')main.innerHTML=appsPage();else main.innerHTML=dataPage()}
-const main=$('#main');
-(async()=>{const list=(await api('/api/schools?pageSize=50')).data||[];school=list.find(x=>x.id==='SG-DEMO-001')||list[0];if(school){const d=(await api('/api/schools/'+encodeURIComponent(school.id))).data;school=d;programs=d.programs||[]}applyLang()})().catch(e=>main.innerHTML='<section class="section"><div class="empty">'+esc(e.message)+'</div></section>');
+
+window.onLangChange = render;
+window.onReady = render;
+render();
 </script>
 </body>
 </html>

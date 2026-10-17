@@ -1,2 +1,5 @@
 node_modules/
 .env
+# Local development database file. On Render the same file is written to
+# GS_DB_DIR (/var/data) which is outside the repository.
+data/db/aethel.json
