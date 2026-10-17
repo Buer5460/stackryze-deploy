@@ -1908,6 +1908,22 @@ adminRouter.post('/bindings/:id/rebinding-review', (req, res) => {
 // Contracts.
 adminRouter.get('/contracts', (req, res) => res.json(ok(contracts.listAgreements({}).map(contractView))));
 
+// The platform records every agreement kind, including a State B (direct B↔S)
+// agreement. Recording is not participating: the platform never confirms
+// business results, and State B stays invisible to the DBC client.
+adminRouter.post('/contracts', (req, res) => {
+  const agreement = contracts.createAgreement({
+    kind: req.body && req.body.kind,
+    title: req.body && req.body.title,
+    b_organization_id: req.body && req.body.b_organization_id,
+    supplier_id: req.body && req.body.supplier_id,
+    dbc_organization_id: req.body && req.body.dbc_organization_id,
+    state: req.body && req.body.state || 'A',
+    is_demo: Boolean(req.body && req.body.is_demo)
+  }, actorOf(req));
+  res.status(201).json(ok(contractView(agreement)));
+});
+
 // Commission engine.
 adminRouter.get('/commission/rules', (req, res) => res.json(ok(contracts.listCommissionRules({}))));
 adminRouter.post('/commission/rules', (req, res) => {
