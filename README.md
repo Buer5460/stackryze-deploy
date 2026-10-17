@@ -11,6 +11,20 @@
 5. 合规前提下的教育金融转介/服务
 
 ## 当前版本
+**V3.0.0 — FULL MVP（2026-10-17）**
+
+五端统一平台：Admin / B（留学机构）/ C（学生·家长）/ S（六类供应商）/ DBC，共用一个数据模型、一套 S0–S10 状态机、一套合同与佣金体系、一套 AETHEL X 支付编排、一套审计体系。
+
+- 客户端入口见 **[FULL_MVP_CLIENT_LINKS.md](FULL_MVP_CLIENT_LINKS.md)**
+- 架构与硬规则落地见 **[FULL_MVP_ARCHITECTURE.md](FULL_MVP_ARCHITECTURE.md)** 与 **[FULL_MVP_STATE_MACHINES.md](FULL_MVP_STATE_MACHINES.md)**
+- 权限体系见 **[FULL_MVP_RBAC.md](FULL_MVP_RBAC.md)**，API 见 **[FULL_MVP_API.md](FULL_MVP_API.md)**，数据字典见 **[FULL_MVP_DATA_DICTIONARY.md](FULL_MVP_DATA_DICTIONARY.md)**
+- 验收与测试见 **[FULL_MVP_ACCEPTANCE.md](FULL_MVP_ACCEPTANCE.md)** / **[FULL_MVP_TEST_REPORT.md](FULL_MVP_TEST_REPORT.md)**（282 项断言全绿）
+- 变更历史见 **[FULL_MVP_CHANGELOG.md](FULL_MVP_CHANGELOG.md)**
+
+运行：`npm install && npm start`（默认 JSON 文件持久化；设置 `DATABASE_URL` 自动切换 PostgreSQL）。教育金融与保险功能默认关闭（合规边界）。
+
+---
+
 **V1.0.0 — 搜索体验、详情对比、真实数据导入与审核（已完成，2026-09-23）**
 
 V1.0 在 V0.5 之上新增：
@@ -49,9 +63,9 @@ V1.0 在 V0.5 之上新增：
 https://global-study-mobile-mvp.onrender.com
 
 ## 开发分支
-global-study-mvp
+global-study-mvp（部署分支）；功能开发在 `workbuddy/*` 子分支。
 
-不要修改 main；本项目的继续开发全部在 global-study-mvp 或其子分支进行。
+不要修改 main。
 
 ## 重要文档
 - docs/ROADMAP.md
