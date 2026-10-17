@@ -52,7 +52,7 @@ jobs:
       - name: API health smoke
         run: |
           curl -fsS http://127.0.0.1:3000/api/health | grep '"ok":true'
-          curl -fsS http://127.0.0.1:3000/api/health | grep '"version":"3.0.0"'
+          curl -fsS http://127.0.0.1:3000/api/health | grep '"version":"3.0.1"'
 
       - name: Public clients are reachable
         run: |

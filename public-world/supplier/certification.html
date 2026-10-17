@@ -8,9 +8,7 @@
 <link rel="stylesheet" href="/app.css">
 </head>
 <body>
-<div class="phone" id="app">
-  <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
-</div>
+<div class="phone" id="app"></div>
 <div class="drawer-mask" id="mask" onclick="GS.closeDrawer()"></div>
 <section class="drawer" id="drawer"><div class="handle"></div>
   <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="GS.closeDrawer()">关闭</button></div>
@@ -129,7 +127,7 @@ function renderBoardBox() {
     var items = byStage[code] || [];
     return '<div class="kanban-col"><h4>' + GS.esc(GS.stageLabel(code)) + '<span>' + items.length + '</span></h4>' +
       (items.length ? items.map(function (a) {
-        return '<div class="kanban-item" onclick="applicationDetail('' + GS.esc(a.id) + '')"><h5>' + GS.esc(a.title || a.id) + '</h5><p>' + GS.esc(GS.date(a.updated_at)) + '</p></div>';
+        return '<div class="kanban-item" onclick="applicationDetail(\'' + GS.esc(a.id) + '\')"><h5>' + GS.esc(a.title || a.id) + '</h5><p>' + GS.esc(GS.date(a.updated_at)) + '</p></div>';
       }).join('') : '<div class="muted">—</div>') + '</div>';
   }).join('') + '</div>';
 }
@@ -155,7 +153,7 @@ async function applicationDetail(id) {
       : GS.emptyState(zh ? '暂无待办' : 'No todos');
     var next = nextStage(a.current_stage);
     if (next) {
-      html += '<div class="form-actions"><button class="btn primary" onclick="advanceStage('' + GS.esc(a.id) + '','' + next + '')">' + GS.esc(zh ? '推进到 ' : 'Advance to ') + GS.esc(GS.stageLabel(next)) + '</button></div>';
+      html += '<div class="form-actions"><button class="btn primary" onclick="advanceStage(\'' + GS.esc(a.id) + '\',\'' + next + '\')">' + GS.esc(zh ? '推进到 ' : 'Advance to ') + GS.esc(GS.stageLabel(next)) + '</button></div>';
     }
     GS.openDrawer(zh ? '申请详情' : 'Application detail', html);
   } catch (e) { GS.openDrawer(GS.t('details'), GS.errorState(e.message)); }
@@ -184,7 +182,7 @@ function renderDocuments(main) {
       ? '<div class="rows">' + state.documents.map(function (d) {
           return '<div class="row-item"><div class="grow"><h4>' + GS.esc(d.type) + '</h4>' +
             '<div class="muted">' + GS.esc(d.file_name || '') + ' · ' + GS.esc(GS.date(d.created_at)) + '</div></div>' +
-            (d.status === 'b_confirmed' ? '<button class="btn soft" onclick="confirmDocument('' + GS.esc(d.id) + '')">' + GS.esc(zh ? 'S 确认' : 'S confirm') + '</button>' : GS.statusTag(d.status)) + '</div>';
+            (d.status === 'b_confirmed' ? '<button class="btn soft" onclick="confirmDocument(\'' + GS.esc(d.id) + '\')">' + GS.esc(zh ? 'S 确认' : 'S confirm') + '</button>' : GS.statusTag(d.status)) + '</div>';
         }).join('') + '</div>'
       : GS.emptyState(zh ? '暂无材料' : 'No documents')) +
     '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '材料确认顺序：C 上传 → B 确认 → S 确认。' : 'Confirmation order: C upload → B confirm → S confirm.') + '</div>' +
@@ -271,7 +269,7 @@ function renderAdmissions(main) {
       ? '<div class="rows">' + state.applications.map(function (a) {
           return '<div class="row-item"><div class="grow"><h4>' + GS.esc(a.title || a.id) + '</h4>' +
             '<div class="muted">' + GS.esc(a.admission_status || 'received') + '</div></div>' +
-            '<button class="btn soft" onclick="setAdmission('' + GS.esc(a.id) + '')">' + GS.esc(zh ? '更新' : 'Update') + '</button></div>';
+            '<button class="btn soft" onclick="setAdmission(\'' + GS.esc(a.id) + '\')">' + GS.esc(zh ? '更新' : 'Update') + '</button></div>';
         }).join('') + '</div>'
       : GS.emptyState(zh ? '暂无招生申请' : 'No admissions')) +
     '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '录取状态机：' : 'Admission workflow: ') + GS.esc(workflow.join(' → ')) + '</div>' +
@@ -283,7 +281,7 @@ async function setAdmission(appId) {
   var workflow = ['received', 'documents_review', 'additional_documents', 'interview_required', 'interview_scheduled', 'interview_complete', 'under_review', 'admitted', 'waitlisted', 'rejected', 'confirmed', 'deposit_paid', 'enrolled', 'withdrawn'];
   GS.openDrawer(zh ? '更新录取状态' : 'Update admission status',
     '<div class="rows">' + workflow.map(function (s) {
-      return '<div class="row-item" onclick="submitAdmission('' + GS.esc(appId) + '','' + s + '')"><div class="grow"><h4>' + GS.esc(s) + '</h4></div><span class="chip">›</span></div>';
+      return '<div class="row-item" onclick="submitAdmission(\'' + GS.esc(appId) + '\',\'' + s + '\')"><div class="grow"><h4>' + GS.esc(s) + '</h4></div><span class="chip">›</span></div>';
     }).join('') + '</div>');
 }
 

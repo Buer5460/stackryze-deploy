@@ -1,6 +1,6 @@
 {
   "name": "global-study-mobile-fullstack",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "private": true,
   "description": "AETHEL EDU / GlobalStudy — FULL MVP V3. Mobile-first S2B2C global school search, study-abroad collaboration and education services platform.",
   "main": "api-server.js",
@@ -8,9 +8,10 @@
     "start": "node api-server.js",
     "start:legacy": "node server.js",
     "start:public-legacy": "node server-public.js",
-    "test": "node tests/full-mvp-core.test.js && node tests/full-mvp-api.test.js && node tests/smoke.test.js && node tests/v1.test.js && node tests/v1.0.1.test.js && node tests/v1.1.test.js && node tests/public-mvp.test.js",
+    "test": "node tests/full-mvp-core.test.js && node tests/full-mvp-api.test.js && node tests/v3.0.1-stabilization.test.js && node tests/smoke.test.js && node tests/v1.test.js && node tests/v1.0.1.test.js && node tests/v1.1.test.js && node tests/public-mvp.test.js",
     "test:core": "node tests/full-mvp-core.test.js",
     "test:api": "node tests/full-mvp-api.test.js",
+    "test:stabilization": "node tests/v3.0.1-stabilization.test.js",
     "test:legacy": "node tests/smoke.test.js && node tests/v1.test.js && node tests/v1.0.1.test.js && node tests/v1.1.test.js && node tests/public-mvp.test.js"
   },
   "engines": {
