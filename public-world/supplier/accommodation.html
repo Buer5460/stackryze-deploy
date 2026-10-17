@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>GlobalStudy — 学生住宿</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="phone" id="app">
+  <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
+</div>
+<div class="drawer-mask" id="mask" onclick="GS.closeDrawer()"></div>
+<section class="drawer" id="drawer"><div class="handle"></div>
+  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="GS.closeDrawer()">关闭</button></div>
+  <div id="drawerBody"></div></section>
+
+<script src="/js/gs.js"></script>
+<script>
+// Supplier client — ACCOMMODATION. One shared supplier system, type-scoped.
+var API = '/api/s/accommodation';
+var TYPE = 'ACCOMMODATION';
+var TAB_NAMES = ['Home', 'Rooms', 'Bookings', 'Board', 'Money'];
+var tab = 'home';
+var me = null;
+var state = { applications: [], todos: [], documents: [], orders: [], rooms: [], bookings: [], commission: null, admissions: [], kanban: [] };
+
+function tabs() {
+  var zh = GS.lang === 'zh';
+  return [
+    { key: 'Home', icon: '⌂', label: zh ? '工作台' : 'Home' },
+    { key: 'Rooms', icon: '🛏️', label: zh ? '房间' : 'Rooms' },
+    { key: 'Bookings', icon: '📅', label: zh ? '预订' : 'Bookings' },
+    { key: 'Board', icon: '▦', label: zh ? '看板' : 'Board' },
+    { key: 'Money', icon: '¥', label: zh ? '佣金' : 'Money' }
+  ];
+}
+
+function renderShell() {
+  var zh = GS.lang === 'zh';
+  var items = tabs();
+  var active = items.filter(function (i) { return i.key.toLowerCase() === tab; })[0] || items[0];
+  document.getElementById('app').innerHTML = GS.shell({
+    title: 'GlobalStudy',
+    subtitle: zh ? '学生住宿' : 'Accommodation',
+    eyebrow: zh ? 'ACCOMMODATION · 在线演示' : 'ACCOMMODATION · LIVE DEMO',
+    headline: zh ? '学生住宿' : 'Accommodation',
+    lead: zh ? '房型 / 房间 / 床位库存、预订、入住与退宿。' : 'Room types, rooms, bed inventory, bookings, check-in and check-out.',
+    tabs: items.map(function (i) { return { key: i.key, label: i.label, icon: i.icon, active: i.key.toLowerCase() === tab }; })
+  });
+  renderTab(tab);
+}
+
+window.renderTab = function (name) {
+  tab = name;
+  var main = document.getElementById('main');
+  if (!main) return;
+  try {
+    if (name === 'home') renderHome(main);
+    else if (name === 'board') renderBoard(main);
+    else if (name === 'documents') renderDocuments(main);
+    else if (name === 'money') renderMoney(main);
+    else if (name === 'orders') renderOrders(main);
+    else if (name === 'admissions') renderAdmissions(main);
+    else if (name === 'rooms') renderRooms(main);
+    else if (name === 'bookings') renderBookings(main);
+    else main.innerHTML = '<section class="section">' + GS.emptyState(GS.t('none')) + '</section>';
+  } catch (e) { main.innerHTML = GS.errorState(e.message); }
+};
+
+function renderHome(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' + GS.metrics([
+    [zh ? '申请' : 'Applications', state.applications.length],
+    [zh ? '待办' : 'Todos', state.todos.filter(function (t) { return t.status !== 'done'; }).length],
+    [zh ? '材料' : 'Documents', state.documents.length],
+    [zh ? '佣金记录' : 'Commission', (state.commission && state.commission.ledger ? state.commission.ledger.length : 0)]
+  ]) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '供应商档案' : 'Supplier profile') + '</h2></div><div id="profileBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '每日简报' : 'Daily brief') + '</h2></div><div id="briefBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    '<div style="margin-top:12px">' + GS.sandboxNote() + '</div>' +
+    '</section>';
+  loadProfile();
+  loadBrief();
+}
+
+async function loadProfile() {
+  try {
+    var r = await GS.get(API + '/me');
+    var box = document.getElementById('profileBox');
+    if (!box) return;
+    var s = r.data.supplier;
+    var zh = GS.lang === 'zh';
+    box.innerHTML = GS.card('<div class="row"><div><h4>' + GS.esc(GS.label(s.name)) + '</h4>' +
+      '<div class="muted">' + GS.esc(s.type) + ' · ' + GS.esc(GS.label(s.name_en)) + '</div></div>' + GS.statusTag(s.verification) + '</div>' +
+      (s.source_url ? '<div class="muted" style="margin-top:6px">' + GS.esc(zh ? '来源：' : 'Source: ') + GS.esc(s.source_url) + '</div>' : ''));
+  } catch (_) { /* ignore */ }
+}
+
+async function loadBrief() {
+  try {
+    var r = await GS.get(API + '/brief');
+    var box = document.getElementById('briefBox');
+    if (!box) return;
+    var b = r.data;
+    box.innerHTML = GS.card('<div class="split">' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '待办' : 'Todos') + '</small><b>' + GS.esc((b.today_todos || []).length) + '</b></div>' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '临近截止' : 'Deadlines') + '</small><b>' + GS.esc((b.upcoming_deadlines || []).length) + '</b></div>' +
+      '<div><small>' + GS.esc(GS.lang === 'zh' ? '状态更新' : 'Updates') + '</small><b>' + GS.esc((b.status_updates || []).length) + '</b></div>' +
+      '</div>');
+  } catch (_) { /* ignore */ }
+}
+
+function renderBoard(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' + GS.sectionHead(zh ? 'S0–S10 看板' : 'S0–S10 board', state.applications.length + '') +
+    '<div id="boardBox">' + GS.emptyState(GS.t('loading')) + '</div></section>';
+  renderBoardBox();
+}
+
+function renderBoardBox() {
+  var box = document.getElementById('boardBox');
+  if (!box) return;
+  var zh = GS.lang === 'zh';
+  if (!state.applications.length) { box.innerHTML = GS.emptyState(zh ? '暂无申请' : 'No applications'); return; }
+  var byStage = {};
+  state.applications.forEach(function (a) { (byStage[a.current_stage] = byStage[a.current_stage] || []).push(a); });
+  box.innerHTML = '<div class="kanban">' + ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10'].map(function (code) {
+    var items = byStage[code] || [];
+    return '<div class="kanban-col"><h4>' + GS.esc(GS.stageLabel(code)) + '<span>' + items.length + '</span></h4>' +
+      (items.length ? items.map(function (a) {
+        return '<div class="kanban-item" onclick="applicationDetail('' + GS.esc(a.id) + '')"><h5>' + GS.esc(a.title || a.id) + '</h5><p>' + GS.esc(GS.date(a.updated_at)) + '</p></div>';
+      }).join('') : '<div class="muted">—</div>') + '</div>';
+  }).join('') + '</div>';
+}
+
+async function applicationDetail(id) {
+  var zh = GS.lang === 'zh';
+  GS.openDrawer(zh ? '申请详情' : 'Application detail', GS.emptyState(GS.t('loading')));
+  try {
+    var r = await GS.get(API + '/applications');
+    var a = (r.data || []).filter(function (x) { return x.id === id; })[0];
+    if (!a) { GS.openDrawer(GS.t('details'), GS.errorState(zh ? '申请不存在' : 'Application not found')); return; }
+    var html = '<div class="stage-strip">' + (a.stages || []).map(function (s) {
+      var cls = 'stage-pill';
+      if (s.code === a.current_stage) cls += ' current';
+      else if (s.status === 'completed') cls += ' done';
+      return '<span class="' + cls + '">' + GS.esc(GS.stageLabel(s.code)) + '</span>';
+    }).join('') + '</div>';
+    html += '<div class="section-head"><h3>' + GS.esc(zh ? '待办' : 'Todos') + '</h3></div>';
+    html += (a.todos || []).length
+      ? '<div class="rows">' + a.todos.map(function (t) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(t.title) + '</h4><div class="muted">' + GS.esc(t.stage || '') + '</div></div>' + GS.statusTag(t.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无待办' : 'No todos');
+    var next = nextStage(a.current_stage);
+    if (next) {
+      html += '<div class="form-actions"><button class="btn primary" onclick="advanceStage('' + GS.esc(a.id) + '','' + next + '')">' + GS.esc(zh ? '推进到 ' : 'Advance to ') + GS.esc(GS.stageLabel(next)) + '</button></div>';
+    }
+    GS.openDrawer(zh ? '申请详情' : 'Application detail', html);
+  } catch (e) { GS.openDrawer(GS.t('details'), GS.errorState(e.message)); }
+}
+
+function nextStage(code) {
+  var codes = ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10'];
+  var i = codes.indexOf(code);
+  return (i >= 0 && i < codes.length - 1) ? codes[i + 1] : null;
+}
+
+async function advanceStage(appId, target) {
+  try {
+    await GS.post(API + '/applications/' + encodeURIComponent(appId) + '/transition', { target: target });
+    alert(GS.lang === 'zh' ? '已推进到 ' + target : 'Advanced to ' + target);
+    await refresh();
+    GS.closeDrawer();
+  } catch (e) { alert((e.payload && e.payload.blocking ? e.payload.blocking.join(', ') + ' — ' : '') + e.message); }
+}
+
+function renderDocuments(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '材料确认' : 'Document confirmation', state.documents.length + '') +
+    (state.documents.length
+      ? '<div class="rows">' + state.documents.map(function (d) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(d.type) + '</h4>' +
+            '<div class="muted">' + GS.esc(d.file_name || '') + ' · ' + GS.esc(GS.date(d.created_at)) + '</div></div>' +
+            (d.status === 'b_confirmed' ? '<button class="btn soft" onclick="confirmDocument('' + GS.esc(d.id) + '')">' + GS.esc(zh ? 'S 确认' : 'S confirm') + '</button>' : GS.statusTag(d.status)) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无材料' : 'No documents')) +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '材料确认顺序：C 上传 → B 确认 → S 确认。' : 'Confirmation order: C upload → B confirm → S confirm.') + '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '家庭材料库（授权后可读）' : 'Family library (read after authorization)') + '</h2></div>' +
+    '<div id="familyBox">' + GS.emptyState(GS.t('loading')) + '</div>' +
+    '</section>';
+  loadFamily();
+}
+
+async function confirmDocument(id) {
+  try {
+    await GS.post(API + '/documents/' + encodeURIComponent(id) + '/confirm', {});
+    alert(GS.lang === 'zh' ? '已确认。' : 'Confirmed.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+async function loadFamily() {
+  try {
+    var r = await GS.get(API + '/family-documents');
+    var box = document.getElementById('familyBox');
+    if (!box) return;
+    var zh = GS.lang === 'zh';
+    var pending = r.data.pending_authorization || [];
+    var authorized = r.data.authorized || [];
+    box.innerHTML = (authorized.length
+      ? '<div class="rows">' + authorized.map(function (d) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(d.type) + '</h4><div class="muted">' + GS.esc(d.file_name || '') + '</div></div>' + GS.statusTag(d.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无已授权材料' : 'No authorized documents')) +
+      (pending.length ? '<div class="notice" style="margin-top:9px">' + GS.esc(zh ? '有 ' + pending.length + ' 份材料等待学生授权。' : pending.length + ' document(s) await student authorization.') + '</div>' : '');
+  } catch (_) { /* ignore */ }
+}
+
+function renderMoney(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '佣金规则' : 'Commission rules', ((state.commission && state.commission.rules) || []).length + '') +
+    ((state.commission && state.commission.rules && state.commission.rules.length)
+      ? '<div class="rows">' + state.commission.rules.map(function (r) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(r.mode) + '</h4><div class="muted">' + GS.esc(GS.money(r.value, r.currency)) + ' · ' + GS.esc(r.trigger_event) + '</div></div>' +
+            (r.is_demo ? '<span class="status demo">DEMO</span>' : '<span class="status good">REAL</span>') + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无佣金规则' : 'No commission rules')) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '佣金台账' : 'Commission ledger') + '</h2><span>' + ((state.commission && state.commission.ledger) || []).length + '</span></div>' +
+    ((state.commission && state.commission.ledger && state.commission.ledger.length)
+      ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(GS.t('amount')) + '</th><th>' + GS.esc(zh ? '触发' : 'Trigger') + '</th><th>' + GS.esc(GS.t('status')) + '</th></tr></thead><tbody>' +
+        state.commission.ledger.map(function (e) {
+          return '<tr><td><b>' + GS.esc(GS.money(e.amount, e.currency)) + '</b></td><td>' + GS.esc(e.trigger_event) + '</td><td>' + GS.statusTag(e.status) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : GS.emptyState(zh ? '暂无佣金记录' : 'No commission records')) +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '演示规则仅用于验证计算逻辑，不代表真实商业条款。' : 'Demo rules validate the calculation logic only; they are not real commercial terms.') + '</div>' +
+    '</section>';
+}
+
+function renderOrders(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '委托单' : 'Orders', state.orders.length + '') +
+    (state.orders.length
+      ? '<div class="rows">' + state.orders.map(function (o) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(o.visa_type || o.certification_type || o.medical_service_id || o.id) + '</h4>' +
+            '<div class="muted">' + GS.esc(GS.date(o.created_at)) + '</div></div>' + GS.statusTag(o.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无委托单' : 'No orders')) +
+    '<div class="form-actions"><button class="btn primary" onclick="newOrder()">' + GS.esc(zh ? '新建委托' : 'New order') + '</button></div>' +
+    '</section>';
+}
+
+async function newOrder() {
+  try {
+    await GS.post(API + '/orders', {});
+    alert(GS.lang === 'zh' ? '委托已创建。' : 'Order created.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function renderAdmissions(main) {
+  var zh = GS.lang === 'zh';
+  var workflow = ['received', 'documents_review', 'additional_documents', 'interview_required', 'interview_scheduled', 'interview_complete', 'under_review', 'admitted', 'waitlisted', 'rejected', 'confirmed', 'deposit_paid', 'enrolled', 'withdrawn'];
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '招生申请' : 'Admissions', state.applications.length + '') +
+    (state.applications.length
+      ? '<div class="rows">' + state.applications.map(function (a) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(a.title || a.id) + '</h4>' +
+            '<div class="muted">' + GS.esc(a.admission_status || 'received') + '</div></div>' +
+            '<button class="btn soft" onclick="setAdmission('' + GS.esc(a.id) + '')">' + GS.esc(zh ? '更新' : 'Update') + '</button></div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无招生申请' : 'No admissions')) +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '录取状态机：' : 'Admission workflow: ') + GS.esc(workflow.join(' → ')) + '</div>' +
+    '</section>';
+}
+
+async function setAdmission(appId) {
+  var zh = GS.lang === 'zh';
+  var workflow = ['received', 'documents_review', 'additional_documents', 'interview_required', 'interview_scheduled', 'interview_complete', 'under_review', 'admitted', 'waitlisted', 'rejected', 'confirmed', 'deposit_paid', 'enrolled', 'withdrawn'];
+  GS.openDrawer(zh ? '更新录取状态' : 'Update admission status',
+    '<div class="rows">' + workflow.map(function (s) {
+      return '<div class="row-item" onclick="submitAdmission('' + GS.esc(appId) + '','' + s + '')"><div class="grow"><h4>' + GS.esc(s) + '</h4></div><span class="chip">›</span></div>';
+    }).join('') + '</div>');
+}
+
+async function submitAdmission(appId, status) {
+  try {
+    await GS.put(API + '/admissions/' + encodeURIComponent(appId), { status: status });
+    GS.closeDrawer();
+    alert(GS.lang === 'zh' ? '已更新为 ' + status : 'Updated to ' + status);
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function renderRooms(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '房间与床位' : 'Rooms & beds', state.rooms.length + '') +
+    (state.rooms.length
+      ? '<div class="rows">' + state.rooms.map(function (r) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(r.name || r.id) + '</h4>' +
+            '<div class="muted">' + GS.esc(r.room_type) + ' · ' + GS.esc(zh ? '可用 ' : 'Available ') + GS.esc(r.beds_available) + ' / ' + GS.esc(r.beds_total) + '</div></div>' +
+            '<span class="status blue">' + GS.esc(GS.money(r.price, r.currency)) + '</span></div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无房间' : 'No rooms')) +
+    '<div class="form-actions"><button class="btn primary" onclick="newRoom()">' + GS.esc(zh ? '新建房间' : 'New room') + '</button></div>' +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '不变式：可用床位 = 总床位 − 已占用床位，永不为负。' : 'Invariant: available beds = total beds − occupied beds, never negative.') + '</div>' +
+    '</section>';
+}
+
+async function newRoom() {
+  try {
+    await GS.post(API + '/rooms', { name: 'Room ' + Date.now().toString().slice(-4), room_type: 'double', beds_total: 2 });
+    alert(GS.lang === 'zh' ? '房间已创建。' : 'Room created.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function renderBookings(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '预订记录' : 'Bookings', state.bookings.length + '') +
+    (state.bookings.length
+      ? '<div class="rows">' + state.bookings.map(function (b) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(b.room_id || b.id) + '</h4>' +
+            '<div class="muted">' + GS.esc(GS.date(b.created_at)) + '</div></div>' + GS.statusTag(b.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无预订' : 'No bookings')) +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '状态流转：预留 → 入住 → 退宿 / 续期 / 取消；床位库存随状态自动更新。' : 'Flow: reserved → checked in → checked out / renewed / cancelled; bed inventory updates automatically.') + '</div>' +
+    '</section>';
+}
+
+async function refresh() {
+  try {
+    var calls = [
+      GS.get(API + '/me').catch(function () { return { data: null }; }),
+      GS.get(API + '/applications').catch(function () { return { data: [] }; }),
+      GS.get(API + '/todos').catch(function () { return { data: [] }; }),
+      GS.get(API + '/commission').catch(function () { return { data: {} }; })
+    ];
+    if (TAB_NAMES.indexOf('Documents') >= 0) calls.push(GS.get(API + '/documents').catch(function () { return { data: [] }; }));
+    if (TAB_NAMES.indexOf('Orders') >= 0) calls.push(GS.get(API + '/orders').catch(function () { return { data: [] }; }));
+    if (TAB_NAMES.indexOf('Rooms') >= 0) calls.push(GS.get(API + '/rooms').catch(function () { return { data: [] }; }));
+    if (TAB_NAMES.indexOf('Bookings') >= 0) calls.push(GS.get(API + '/bookings').catch(function () { return { data: [] }; }));
+    var results = await Promise.all(calls);
+    me = results[0].data;
+    state.applications = results[1].data || [];
+    state.todos = results[2].data || [];
+    state.commission = results[3].data || {};
+    var idx = 4;
+    if (TAB_NAMES.indexOf('Documents') >= 0) state.documents = results[idx++].data || [];
+    if (TAB_NAMES.indexOf('Orders') >= 0) state.orders = results[idx++].data || [];
+    if (TAB_NAMES.indexOf('Rooms') >= 0) state.rooms = results[idx++].data || [];
+    if (TAB_NAMES.indexOf('Bookings') >= 0) state.bookings = results[idx++].data || [];
+  } catch (e) {
+    if (e.status === 401) { GS.clearSession(); return showLogin(); }
+  }
+  renderShell();
+  if (tab === 'board') renderBoardBox();
+}
+
+function showLogin() {
+  document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel([]) + '</div>';
+  GS.get('/api/auth/demo-accounts').then(function (r) {
+    document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel(r.data) + '</div>';
+    GS.bindLogin();
+  }).catch(function () { GS.bindLogin(); });
+}
+
+window.onLangChange = function () { renderShell(); };
+
+(async function boot() {
+  if (GS.requireAuth()) { showLogin(); return; }
+  await refresh();
+})();
+</script>
+</body>
+</html>

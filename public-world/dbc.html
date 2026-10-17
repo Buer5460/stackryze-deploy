@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>GlobalStudy — DBC 招生牌照</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="phone" id="app">
+  <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
+</div>
+<div class="drawer-mask" id="mask" onclick="GS.closeDrawer()"></div>
+<section class="drawer" id="drawer"><div class="handle"></div>
+  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="GS.closeDrawer()">关闭</button></div>
+  <div id="drawerBody"></div></section>
+
+<script src="/js/gs.js"></script>
+<script>
+var API = '/api/dbc';
+var TAB_NAMES = ['Home', 'Suppliers', 'Agreements', 'Admissions', 'Money'];
+var tab = 'home';
+var me = null;
+var state = { suppliers: [], agreements: [], applications: [], students: [], settlements: [], todos: [] };
+
+function tabs() {
+  var zh = GS.lang === 'zh';
+  return [
+    { key: 'Home', icon: '⌂', label: zh ? '工作台' : 'Home' },
+    { key: 'Suppliers', icon: '🏫', label: zh ? '供应商' : 'Suppliers' },
+    { key: 'Agreements', icon: '📄', label: zh ? '协议' : 'Agreements' },
+    { key: 'Admissions', icon: '▤', label: zh ? '招生' : 'Admissions' },
+    { key: 'Money', icon: '¥', label: zh ? '结算' : 'Money' }
+  ];
+}
+
+function renderShell() {
+  var zh = GS.lang === 'zh';
+  var items = tabs();
+  var active = items.filter(function (i) { return i.key.toLowerCase() === tab; })[0] || items[0];
+  var hero = {
+    Home: { eyebrow: zh ? 'DBC · 状态 A' : 'DBC · STATE A', title: zh ? '工作台' : 'Dashboard', lead: zh ? 'DBC 只参与状态 A：S → DBC → AETHEL X → B。' : 'DBC participates in State A only: S → DBC → AETHEL X → B.' },
+    Suppliers: { eyebrow: zh ? '供应商' : 'SUPPLIERS', title: zh ? 'S 管理' : 'Supplier management', lead: zh ? '仅显示与 DBC 有状态 A 协议的供应商。' : 'Only suppliers with a State A agreement are listed.' },
+    Agreements: { eyebrow: zh ? '协议' : 'AGREEMENTS', title: zh ? 'S / B 协议' : 'S / B agreements', lead: zh ? '状态 B（B 与 S 直接合作）完全不可见、不可结算。' : 'State B (direct B↔S) is completely invisible and cannot be settled.' },
+    Admissions: { eyebrow: zh ? '招生' : 'ADMISSIONS', title: zh ? '招生申请' : 'Admissions', lead: zh ? 'S0–S10 状态机下的状态 A 申请。' : 'State A applications on the S0–S10 machine.' },
+    Money: { eyebrow: zh ? '结算' : 'MONEY', title: zh ? '结算与对账' : 'Settlement & reconciliation', lead: zh ? 'DBC 不持有平台资金，不参与 B 净佣金分成。' : 'DBC holds no platform funds and takes no share of the B net commission.' }
+  }[active.key] || {};
+
+  document.getElementById('app').innerHTML = GS.shell({
+    title: 'GlobalStudy',
+    subtitle: zh ? 'DBC 招生牌照' : 'DBC',
+    eyebrow: hero.eyebrow, headline: hero.title, lead: hero.lead,
+    tabs: items.map(function (i) { return { key: i.key, label: i.label, icon: i.icon, active: i.key.toLowerCase() === tab }; })
+  });
+  renderTab(tab);
+}
+
+window.renderTab = function (name) {
+  tab = name;
+  var main = document.getElementById('main');
+  if (!main) return;
+  try {
+    if (name === 'home') renderHome(main);
+    else if (name === 'suppliers') renderSuppliers(main);
+    else if (name === 'agreements') renderAgreements(main);
+    else if (name === 'admissions') renderAdmissions(main);
+    else renderMoney(main);
+  } catch (e) { main.innerHTML = GS.errorState(e.message); }
+};
+
+function renderHome(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' + GS.metrics([
+    [zh ? '供应商' : 'Suppliers', state.suppliers.length],
+    [zh ? '协议' : 'Agreements', state.agreements.length],
+    [zh ? '申请' : 'Applications', state.applications.length],
+    [zh ? '结算单' : 'Settlements', state.settlements.length]
+  ]) +
+    '<div class="banner info">' + GS.esc(zh
+      ? '状态 A 链路：S → DBC → AETHEL X → B。DBC 不持有平台资金，不参与 B 净佣金分成。'
+      : 'State A chain: S → DBC → AETHEL X → B. DBC holds no platform funds and takes no share of the B net commission.') + '</div>' +
+    '<div class="banner warn">' + GS.esc(zh
+      ? '状态 B（B 与 S 直接合作）：DBC 不能参与、不能查看、不能结算。'
+      : 'State B (direct B↔S): DBC cannot participate, view or settle.') + '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? 'DBC 资料' : 'DBC profile') + '</h2></div><div id="profileBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '每日简报' : 'Daily brief') + '</h2></div><div id="briefBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    '</section>';
+  loadProfile();
+  loadBrief();
+}
+
+async function loadProfile() {
+  try {
+    var r = await GS.get(API + '/me');
+    var box = document.getElementById('profileBox');
+    if (!box) return;
+    var o = r.data.organization || {};
+    var p = r.data.profile || {};
+    box.innerHTML = GS.card('<div class="row"><div><h4>' + GS.esc(GS.label(o.name)) + '</h4>' +
+      '<div class="muted">' + GS.esc(zh2() ? '牌照 ' : 'Licence ') + GS.esc(p.licence_number || '—') + '</div></div>' + GS.statusTag(p.licence_status) + '</div>' +
+      '<div class="split"><div><small>' + GS.esc(zh2() ? '仅状态 A' : 'State A only') + '</small><b>' + GS.esc(p.state_a_only ? GS.t('yes') : GS.t('no')) + '</b></div>' +
+      '<div><small>' + GS.esc(zh2() ? '协议文件' : 'Agreement files') + '</small><b>' + GS.esc((p.agreement_files || []).length) + '</b></div></div>');
+  } catch (_) { /* ignore */ }
+}
+
+function zh2() { return GS.lang === 'zh'; }
+
+async function loadBrief() {
+  try {
+    var r = await GS.get(API + '/brief');
+    var box = document.getElementById('briefBox');
+    if (!box) return;
+    var b = r.data;
+    box.innerHTML = GS.card('<div class="split">' +
+      '<div><small>' + GS.esc(zh2() ? '待办' : 'Todos') + '</small><b>' + GS.esc((b.today_todos || []).length) + '</b></div>' +
+      '<div><small>' + GS.esc(zh2() ? '临近截止' : 'Deadlines') + '</small><b>' + GS.esc((b.upcoming_deadlines || []).length) + '</b></div>' +
+      '<div><small>' + GS.esc(zh2() ? '材料缺失' : 'Missing docs') + '</small><b>' + GS.esc((b.missing_documents || []).length) + '</b></div>' +
+      '</div>');
+  } catch (_) { /* ignore */ }
+}
+
+function renderSuppliers(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    '<div class="banner info">' + GS.esc(zh ? '仅显示状态 A 供应商。' : 'State A suppliers only.') + '</div>' +
+    GS.sectionHead(zh ? 'S 管理' : 'Suppliers', state.suppliers.length + '') +
+    (state.suppliers.length
+      ? '<div class="rows">' + state.suppliers.map(function (s) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.label(s.name)) + '</h4>' +
+            '<div class="muted">' + GS.esc(s.type) + '</div></div>' + GS.statusTag(s.verification) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无状态 A 供应商' : 'No State A suppliers')) +
+    '</section>';
+}
+
+function renderAgreements(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    '<div class="banner warn">' + GS.esc(zh ? '状态 B 协议在本端完全不可见。' : 'State B agreements are completely invisible here.') + '</div>' +
+    GS.sectionHead(zh ? 'DBC-S 协议（状态 A）' : 'DBC-S agreements (State A)', state.agreements.length + '') +
+    (state.agreements.length
+      ? '<div class="rows">' + state.agreements.map(function (a) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(a.title) + '</h4>' +
+            '<div class="muted">' + GS.esc(a.kind) + ' · ' + GS.esc(GS.date(a.created_at)) + '</div></div>' + GS.statusTag(a.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无协议' : 'No agreements')) +
+    '<div class="form-actions"><button class="btn primary" onclick="newAgreement()">' + GS.esc(zh ? '新建 DBC-S 协议' : 'New DBC-S agreement') + '</button></div>' +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '新建协议固定为状态 A；本端无法创建或查看状态 B 协议。' : 'New agreements are always State A; this client cannot create or view State B agreements.') + '</div>' +
+    '</section>';
+}
+
+async function newAgreement() {
+  try {
+    var suppliers = state.suppliers.length ? state.suppliers : [];
+    if (!suppliers.length) { alert(GS.lang === 'zh' ? '请先绑定状态 A 供应商。' : 'Bind a State A supplier first.'); return; }
+    await GS.post(API + '/agreements', { supplier_id: suppliers[0].id });
+    alert(GS.lang === 'zh' ? '协议已创建（状态 A）。' : 'Agreement created (State A).');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function renderAdmissions(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    GS.sectionHead(zh ? '状态 A 申请' : 'State A applications', state.applications.length + '') +
+    (state.applications.length
+      ? '<div class="kanban">' + ['S0', 'S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9', 'S10'].map(function (code) {
+          var items = state.applications.filter(function (a) { return a.current_stage === code; });
+          return '<div class="kanban-col"><h4>' + GS.esc(GS.stageLabel(code)) + '<span>' + items.length + '</span></h4>' +
+            (items.length ? items.map(function (a) {
+              return '<div class="kanban-item"><h5>' + GS.esc(a.title || a.id) + '</h5><p>' + GS.esc(GS.date(a.updated_at)) + '</p></div>';
+            }).join('') : '<div class="muted">—</div>') + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无状态 A 申请' : 'No State A applications')) +
+    GS.sectionHead(zh ? '授权学生' : 'Authorised students', '') +
+    (state.students.length
+      ? '<div class="rows">' + state.students.map(function (c) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.label(c.name || c.name_en) || '—') + '</h4>' +
+            '<div class="muted">' + GS.esc((c.target_countries || []).join('/')) + '</div></div>' + GS.statusTag(c.binding_state) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无学生' : 'No students')) +
+    '</section>';
+}
+
+function renderMoney(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    '<div class="banner info">' + GS.esc(zh ? 'DBC 不持有平台资金，不参与 B 净佣金分成。' : 'DBC holds no platform funds and takes no share of the B net commission.') + '</div>' +
+    GS.sectionHead(zh ? '状态 A 结算单' : 'State A settlements', state.settlements.length + '') +
+    (state.settlements.length
+      ? '<div class="rows">' + state.settlements.map(function (s) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.money(s.total_amount, s.currency)) + '</h4>' +
+            '<div class="muted">' + GS.esc(zh ? '到期 ' : 'Due ') + GS.esc(GS.date(s.due_date)) + '</div></div>' + GS.statusTag(s.status) + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无结算单' : 'No settlements')) +
+    '</section>';
+}
+
+async function refresh() {
+  try {
+    var results = await Promise.all([
+      GS.get(API + '/me').catch(function () { return { data: null }; }),
+      GS.get(API + '/suppliers').catch(function () { return { data: [] }; }),
+      GS.get(API + '/agreements').catch(function () { return { data: [] }; }),
+      GS.get(API + '/applications').catch(function () { return { data: [] }; }),
+      GS.get(API + '/students').catch(function () { return { data: [] }; }),
+      GS.get(API + '/settlements').catch(function () { return { data: [] }; })
+    ]);
+    me = results[0].data;
+    state.suppliers = results[1].data || [];
+    state.agreements = results[2].data || [];
+    state.applications = results[3].data || [];
+    state.students = results[4].data || [];
+    state.settlements = results[5].data || [];
+  } catch (e) {
+    if (e.status === 401) { GS.clearSession(); return showLogin(); }
+  }
+  renderShell();
+}
+
+function showLogin() {
+  document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel([]) + '</div>';
+  GS.get('/api/auth/demo-accounts').then(function (r) {
+    document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel(r.data) + '</div>';
+    GS.bindLogin();
+  }).catch(function () { GS.bindLogin(); });
+}
+
+window.onLangChange = function () { renderShell(); };
+
+(async function boot() {
+  if (GS.requireAuth()) { showLogin(); return; }
+  await refresh();
+})();
+</script>
+</body>
+</html>

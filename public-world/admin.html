@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>GlobalStudy — 平台管理端</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="phone" id="app">
+  <noscript><header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>GlobalStudy</small></div></a><div class="header-actions"><span class="lang-btn">English</span><a class="pill" href="/">切换客户端</a></div></header><main class="section"><div class="notice">请启用 JavaScript 以使用本客户端 / Please enable JavaScript.</div></main><footer class="footer">GlobalStudy · 由安世达教育提供核心动力<span class="footer-powered">Powered by Aethel Edu</span></footer></noscript>
+</div>
+<div class="drawer-mask" id="mask" onclick="GS.closeDrawer()"></div>
+<section class="drawer" id="drawer"><div class="handle"></div>
+  <div class="drawer-head"><b id="drawerTitle">详情</b><button id="drawerClose" onclick="GS.closeDrawer()">关闭</button></div>
+  <div id="drawerBody"></div></section>
+
+<script src="/js/gs.js"></script>
+<script>
+var API = '/api/admin';
+var TAB_NAMES = ['Home', 'Users', 'Verify', 'Rec', 'Money', 'System'];
+var tab = 'home';
+var state = { dashboard: null, users: [], verifications: null, pool: [], ledger: [], settlements: [], config: null, audit: [] };
+
+function tabs() {
+  var zh = GS.lang === 'zh';
+  return [
+    { key: 'Home', icon: '⌂', label: zh ? '总览' : 'Home' },
+    { key: 'Users', icon: '👥', label: zh ? '用户' : 'Users' },
+    { key: 'Verify', icon: '✓', label: zh ? '审核' : 'Verify' },
+    { key: 'Rec', icon: '⚖️', label: zh ? '推荐' : 'Rec' },
+    { key: 'Money', icon: '¥', label: zh ? '资金' : 'Money' },
+    { key: 'System', icon: '⚙️', label: zh ? '系统' : 'System' }
+  ];
+}
+
+function renderShell() {
+  var zh = GS.lang === 'zh';
+  var items = tabs();
+  var active = items.filter(function (i) { return i.key.toLowerCase() === tab; })[0] || items[0];
+  var hero = {
+    Home: { eyebrow: zh ? '平台管理端 · 需登录' : 'PLATFORM ADMIN · LOGIN REQUIRED', title: zh ? '总览' : 'Overview', lead: zh ? '统一用户、审核、推荐、合同、佣金、支付编排与审计。' : 'Unified users, verification, recommendation, contracts, commission, payment orchestration and audit.' },
+    Users: { eyebrow: zh ? '用户管理' : 'USERS', title: zh ? '统一用户管理' : 'Unified user management', lead: zh ? 'Admin / B / C / S / DBC 五端统一档案。' : 'One profile system across Admin / B / C / S / DBC.' },
+    Verify: { eyebrow: zh ? '认证审核' : 'VERIFICATION', title: zh ? '认证与 KYC/KYB' : 'Verification & KYC/KYB', lead: zh ? 'B / S / DBC 统一审核队列。' : 'A single queue for B / S / DBC.' },
+    Rec: { eyebrow: zh ? '推荐引擎' : 'RECOMMENDATION', title: zh ? '推荐池与权重' : 'Pool & weights', lead: zh ? 'Level 1/2 准入、权重配置、公平轮换与推荐日志。' : 'Level 1/2 admission, weights, fair rotation and recommendation logs.' },
+    Money: { eyebrow: zh ? '资金' : 'MONEY', title: zh ? '支付与结算' : 'Payments & settlement', lead: zh ? 'AETHEL X 编排、佣金台账与结算单。' : 'AETHEL X orchestration, commission ledger and settlements.' },
+    System: { eyebrow: zh ? '系统' : 'SYSTEM', title: zh ? '系统配置' : 'System config', lead: zh ? '全部策略后台可配置，不写死在代码里。' : 'Every policy is configurable in the backend, never hard-coded.' }
+  }[active.key] || {};
+
+  document.getElementById('app').innerHTML = GS.shell({
+    title: 'GlobalStudy',
+    subtitle: zh ? '平台管理端' : 'Platform Admin',
+    eyebrow: hero.eyebrow, headline: hero.title, lead: hero.lead,
+    tabs: items.map(function (i) { return { key: i.key, label: i.label, icon: i.icon, active: i.key.toLowerCase() === tab }; })
+  });
+  renderTab(tab);
+}
+
+window.renderTab = function (name) {
+  tab = name;
+  var main = document.getElementById('main');
+  if (!main) return;
+  try {
+    if (name === 'home') renderHome(main);
+    else if (name === 'users') renderUsers(main);
+    else if (name === 'verify') renderVerify(main);
+    else if (name === 'rec') renderRec(main);
+    else if (name === 'money') renderMoney(main);
+    else renderSystem(main);
+  } catch (e) { main.innerHTML = GS.errorState(e.message); }
+};
+
+function renderHome(main) {
+  var zh = GS.lang === 'zh';
+  var d = state.dashboard || {};
+  var counts = d.counts || {};
+  main.innerHTML = '<section class="section">' + GS.metrics([
+    [zh ? '用户' : 'Users', counts.users || 0],
+    [zh ? '机构' : 'Organizations', counts.organizations || 0],
+    [zh ? '供应商' : 'Suppliers', counts.suppliers || 0],
+    [zh ? '申请' : 'Applications', counts.applications || 0],
+    [zh ? '绑定' : 'Bindings', counts.bindings || 0],
+    [zh ? '支付' : 'Payments', counts.payment_intents || 0]
+  ]) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '申请阶段分布' : 'Applications by stage') + '</h2></div>' +
+    '<div class="chips">' + Object.keys(d.applications_by_stage || {}).map(function (code) {
+      return '<span class="chip' + (d.applications_by_stage[code] ? ' blue' : '') + '">' + GS.esc(GS.stageLabel(code)) + ' ' + GS.esc(d.applications_by_stage[code]) + '</span>';
+    }).join('') + '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '持久化' : 'Persistence') + '</h2></div>' +
+    GS.card('<div class="row"><div><h4>' + GS.esc(d.persistence) + '</h4><div class="muted">' + GS.esc(zh ? '支付模式 ' : 'Payment mode ') + GS.esc(d.payment_mode) + '</div></div>' +
+      (d.finance_enabled ? '<span class="status good">FINANCE ON</span>' : '<span class="status demo">FINANCE OFF</span>') + '</div>') +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '审计日志' : 'Audit log') + '</h2><span>' + state.audit.length + '</span></div>' +
+    (state.audit.length
+      ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '时间' : 'Time') + '</th><th>' + GS.esc(zh ? '动作' : 'Action') + '</th><th>' + GS.esc(zh ? '角色' : 'Role') + '</th></tr></thead><tbody>' +
+        state.audit.slice(0, 15).map(function (l) {
+          return '<tr><td>' + GS.esc(GS.datetime(l.at)) + '</td><td>' + GS.esc(l.action) + '</td><td>' + GS.esc(l.actor_role || '—') + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : GS.emptyState(zh ? '暂无日志' : 'No entries')) +
+    '</section>';
+}
+
+function renderUsers(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    '<div class="search"><select id="userAudience"><option value="">' + GS.esc(GS.t('all')) + '</option>' +
+    ['ADMIN', 'B', 'C', 'S', 'DBC'].map(function (a) { return '<option value="' + a + '">' + a + '</option>'; }).join('') +
+    '</select><button class="btn primary wide" onclick="loadUsers()">' + GS.esc(GS.t('search')) + '</button></div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '用户' : 'Users') + '</h2><span id="userCount">' + state.users.length + '</span></div>' +
+    (state.users.length
+      ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '名称' : 'Name') + '</th><th>' + GS.esc(zh ? '角色' : 'Role') + '</th><th>' + GS.esc(GS.t('status')) + '</th><th>' + GS.esc(zh ? '类型' : 'Type') + '</th></tr></thead><tbody>' +
+        state.users.map(function (u) {
+          return '<tr><td><b>' + GS.esc(u.display_name || u.email || u.id) + '</b><div class="muted">' + GS.esc(u.email || '') + '</div></td>' +
+            '<td>' + GS.esc(u.role) + '</td><td>' + GS.statusTag(u.status) + '</td><td>' + (u.is_demo ? '<span class="status demo">DEMO</span>' : '<span class="status good">REAL</span>') + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : GS.emptyState(zh ? '暂无用户' : 'No users')) +
+    '</section>';
+  loadUsers();
+}
+
+async function loadUsers() {
+  try {
+    var audience = (document.getElementById('userAudience') || {}).value || '';
+    var r = await GS.get(API + '/users' + (audience ? '?audience=' + audience : ''));
+    state.users = r.data;
+    var c = document.getElementById('userCount');
+    if (c) c.textContent = state.users.length;
+    renderTab('users');
+  } catch (e) { alert(e.message); }
+}
+
+function renderVerify(main) {
+  var zh = GS.lang === 'zh';
+  var v = state.verifications || { organizations: [], suppliers: [] };
+  main.innerHTML = '<section class="section">' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '机构认证（KYC / KYB / AML）' : 'Organizations (KYC / KYB / AML)') + '</h2><span>' + v.organizations.length + '</span></div>' +
+    (v.organizations.length
+      ? '<div class="rows">' + v.organizations.map(function (o) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.label(o.name)) + '</h4>' +
+            '<div class="muted">' + GS.esc(o.kind) + ' · KYC ' + GS.esc(o.kyc_status) + ' · KYB ' + GS.esc(o.kyb_status) + '</div></div>' +
+            '<div class="actions"><button class="btn green" onclick="verifyOrg(\'' + GS.esc(o.id) + '\',\'approve\')">' + GS.esc(zh ? '通过' : 'Approve') + '</button>' +
+            '<button class="btn ghost" onclick="verifyOrg(\'' + GS.esc(o.id) + '\',\'freeze\')">' + GS.esc(zh ? '冻结' : 'Freeze') + '</button></div></div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无机构' : 'No organizations')) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '供应商核验' : 'Supplier verification') + '</h2><span>' + v.suppliers.length + '</span></div>' +
+    (v.suppliers.length
+      ? '<div class="rows">' + v.suppliers.map(function (s) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.label(s.name)) + '</h4>' +
+            '<div class="muted">' + GS.esc(s.type) + ' · ' + GS.esc(s.source_url || (zh ? '无来源' : 'no source')) + '</div></div>' +
+            '<div class="actions"><button class="btn green" onclick="verifySupplier(\'' + GS.esc(s.id) + '\',\'approve\')">' + GS.esc(zh ? '通过' : 'Approve') + '</button>' +
+            '<button class="btn ghost" onclick="verifySupplier(\'' + GS.esc(s.id) + '\',\'reject\')">' + GS.esc(zh ? '驳回' : 'Reject') + '</button></div></div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无供应商' : 'No suppliers')) +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '没有来源（source_url / supplier_evidence）的供应商不能核验通过。' : 'A supplier without a source (source_url / supplier_evidence) cannot be verified.') + '</div>' +
+    '</section>';
+}
+
+async function verifyOrg(id, decision) {
+  try {
+    await GS.post(API + '/verifications/organizations/' + encodeURIComponent(id), { decision: decision });
+    alert(GS.lang === 'zh' ? '已更新。' : 'Updated.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+async function verifySupplier(id, decision) {
+  try {
+    await GS.post(API + '/verifications/suppliers/' + encodeURIComponent(id), { decision: decision });
+    alert(GS.lang === 'zh' ? '已更新。' : 'Updated.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function renderRec(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '推荐池准入' : 'Recommendation pool') + '</h2><span>' + state.pool.length + '</span></div>' +
+    (state.pool.length
+      ? '<div class="rows">' + state.pool.map(function (b) {
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.label(b.name)) + '</h4>' +
+            '<div class="muted">' + GS.esc(b.level || '—') + ' · ' + GS.esc(b.failures.length ? b.failures.join(', ') : (zh ? '全部准入条件通过' : 'all admission checks passed')) + '</div></div>' +
+            (b.in_pool ? '<span class="status good">IN POOL</span>' : '<span class="status demo">EXCLUDED</span>') + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无 B 端' : 'No B agencies')) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '推荐权重' : 'Recommendation weights') + '</h2></div><div id="weightsBox">' + GS.esc(GS.t('loading')) + '</div>' +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '权重可在后台调整；广告预算不能影响自然推荐排名。' : 'Weights are configurable here; ad budget never affects natural recommendation ranking.') + '</div>' +
+    '</section>';
+  loadWeights();
+}
+
+async function loadWeights() {
+  try {
+    var r = await GS.get(API + '/config/recommendation-weights');
+    var box = document.getElementById('weightsBox');
+    if (!box) return;
+    var zh = GS.lang === 'zh';
+    box.innerHTML = GS.card('<div class="kv">' + Object.keys(r.data).map(function (k) {
+      return '<div><small>' + GS.esc(k) + '</small><b>' + GS.esc(r.data[k]) + '%</b></div>';
+    }).join('') + '</div>' +
+      '<div class="form-actions"><button class="btn primary" onclick="editWeights()">' + GS.esc(zh ? '调整权重' : 'Edit weights') + '</button></div>');
+  } catch (_) { /* ignore */ }
+}
+
+async function editWeights() {
+  var zh = GS.lang === 'zh';
+  var keys = ['requirement_match', 'quality_trust', 'responsiveness', 'fair_rotation', 'partnership_depth', 'random_jitter'];
+  var html = keys.map(function (k) {
+    return '<div class="field"><label>' + GS.esc(k) + '</label><input id="w-' + k + '" type="number" min="0" max="100"></div>';
+  }).join('');
+  GS.openDrawer(zh ? '调整推荐权重' : 'Edit recommendation weights',
+    html + '<div class="form-actions"><button class="btn primary" onclick="saveWeights()">' + GS.esc(GS.t('save')) + '</button></div>');
+  var r = await GS.get(API + '/config/recommendation-weights');
+  keys.forEach(function (k) { document.getElementById('w-' + k).value = r.data[k]; });
+}
+
+async function saveWeights() {
+  var keys = ['requirement_match', 'quality_trust', 'responsiveness', 'fair_rotation', 'partnership_depth', 'random_jitter'];
+  var body = {};
+  keys.forEach(function (k) { body[k] = Number(document.getElementById('w-' + k).value); });
+  try {
+    await GS.put(API + '/config/recommendation-weights', body);
+    GS.closeDrawer();
+    alert(GS.lang === 'zh' ? '权重已保存。' : 'Weights saved.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function renderMoney(main) {
+  var zh = GS.lang === 'zh';
+  main.innerHTML = '<section class="section">' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '佣金台账' : 'Commission ledger') + '</h2><span>' + state.ledger.length + '</span></div>' +
+    (state.ledger.length
+      ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(GS.t('amount')) + '</th><th>' + GS.esc(zh ? '触发' : 'Trigger') + '</th><th>' + GS.esc(GS.t('status')) + '</th></tr></thead><tbody>' +
+        state.ledger.map(function (e) {
+          return '<tr><td><b>' + GS.esc(GS.money(e.amount, e.currency)) + '</b></td><td>' + GS.esc(e.trigger_event) + '</td><td>' + GS.statusTag(e.status) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : GS.emptyState(zh ? '暂无佣金记录' : 'No commission records')) +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '结算单' : 'Settlements') + '</h2><span>' + state.settlements.length + '</span></div>' +
+    (state.settlements.length
+      ? '<div class="rows">' + state.settlements.map(function (s) {
+          var next = ['projected', 'confirmed', 'receivable', 'received', 'payable', 'paid'];
+          var i = next.indexOf(s.status);
+          var target = (i >= 0 && i < next.length - 1) ? next[i + 1] : null;
+          return '<div class="row-item"><div class="grow"><h4>' + GS.esc(GS.money(s.total_amount, s.currency)) + '</h4>' +
+            '<div class="muted">' + GS.esc(zh ? '到期 ' : 'Due ') + GS.esc(GS.date(s.due_date)) + '</div></div>' + GS.statusTag(s.status) +
+            (target ? '<button class="btn soft" onclick="advanceSettlement(\'' + GS.esc(s.id) + '\',\'' + target + '\')">' + GS.esc(zh ? '推进到 ' : 'To ') + GS.esc(target) + '</button>' : '') + '</div>';
+        }).join('') + '</div>'
+      : GS.emptyState(zh ? '暂无结算单' : 'No settlements')) +
+    '</section>';
+}
+
+async function advanceSettlement(id, target) {
+  try {
+    await GS.post(API + '/settlements/' + encodeURIComponent(id) + '/advance', { target: target });
+    alert(GS.lang === 'zh' ? '已推进到 ' + target : 'Advanced to ' + target);
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+function renderSystem(main) {
+  var zh = GS.lang === 'zh';
+  var c = state.config || {};
+  main.innerHTML = '<section class="section">' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '功能开关' : 'Feature flags') + '</h2></div>' +
+    '<div class="kv">' +
+    '<div><small>FINANCE_ENABLED</small><b>' + GS.esc(String(c.finance_enabled)) + '</b></div>' +
+    '<div><small>INSURANCE_ENABLED</small><b>' + GS.esc(String(c.insurance_enabled)) + '</b></div>' +
+    '<div><small>ADS_ENABLED</small><b>' + GS.esc(String(c.ads_enabled)) + '</b></div>' +
+    '<div><small>DEMO_LOGIN</small><b>' + GS.esc(String(c.demo_login_enabled)) + '</b></div>' +
+    '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '核心策略' : 'Core policies') + '</h2></div>' +
+    '<div class="kv">' +
+    '<div><small>' + GS.esc(zh ? '首绑保护（月）' : 'First-binding protection (months)') + '</small><b>' + GS.esc(c.first_binding_protection_months) + '</b></div>' +
+    '<div><small>' + GS.esc(zh ? '会员宽限（天）' : 'Membership grace (days)') + '</small><b>' + GS.esc(c.membership_grace_days) + '</b></div>' +
+    '<div><small>' + GS.esc(zh ? '到期提醒' : 'Expiry reminders') + '</small><b>' + GS.esc((c.membership_expiry_reminder_days || []).join('/')) + '</b></div>' +
+    '<div><small>' + GS.esc(zh ? '平台佣金分成' : 'Platform commission share') + '</small><b>' + GS.esc(c.commission_net_share_to_platform) + '%</b></div>' +
+    '</div>' +
+    '<div class="section-head"><h2>' + GS.esc(zh ? '外部 Provider' : 'External providers') + '</h2></div>' +
+    '<div class="rows">' + Object.keys(c.providers || {}).map(function (k) {
+      var p = c.providers[k];
+      return '<div class="row-item"><div class="grow"><h4>' + GS.esc(k) + '</h4><div class="muted">' + GS.esc(p.adapter) + '</div></div>' +
+        (p.mode === 'sandbox' ? '<span class="status demo">SANDBOX</span>' : '<span class="status good">LIVE</span>') + '</div>';
+    }).join('') + '</div>' +
+    '<div class="form-actions" style="margin-top:12px"><button class="btn ghost" onclick="resetConfig()">' + GS.esc(zh ? '恢复默认配置' : 'Reset to defaults') + '</button></div>' +
+    '<div style="margin-top:12px"><button class="btn ghost wide" onclick="GS.logout()">' + GS.esc(GS.t('logout')) + '</button></div>' +
+    '</section>';
+}
+
+async function resetConfig() {
+  if (!window.confirm(GS.lang === 'zh' ? '确认恢复全部默认配置？' : 'Reset all configuration to defaults?')) return;
+  try {
+    await GS.post(API + '/config/reset', {});
+    alert(GS.lang === 'zh' ? '已恢复默认配置。' : 'Defaults restored.');
+    await refresh();
+  } catch (e) { alert(e.message); }
+}
+
+async function refresh() {
+  try {
+    var results = await Promise.all([
+      GS.get(API + '/dashboard').catch(function () { return { data: null }; }),
+      GS.get(API + '/users').catch(function () { return { data: [] }; }),
+      GS.get(API + '/verifications').catch(function () { return { data: { organizations: [], suppliers: [] } }; }),
+      GS.get(API + '/recommendation/pool').catch(function () { return { data: [] }; }),
+      GS.get(API + '/commission/ledger').catch(function () { return { data: [] }; }),
+      GS.get(API + '/settlements').catch(function () { return { data: [] }; }),
+      GS.get(API + '/config').catch(function () { return { data: null }; }),
+      GS.get(API + '/audit?limit=30').catch(function () { return { data: [] }; })
+    ]);
+    state.dashboard = results[0].data;
+    state.users = results[1].data || [];
+    state.verifications = results[2].data;
+    state.pool = results[3].data || [];
+    state.ledger = results[4].data || [];
+    state.settlements = results[5].data || [];
+    state.config = results[6].data;
+    state.audit = results[7].data || [];
+  } catch (e) {
+    if (e.status === 401) { GS.clearSession(); return showLogin(); }
+  }
+  renderShell();
+}
+
+function showLogin() {
+  document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel([]) + '</div>';
+  GS.get('/api/auth/demo-accounts').then(function (r) {
+    document.getElementById('app').innerHTML = '<div class="phone">' + GS.loginPanel(r.data) + '</div>';
+    GS.bindLogin();
+  }).catch(function () { GS.bindLogin(); });
+}
+
+window.onLangChange = function () { renderShell(); };
+
+(async function boot() {
+  if (GS.requireAuth()) { showLogin(); return; }
+  await refresh();
+})();
+</script>
+</body>
+</html>

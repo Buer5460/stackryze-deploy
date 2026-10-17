@@ -3,7 +3,7 @@ services:
     name: global-study-mobile-mvp
     runtime: node
     plan: free
-    buildCommand: echo "No dependencies"
+    buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -11,5 +11,13 @@ services:
         value: 22
       - key: DEFAULT_TIMEZONE_OFFSET_MINUTES
         value: 480
+      # Set to the Supabase / Neon / Render PostgreSQL connection string to
+      # switch the platform from the JSON file store to PostgreSQL. When unset,
+      # the service uses the durable JSON file store (survives restarts).
+      - key: DATABASE_URL
+        sync: false
+      # Optional: override the data directory used by the JSON file backend.
+      - key: GS_DB_DIR
+        value: /var/data
       - key: APP_TOKEN
         sync: false
