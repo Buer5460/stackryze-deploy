@@ -1,0 +1,707 @@
+{
+  "version": "3.0.3",
+  "exported_at": "2026-10-18T15:32:57.612Z",
+  "backend": "json-file",
+  "scope": "public-whitelisted",
+  "dropped_collections": {
+    "users": 11,
+    "sessions": 0,
+    "memberships": 4,
+    "c_profiles": 1,
+    "dbc_profiles": 1,
+    "service_scopes": 0,
+    "recommendations": 0,
+    "recommendation_scores": 0,
+    "recommendation_rotations": 0,
+    "bindings": 0,
+    "binding_histories": 0,
+    "agreements": 2,
+    "agreement_versions": 2,
+    "signatures": 0,
+    "contract_evidence": 0,
+    "rooms": 0,
+    "beds": 0,
+    "guardian_services": 0,
+    "bookings": 0,
+    "medical_services": 0,
+    "medical_orders": 0,
+    "certification_services": 0,
+    "certification_orders": 0,
+    "visa_services": 0,
+    "visa_orders": 0,
+    "finance_products": 0,
+    "finance_referrals": 0,
+    "student_profiles": 0,
+    "family_documents": 0,
+    "document_versions": 0,
+    "document_authorizations": 0,
+    "applications": 0,
+    "application_timeline": 0,
+    "application_todos": 0,
+    "visa_cases": 0,
+    "visa_results": 0,
+    "payment_intents": 0,
+    "payment_routes": 0,
+    "payment_providers": 0,
+    "payment_receipts": 0,
+    "refunds": 0,
+    "fee_breakdowns": 0,
+    "commission_triggers": 0,
+    "commission_ledger": 0,
+    "settlements": 0,
+    "invoices": 0,
+    "reviews": 0,
+    "messages": 0,
+    "notifications": 0,
+    "daily_briefs": 0,
+    "disputes": 0,
+    "dispute_evidence": 0,
+    "ad_products": 0,
+    "ad_orders": 0,
+    "ad_creatives": 0,
+    "ad_schedules": 0,
+    "ad_reports": 0,
+    "audit_logs": 38,
+    "source_evidence": 0
+  },
+  "data": {
+    "organizations": [
+      {
+        "id": "ORG-MVDZILX5-NWGNWJFSSDYO",
+        "kind": "B",
+        "name": "环球学桥（演示）",
+        "name_en": "GlobalBridge Education (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": true,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.594Z"
+      },
+      {
+        "id": "ORG-MVDZILXA-Q9XSJFSJBLWZ",
+        "kind": "B",
+        "name": "启航留学（演示）",
+        "name_en": "Qihang Study (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": true,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.598Z"
+      },
+      {
+        "id": "ORG-MVDZILXA-AQYGLUW0DUVT",
+        "kind": "B",
+        "name": "新锐国际教育（演示）",
+        "name_en": "NewEdge Global (Demo)",
+        "country": "CN",
+        "city": "Shanghai",
+        "verified": false,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.598Z"
+      },
+      {
+        "id": "ORG-MVDZILXA-SOGVBOG08ZU3",
+        "kind": "B",
+        "name": "远帆留学（演示）",
+        "name_en": "YuanFan Study (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": true,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.598Z"
+      },
+      {
+        "id": "ORG-MVDZILXD-AVFUU_ZMQ3TA",
+        "kind": "S",
+        "name": "南洋国际学院（演示）",
+        "name_en": "Nanyang International College (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": false,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.601Z"
+      },
+      {
+        "id": "ORG-MVDZILXE-QI1BNPVJAA5J",
+        "kind": "S",
+        "name": "康桥体检中心（演示）",
+        "name_en": "HealthBridge Medical (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": false,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.602Z"
+      },
+      {
+        "id": "ORG-MVDZILXE-WW-0NBCWI3EM",
+        "kind": "S",
+        "name": "正衡文件认证（演示）",
+        "name_en": "CertifyPro Documents (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": false,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.602Z"
+      },
+      {
+        "id": "ORG-MVDZILXE-VTMIEMIRQ0BU",
+        "kind": "S",
+        "name": "通行签证代办（演示）",
+        "name_en": "Passport Visa Service (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": false,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.602Z"
+      },
+      {
+        "id": "ORG-MVDZILXF-H72CULN_WPCZ",
+        "kind": "S",
+        "name": "安寓学生住宿（演示）",
+        "name_en": "AnYu Student Living (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": false,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.603Z"
+      },
+      {
+        "id": "ORG-MVDZILXF--TO9MVBW9TZ0",
+        "kind": "S",
+        "name": "学融教育金融（演示）",
+        "name_en": "EduFinance (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": false,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.603Z"
+      },
+      {
+        "id": "ORG-MVDZILXI-CJANJ2M9HZ7J",
+        "kind": "DBC",
+        "name": "安途招生牌照合作（演示）",
+        "name_en": "AnTu DBC (Demo)",
+        "country": "SG",
+        "city": "Singapore",
+        "verified": true,
+        "is_demo": true,
+        "created_at": "2026-10-18T15:32:57.606Z"
+      }
+    ],
+    "b_profiles": [
+      {
+        "id": "BPF-MVDZILXA-KQX7VQBZJYLL",
+        "organization_id": "ORG-MVDZILXA-SOGVBOG08ZU3",
+        "level": "LEVEL_2",
+        "service_countries": [
+          "SG",
+          "UK"
+        ],
+        "service_courses": [
+          "Computer Science",
+          "Data Science"
+        ],
+        "service_stages": [
+          "MASTER"
+        ],
+        "service_types": [
+          "APPLICATION",
+          "VISA"
+        ],
+        "languages": [
+          "ZH",
+          "EN"
+        ],
+        "daily_order_cap": 4,
+        "monthly_order_cap": 30,
+        "rating_avg": 4.6,
+        "rating_count": 18,
+        "avg_response_minutes": 30
+      },
+      {
+        "id": "BPF-MVDZILXB-QSUHHWTOZW1Z",
+        "organization_id": "ORG-MVDZILX5-NWGNWJFSSDYO",
+        "level": "LEVEL_2",
+        "service_countries": [
+          "SG",
+          "UK",
+          "AU"
+        ],
+        "service_courses": [
+          "Computer Science",
+          "Business",
+          "Engineering"
+        ],
+        "service_stages": [
+          "BACHELOR",
+          "MASTER"
+        ],
+        "service_types": [
+          "APPLICATION",
+          "VISA",
+          "ACCOMMODATION"
+        ],
+        "languages": [
+          "ZH",
+          "EN"
+        ],
+        "daily_order_cap": 5,
+        "monthly_order_cap": 40,
+        "rating_avg": 4.8,
+        "rating_count": 46,
+        "avg_response_minutes": 12
+      },
+      {
+        "id": "BPF-MVDZILXB-MZANLQ8XJ20N",
+        "organization_id": "ORG-MVDZILXA-Q9XSJFSJBLWZ",
+        "level": "LEVEL_1",
+        "service_countries": [
+          "SG",
+          "CN"
+        ],
+        "service_courses": [
+          "Business",
+          "Arts"
+        ],
+        "service_stages": [
+          "BACHELOR",
+          "DIPLOMA"
+        ],
+        "service_types": [
+          "APPLICATION"
+        ],
+        "languages": [
+          "ZH",
+          "EN"
+        ],
+        "daily_order_cap": 3,
+        "monthly_order_cap": 20,
+        "rating_avg": 4.4,
+        "rating_count": 12,
+        "avg_response_minutes": 45
+      },
+      {
+        "id": "BPF-MVDZILXB-RON3ZY1QW7GW",
+        "organization_id": "ORG-MVDZILXA-AQYGLUW0DUVT",
+        "level": "FREE",
+        "service_countries": [
+          "CN"
+        ],
+        "service_courses": [
+          "Language"
+        ],
+        "service_stages": [
+          "LANGUAGE"
+        ],
+        "service_types": [
+          "APPLICATION"
+        ],
+        "languages": [
+          "ZH"
+        ],
+        "daily_order_cap": 2,
+        "monthly_order_cap": 10,
+        "rating_avg": 0,
+        "rating_count": 0,
+        "avg_response_minutes": 240
+      }
+    ],
+    "suppliers": [
+      {
+        "id": "SUP-MVDZILXD-N8CX9DK4CPOH",
+        "organization_id": "ORG-MVDZILXD-AVFUU_ZMQ3TA",
+        "type": "EDUCATION",
+        "name": "南洋国际学院（演示）",
+        "name_en": "Nanyang International College (Demo)",
+        "verification": "verified",
+        "is_demo": true,
+        "public_visible": true,
+        "accepts_b_orders": true,
+        "created_at": "2026-10-18T15:32:57.601Z"
+      },
+      {
+        "id": "SUP-MVDZILXE-CIYC_3G_EYSZ",
+        "organization_id": "ORG-MVDZILXE-QI1BNPVJAA5J",
+        "type": "MEDICAL",
+        "name": "康桥体检中心（演示）",
+        "name_en": "HealthBridge Medical (Demo)",
+        "verification": "verified",
+        "is_demo": true,
+        "public_visible": true,
+        "accepts_b_orders": true,
+        "created_at": "2026-10-18T15:32:57.602Z"
+      },
+      {
+        "id": "SUP-MVDZILXE-KCWLQ6XRADWO",
+        "organization_id": "ORG-MVDZILXE-WW-0NBCWI3EM",
+        "type": "CERTIFICATION",
+        "name": "正衡文件认证（演示）",
+        "name_en": "CertifyPro Documents (Demo)",
+        "verification": "verified",
+        "is_demo": true,
+        "public_visible": true,
+        "accepts_b_orders": true,
+        "created_at": "2026-10-18T15:32:57.602Z"
+      },
+      {
+        "id": "SUP-MVDZILXE-27MGLITV9RDJ",
+        "organization_id": "ORG-MVDZILXE-VTMIEMIRQ0BU",
+        "type": "VISA",
+        "name": "通行签证代办（演示）",
+        "name_en": "Passport Visa Service (Demo)",
+        "verification": "verified",
+        "is_demo": true,
+        "public_visible": true,
+        "accepts_b_orders": true,
+        "created_at": "2026-10-18T15:32:57.602Z"
+      },
+      {
+        "id": "SUP-MVDZILXF-QZGFYJOQHXWS",
+        "organization_id": "ORG-MVDZILXF-H72CULN_WPCZ",
+        "type": "ACCOMMODATION",
+        "name": "安寓学生住宿（演示）",
+        "name_en": "AnYu Student Living (Demo)",
+        "verification": "verified",
+        "is_demo": true,
+        "public_visible": true,
+        "accepts_b_orders": true,
+        "created_at": "2026-10-18T15:32:57.603Z"
+      },
+      {
+        "id": "SUP-MVDZILXF-938N2YQCXS8P",
+        "organization_id": "ORG-MVDZILXF--TO9MVBW9TZ0",
+        "type": "FINANCE",
+        "name": "学融教育金融（演示）",
+        "name_en": "EduFinance (Demo)",
+        "verification": "verified",
+        "is_demo": true,
+        "public_visible": true,
+        "accepts_b_orders": true,
+        "created_at": "2026-10-18T15:32:57.603Z"
+      }
+    ],
+    "supplier_profiles": [
+      {
+        "id": "SPF-MVDZILXE-_9ZM6ZQEKX2Q",
+        "supplier_id": "SUP-MVDZILXD-N8CX9DK4CPOH",
+        "description": "演示教育机构，用于验证申请、看板与材料流程。",
+        "description_en": "Demo education institution for application and board validation.",
+        "languages": [
+          "EN"
+        ],
+        "service_countries": [
+          "SG"
+        ],
+        "service_cities": [
+          "Singapore"
+        ],
+        "media": [],
+        "qualifications": []
+      },
+      {
+        "id": "SPF-MVDZILXE-DPCAGJMMT4BB",
+        "supplier_id": "SUP-MVDZILXE-CIYC_3G_EYSZ",
+        "description": "演示体检机构：只保存预约、状态、完成与报告文件。",
+        "description_en": "Demo medical provider: appointment, status, completion and report files only.",
+        "languages": [
+          "EN",
+          "ZH"
+        ],
+        "service_countries": [
+          "SG"
+        ],
+        "service_cities": [
+          "Singapore"
+        ],
+        "media": [],
+        "qualifications": []
+      },
+      {
+        "id": "SPF-MVDZILXE-E-KSSTIX8OJR",
+        "supplier_id": "SUP-MVDZILXE-KCWLQ6XRADWO",
+        "description": "演示文件认证机构：学历、成绩、公证、翻译认证。",
+        "description_en": "Demo certification body: degree, transcript, notarisation and translation.",
+        "languages": [
+          "EN",
+          "ZH"
+        ],
+        "service_countries": [
+          "SG"
+        ],
+        "service_cities": [
+          "Singapore"
+        ],
+        "media": [],
+        "qualifications": []
+      },
+      {
+        "id": "SPF-MVDZILXE-BJFAM71_OVP0",
+        "supplier_id": "SUP-MVDZILXE-27MGLITV9RDJ",
+        "description": "演示签证代办机构。",
+        "description_en": "Demo visa agency.",
+        "languages": [
+          "EN",
+          "ZH"
+        ],
+        "service_countries": [
+          "SG"
+        ],
+        "service_cities": [
+          "Singapore"
+        ],
+        "media": [],
+        "qualifications": []
+      },
+      {
+        "id": "SPF-MVDZILXF-O433MAXO5S5L",
+        "supplier_id": "SUP-MVDZILXF-QZGFYJOQHXWS",
+        "description": "演示学生住宿机构。",
+        "description_en": "Demo student accommodation provider.",
+        "languages": [
+          "EN",
+          "ZH"
+        ],
+        "service_countries": [
+          "SG"
+        ],
+        "service_cities": [
+          "Singapore"
+        ],
+        "media": [],
+        "qualifications": []
+      },
+      {
+        "id": "SPF-MVDZILXF-DS0RSFOBG871",
+        "supplier_id": "SUP-MVDZILXF-938N2YQCXS8P",
+        "description": "功能暂未开放 / Coming soon。",
+        "description_en": "Feature not open yet / Coming soon.",
+        "languages": [
+          "EN",
+          "ZH"
+        ],
+        "service_countries": [
+          "SG"
+        ],
+        "service_cities": [
+          "Singapore"
+        ],
+        "media": [],
+        "qualifications": []
+      }
+    ],
+    "institutions": [
+      {
+        "id": "INS-DEMO-0001",
+        "supplier_id": "SUP-MVDZILXD-N8CX9DK4CPOH",
+        "name": "南洋国际学院（演示）",
+        "name_en": "Nanyang International College (Demo)",
+        "country_id": "SG",
+        "city_id": "SG-CITY-SINGAPORE",
+        "latitude": 1.3521,
+        "longitude": 103.8198,
+        "is_demo": true,
+        "verified_status": "demo",
+        "created_at": "2026-10-18T15:32:57.607Z"
+      }
+    ],
+    "campuses": [],
+    "programs": [],
+    "scholarships": [],
+    "accommodations": [],
+    "application_stages": [],
+    "commission_rules": [
+      {
+        "id": "CMR-MVDZILXH-MFUWXWMQZUP_",
+        "supplier_id": "SUP-MVDZILXD-N8CX9DK4CPOH",
+        "product_id": null,
+        "mode": "PERCENTAGE",
+        "value": 15,
+        "currency": "SGD",
+        "trigger_event": "PAYMENT_SUCCEEDED",
+        "settlement_cycle_days": 30,
+        "is_demo": true,
+        "effective_from": "2026-10-18T15:32:57.605Z",
+        "effective_to": null
+      },
+      {
+        "id": "CMR-MVDZILXI-9YI9QOOS9NIR",
+        "supplier_id": "SUP-MVDZILXF-QZGFYJOQHXWS",
+        "product_id": null,
+        "mode": "FIXED_PER_BOOKING",
+        "value": 120,
+        "currency": "SGD",
+        "trigger_event": "BOOKING_CONFIRMED",
+        "settlement_cycle_days": 30,
+        "is_demo": true,
+        "effective_from": "2026-10-18T15:32:57.606Z",
+        "effective_to": null
+      }
+    ],
+    "ad_inventory": [
+      {
+        "id": "ADI-SEARCH-SPONSORED",
+        "slot_type": "search_ranking_sponsored",
+        "label_zh": "搜索排名赞助位",
+        "label_en": "Search ranking sponsored slot",
+        "total": 20,
+        "reserved": 0,
+        "monthly_price": 100,
+        "currency": "SGD"
+      },
+      {
+        "id": "ADI-BANNER-HOME",
+        "slot_type": "banner",
+        "label_zh": "横幅广告位",
+        "label_en": "Banner",
+        "total": 10,
+        "reserved": 0,
+        "monthly_price": 100,
+        "currency": "SGD"
+      },
+      {
+        "id": "ADI-RECOMMENDED-SLOT",
+        "slot_type": "recommended_slot",
+        "label_zh": "推荐位",
+        "label_en": "Recommended slot",
+        "total": 8,
+        "reserved": 0,
+        "monthly_price": 100,
+        "currency": "SGD"
+      },
+      {
+        "id": "ADI-SPLASH",
+        "slot_type": "splash",
+        "label_zh": "开屏广告",
+        "label_en": "Splash",
+        "total": 4,
+        "reserved": 0,
+        "monthly_price": 100,
+        "currency": "SGD"
+      }
+    ],
+    "system_config": [
+      {
+        "id": "SYSTEM",
+        "version": "3.0.0",
+        "updated_at": "2026-10-18T15:32:57.603Z",
+        "values": {
+          "recommendation_weights": {
+            "requirement_match": 35,
+            "quality_trust": 25,
+            "responsiveness": 15,
+            "fair_rotation": 10,
+            "partnership_depth": 10,
+            "random_jitter": 5
+          },
+          "recommendation_pool_size": 5,
+          "recommendation_min_pool_size": 3,
+          "level2_priority_enabled": true,
+          "level1_fallback_enabled": true,
+          "browse_only_enabled": true,
+          "min_exposure_share": 0.08,
+          "cold_start_bonus": 6,
+          "cold_start_days": 45,
+          "head_b_penalty": 0.6,
+          "no_response_switch_minutes": 30,
+          "ad_budget_affects_ranking": false,
+          "first_binding_protection_months": 12,
+          "rebinding_requires_platform_review": true,
+          "contract_signature_mode": "sandbox",
+          "membership_expiry_reminder_days": [
+            60,
+            30,
+            7,
+            1
+          ],
+          "membership_grace_days": 30,
+          "membership_renewal_url": null,
+          "c_unbound_can_browse": true,
+          "c_unbound_can_view_fees": true,
+          "c_unbound_can_review": true,
+          "c_unbound_can_search": true,
+          "c_unbound_can_order": false,
+          "c_unbound_can_pay": false,
+          "c_unbound_can_upload": false,
+          "c_unbound_can_contact_supplier": false,
+          "c_can_see_supplier_phone": false,
+          "c_can_see_supplier_private_email": false,
+          "c_can_see_supplier_private_whatsapp": false,
+          "c_can_see_commission": false,
+          "commission_platform_orchestration_fee_bps": 250,
+          "commission_gateway_fee_bps": 180,
+          "commission_net_share_to_platform": 0,
+          "commission_default_currency": "SGD",
+          "commission_settlement_cycle_days": 30,
+          "finance_enabled": false,
+          "insurance_enabled": false,
+          "ads_enabled": true,
+          "demo_login_enabled": true,
+          "real_registration_enabled": true,
+          "ads_demo_topup_amount": 800,
+          "ads_demo_monthly_price": 100,
+          "ads_demo_max_renewals": 6,
+          "ads_default_currency": "SGD",
+          "demo_data_requires_label": true,
+          "verified_requires_source": true,
+          "ai_may_not_invent": [
+            "tuition",
+            "admission_rate",
+            "ranking",
+            "commission",
+            "loan_rate",
+            "bed_inventory",
+            "visa_success_rate"
+          ],
+          "providers": {
+            "payment": {
+              "adapter": "nexuspay",
+              "mode": "sandbox"
+            },
+            "ocr": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            },
+            "kyc": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            },
+            "aml": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            },
+            "sms": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            },
+            "email": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            },
+            "whatsapp": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            },
+            "wechat": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            },
+            "signature": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            },
+            "blockchain_evidence": {
+              "adapter": "sandbox",
+              "mode": "sandbox"
+            }
+          },
+          "brand": {
+            "product": "GlobalStudy",
+            "operator": "AETHEL EDU 安世达教育",
+            "footer_zh": "由安世达教育提供核心动力",
+            "footer_en": "Powered by Aethel Edu"
+          }
+        }
+      }
+    ]
+  }
+}
