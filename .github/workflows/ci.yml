@@ -52,7 +52,7 @@ jobs:
       - name: API health smoke
         run: |
           curl -fsS http://127.0.0.1:3000/api/health | grep '"ok":true'
-          curl -fsS http://127.0.0.1:3000/api/health | grep '"version":"3.0.1"'
+          curl -fsS http://127.0.0.1:3000/api/health | grep '"version":"3.0.2"'
 
       - name: Public clients are reachable
         run: |
@@ -115,6 +115,23 @@ jobs:
       - name: Persistence backend is reported honestly
         run: |
           curl -fsS http://127.0.0.1:3000/api/health | grep -E '"backend":"(postgresql|json-file|memory)"'
+
+      - name: Snapshot export is admin-only (Fix 2)
+        run: |
+          test "$(curl -s -o /tmp/snap.json -w '%{http_code}' http://127.0.0.1:3000/api/admin/snapshot/export)" = "401"
+          TOKEN=$(curl -fsS -X POST http://127.0.0.1:3000/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"admin@demo.local","password":"demo1234"}' | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+          curl -fsS http://127.0.0.1:3000/api/admin/snapshot/export \
+            -H "Authorization: Bearer $TOKEN" > /tmp/snapshot-export.json
+          node -e "const d=require('/tmp/snapshot-export.json'); if(!d.ok||!d.data.counts.users) process.exit(1)"
+          ! grep -q "DATABASE_URL" /tmp/snapshot-export.json
+          ! grep -qE "postgres(ql)?://" /tmp/snapshot-export.json
+
+      - name: Snapshot restore script tolerates a missing branch
+        run: |
+          GS_DB_DIR="$(mktemp -d)" GS_SNAPSHOT_BRANCH="ci-missing-branch" \
+            bash scripts/snapshot-restore.sh | grep -q "fresh dataset"
 
       - name: Stop MVP server
         if: always()

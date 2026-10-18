@@ -32,7 +32,7 @@ const seed = require('./lib/seed');
 const audit = require('./lib/audit');
 const { lower, upper, asNumber, round2, id: makeId } = require('./lib/util');
 
-const VERSION = '3.0.1';
+const VERSION = '3.0.2';
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '2mb' }));
@@ -2053,6 +2053,36 @@ adminRouter.get('/audit', (req, res) => {
   const entries = audit.query({ audience: req.query.audience, action: req.query.action, entity: req.query.entity, entity_id: req.query.entity_id });
   const limit = Math.min(500, Number(req.query.limit) || 200);
   res.json(ok(entries.slice(0, limit), { total: entries.length }));
+});
+
+// Data snapshot (Fix 2): export the current dataset so a maintenance script can
+// commit it to the `data-snapshot` branch, which the build checks out before
+// `npm start`. This is what makes data survive a *redeploy* on hosts without a
+// persistent disk (Render free tier). Export is admin-only.
+adminRouter.get('/snapshot/export', (req, res) => {
+  const payload = {
+    version: VERSION,
+    exported_at: new Date().toISOString(),
+    backend: db.backend,
+    counts: db.counts(),
+    data: db.snapshot()
+  };
+  res.json(ok(payload));
+});
+
+// Import a previously exported snapshot. Guarded by a confirmation body so it
+// can never be triggered accidentally; used only by the documented maintenance
+// flow (or an operator restoring a known-good snapshot).
+adminRouter.post('/snapshot/import', (req, res) => {
+  const body = req.body || {};
+  if (body.confirm !== 'RESTORE_SNAPSHOT') {
+    return fail(res, 400, '需要 confirm=RESTORE_SNAPSHOT 才会执行快照恢复');
+  }
+  if (!body.data || typeof body.data !== 'object') return fail(res, 400, '缺少 data');
+  db.restore(body.data);
+  db.flushSync();
+  audit.record({ actor: actorOf(req), action: 'admin:snapshot_import', entity: 'system', to: { counts: db.counts() } });
+  res.json(ok({ restored: true, counts: db.counts() }));
 });
 
 // System config.

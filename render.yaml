@@ -3,7 +3,7 @@ services:
     name: global-study-mobile-mvp
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install && bash scripts/snapshot-restore.sh
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -11,12 +11,18 @@ services:
         value: 22
       - key: DEFAULT_TIMEZONE_OFFSET_MINUTES
         value: 480
-      # Set to the Supabase / Neon / Render PostgreSQL connection string to
-      # switch the platform from the JSON file store to PostgreSQL. When unset,
-      # the service uses the durable JSON file store (survives restarts).
+      # Set to a PostgreSQL connection string to switch the platform to
+      # PostgreSQL (preferred when a managed database is available). When unset,
+      # the service uses the snapshot backend described below.
       - key: DATABASE_URL
         sync: false
-      # Optional: override the data directory used by the JSON file backend.
+      # Snapshot backend (Fix 2): the dataset lives in the `data-snapshot`
+      # branch of this repository and is checked out at build time, so writes
+      # survive redeploys even on hosts without a persistent disk.
+      # Set GS_SNAPSHOT_ENABLED=0 to opt out (plain local file instead).
+      - key: GS_SNAPSHOT_ENABLED
+        value: "1"
+      # Directory for the JSON file backend when the snapshot backend is off.
       - key: GS_DB_DIR
         value: /var/data
       - key: APP_TOKEN

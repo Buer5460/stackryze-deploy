@@ -84,7 +84,7 @@ async function main() {
     const r = await req('GET', '/api/health');
     assert.equal(r.status, 200);
     assert.equal(r.body.data.service, 'aethel-edu-globalstudy');
-    assert.equal(r.body.data.version, '3.0.1');
+    assert.equal(r.body.data.version, '3.0.2');
     assert.ok(r.body.data.counts);
   });
 
