@@ -93,38 +93,40 @@ console.log('[snapshot-push] snapshot holds ' + n + ' records across ' +
             Object.keys(out.counts).length + ' collections');
 "
 
-# --- 5. Commit onto the snapshot branch (orphan branch, dataset only) ------
-ORIGINAL_REF="$(git rev-parse --abbrev-ref HEAD)"
-ORIGINAL_SHA="$(git rev-parse HEAD)"
-
+# --- 5. Commit onto the snapshot branch via a dedicated worktree ----------
+# A worktree is used so the main checkout is NEVER switched, stashed or reset:
+# the snapshot branch is orphaned and holds only the dataset file.
 say "preparing branch '${BRANCH}'"
-git stash list >/dev/null 2>&1 || true
+WORKTREE="${WORK_DIR}/worktree"
 
-if git rev-parse --verify "origin/${BRANCH}" >/dev/null 2>&1; then
-  git checkout -q -B "${BRANCH}" "origin/${BRANCH}"
+if git ls-remote --exit-code --heads origin "${BRANCH}" >/dev/null 2>&1; then
+  git fetch -q origin "${BRANCH}"
+  git worktree add -q --detach "${WORKTREE}" "origin/${BRANCH}"
 else
-  git checkout -q --orphan "${BRANCH}"
-  git rm -rf --cached . >/dev/null 2>&1 || true
+  # Orphan branch: start from an empty index so the branch holds ONLY the
+  # dataset (no code, no docs, no history from the code branches).
+  git worktree add -q --detach "${WORKTREE}"
+  git -C "${WORKTREE}" rm -rf --cached . >/dev/null 2>&1 || true
 fi
 
-mkdir -p "$(dirname "${SNAPSHOT_PATH}")"
-cp "${SNAPSHOT_FILE}" "${SNAPSHOT_PATH}"
+mkdir -p "$(dirname "${WORKTREE}/${SNAPSHOT_PATH}")"
+cp "${SNAPSHOT_FILE}" "${WORKTREE}/${SNAPSHOT_PATH}"
 
-git add "${SNAPSHOT_PATH}"
-if git diff --cached --quiet; then
+git -C "${WORKTREE}" add -f "${SNAPSHOT_PATH}"
+if git -C "${WORKTREE}" diff --cached --quiet; then
   say "snapshot unchanged — nothing to commit"
 else
-  git -c user.name="AETHEL EDU" -c user.email="dev@aethel.local" \
+  git -C "${WORKTREE}" -c user.name="AETHEL EDU" -c user.email="dev@aethel.local" \
       commit -q -m "snapshot: dataset export $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-  say "committed $(git rev-parse --short HEAD)"
+  say "committed $(git -C "${WORKTREE}" rev-parse --short HEAD)"
 fi
 
 # --- 6. Push (never force) --------------------------------------------------
 say "pushing origin/${BRANCH}"
-git push -q origin "HEAD:refs/heads/${BRANCH}"
+SNAPSHOT_SHA="$(git -C "${WORKTREE}" rev-parse HEAD)"
+git push -q origin "${SNAPSHOT_SHA}:refs/heads/${BRANCH}"
 
-# --- 7. Restore the working branch exactly as it was -----------------------
-git checkout -q "${ORIGINAL_REF}"
-git reset -q --mixed "${ORIGINAL_SHA}"
+# --- 7. Clean up the worktree (main checkout untouched) ---------------------
+git worktree remove --force "${WORKTREE}" 2>/dev/null || rm -rf "${WORKTREE}"
 
 say "done — the next deploy restores this dataset"
