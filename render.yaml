@@ -3,7 +3,7 @@ services:
     name: global-study-mobile-mvp
     runtime: node
     plan: free
-    buildCommand: npm install && bash scripts/snapshot-restore.sh
+    buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
@@ -17,9 +17,9 @@ services:
       - key: DATABASE_URL
         sync: false
       # Snapshot backend (Fix 2): the dataset lives in the `data-snapshot`
-      # branch of this repository and is checked out at build time, so writes
-      # survive redeploys even on hosts without a persistent disk.
-      # Set GS_SNAPSHOT_ENABLED=0 to opt out (plain local file instead).
+      # branch of this repository and is restored at app start (pure Node, no
+      # git), so writes survive redeploys even on hosts without a persistent
+      # disk. Set GS_SNAPSHOT_ENABLED=0 to opt out (plain local file instead).
       - key: GS_SNAPSHOT_ENABLED
         value: "1"
       # Directory for the JSON file backend when the snapshot backend is off.
