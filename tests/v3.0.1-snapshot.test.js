@@ -233,6 +233,28 @@ async function main() {
     }
   });
 
+  await test('G11: boot self-heals from the snapshot branch when the data dir is empty', async () => {
+    // Simulate a redeploy: a brand-new empty data dir. Boot must restore the
+    // dataset from the public snapshot branch by itself (no build step needed).
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'v301-selfheal-'));
+    const apiC = resetInstance(empty, { GS_SNAPSHOT_ENABLED: '1' });
+    await apiC.boot();
+    const users = DB().stores.users.all();
+    const probe = users.filter((u) => String(u.email || '').includes('persist-'));
+    assert.ok(users.length > 5, 'boot did not restore the snapshot: ' + users.length + ' users');
+    // The snapshot branch we published in this session contains the probe user.
+    assert.ok(probe.length >= 1, 'probe user missing after self-heal');
+  });
+
+  await test('G12: snapshot self-heal can be disabled (opt-out honoured)', async () => {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'v301-nosnap-'));
+    const apiD = resetInstance(empty, { GS_SNAPSHOT_ENABLED: '0' });
+    await apiD.boot();
+    // With the snapshot backend off, boot seeds fresh demo data only.
+    const users = DB().stores.users.all();
+    assert.ok(users.every((u) => u.is_demo), 'opt-out must not restore snapshot data');
+  });
+
   await test('G11: redeploy simulation restores the dataset (export → snapshot → boot)', async () => {
     // 1) boot an instance and write a marker
     const dirA = fs.mkdtempSync(path.join(os.tmpdir(), 'v301-redeploy-a-'));
