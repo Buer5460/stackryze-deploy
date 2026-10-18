@@ -324,6 +324,11 @@
     if (typeof window.renderTab === 'function') window.renderTab(name);
   }
 
+  // Tab switchers are referenced by inline onclick attributes in every client;
+  // expose them globally so the buttons work.
+  window.showTab = showTab;
+  window.closeDrawer = closeDrawer;
+
   // -------------------------------------------------------------------------
   // Auth gate — redirect to the demo login panel when there is no session.
   // -------------------------------------------------------------------------
@@ -499,12 +504,18 @@
         }).join('') + '</nav>'
       : '';
 
-    return header + hero + tabs + '<main id="main"></main>' + footer() + nav +
-      '<div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>' +
-      '<section class="drawer" id="drawer"><div class="handle"></div>' +
-      '<div class="drawer-head"><b id="drawerTitle">' + esc(t('details')) + '</b>' +
-      '<button id="drawerClose" onclick="closeDrawer()">' + esc(t('close')) + '</button></div>' +
-      '<div id="drawerBody"></div></section>';
+    var drawerBlock = '';
+    // Fix 4: client pages carry their own static drawer. Only inject a shared
+    // one when the page does not have it (prevents duplicate drawer DOM).
+    if (!document.getElementById('drawerBody')) {
+      drawerBlock =
+        '<div class="drawer-mask" id="mask" onclick="closeDrawer()"></div>' +
+        '<section class="drawer" id="drawer"><div class="handle"></div>' +
+        '<div class="drawer-head"><b id="drawerTitle">' + esc(t('details')) + '</b>' +
+        '<button id="drawerClose" onclick="closeDrawer()">' + esc(t('close')) + '</button></div>' +
+        '<div id="drawerBody"></div></section>';
+    }
+    return header + hero + tabs + '<main id="main"></main>' + footer() + nav + drawerBlock;
   }
 
   // -------------------------------------------------------------------------

@@ -529,12 +529,24 @@ async function refresh() {
     return showLogin();
   }
   caps = me.capabilities;
+  // Fix 3/4: the strict-gate endpoints (applications/documents/payments/...)
+  // return 403 while the binding flow is incomplete. That is a *legitimate*
+  // pre-binding state, not an error to surface: render the shell with the
+  // bind prompt and leave the gated lists empty. Anything else still throws.
+  var gate = function (p) {
+    return GS.get(p).catch(function (e) {
+      if (e.status === 403 && (e.payload && (e.payload.code === 'C_UNBOUND' || e.payload.code === 'C_BINDING_INCOMPLETE'))) {
+        return { data: [] };
+      }
+      throw e;
+    });
+  };
   var results = await Promise.all([
-    GS.get('/api/c/applications'),
-    GS.get('/api/c/documents'),
-    GS.get('/api/c/payments'),
-    GS.get('/api/c/messages'),
-    GS.get('/api/c/todos')
+    gate('/api/c/applications'),
+    gate('/api/c/documents'),
+    gate('/api/c/payments'),
+    gate('/api/c/messages'),
+    gate('/api/c/todos')
   ]);
   state.applications = results[0].data || [];
   state.documents = results[1].data || [];
@@ -542,6 +554,9 @@ async function refresh() {
   state.messages = results[3].data || [];
   state.todos = results[4].data || [];
   renderShell();
+  // Re-render the active tab so newly created records appear without a
+  // manual second click (Fix 4 UI closure).
+  if (typeof tab !== 'undefined') renderTab(tab);
 }
 
 function showLogin() {
