@@ -29,6 +29,7 @@ const applications = require('./lib/applications');
 const suppliers = require('./lib/supplier');
 const payments = require('./lib/payments');
 const seed = require('./lib/seed');
+const snapshotPolicy = require('./lib/snapshot-policy');
 const audit = require('./lib/audit');
 const { lower, upper, asNumber, round2, id: makeId } = require('./lib/util');
 
@@ -2055,19 +2056,43 @@ adminRouter.get('/audit', (req, res) => {
   res.json(ok(entries.slice(0, limit), { total: entries.length }));
 });
 
-// Data snapshot (Fix 2): export the current dataset so a maintenance script can
-// commit it to the `data-snapshot` branch, which the build checks out before
-// `npm start`. This is what makes data survive a *redeploy* on hosts without a
-// persistent disk (Render free tier). Export is admin-only.
+// Data snapshot (Fix 2 / Fix 3).
+//
+// /snapshot/export is the PUBLIC path: it applies a strict field whitelist and
+// refuses to emit anything sensitive, because its only purpose is to feed the
+// public `data-snapshot` branch (V3.0.3 security hotfix). Admin-only.
 adminRouter.get('/snapshot/export', (req, res) => {
-  const payload = {
+  let publicSnapshot;
+  try {
+    publicSnapshot = snapshotPolicy.buildPublicSnapshot(db.snapshot());
+  } catch (err) {
+    // Never publish a payload that fails the safety gate.
+    return fail(res, 422, '公开快照未通过安全白名单：' + err.message);
+  }
+  res.json(ok({
     version: VERSION,
     exported_at: new Date().toISOString(),
     backend: db.backend,
+    scope: 'public-whitelisted',
+    counts: publicSnapshot.counts || db.counts(),
+    dropped_collections: publicSnapshot.dropped,
+    data: publicSnapshot.data
+  }));
+});
+
+// Full (internal) export: every collection, for operator backups only. This
+// payload must NEVER be committed to a public repository — the maintenance
+// script refuses to publish it (see scripts/snapshot-push.sh).
+adminRouter.get('/snapshot/export/full', (req, res) => {
+  res.json(ok({
+    version: VERSION,
+    exported_at: new Date().toISOString(),
+    backend: db.backend,
+    scope: 'internal-only',
+    warning: 'Contains sessions, credentials and PII — never commit to a public repo.',
     counts: db.counts(),
     data: db.snapshot()
-  };
-  res.json(ok(payload));
+  }));
 });
 
 // Import a previously exported snapshot. Guarded by a confirmation body so it
@@ -2079,10 +2104,22 @@ adminRouter.post('/snapshot/import', (req, res) => {
     return fail(res, 400, '需要 confirm=RESTORE_SNAPSHOT 才会执行快照恢复');
   }
   if (!body.data || typeof body.data !== 'object') return fail(res, 400, '缺少 data');
-  db.restore(body.data);
+  // Fix 3: a restore must never re-activate old sessions. Whitelisted public
+  // snapshots carry no sessions at all, but an internal restore could.
+  const incoming = body.data;
+  if (incoming.sessions) incoming.sessions = [];
+  if (incoming.users && Array.isArray(incoming.users)) {
+    incoming.users = incoming.users.map((u) => {
+      const copy = { ...u };
+      delete copy.password;
+      delete copy.demo_token;
+      return copy;
+    });
+  }
+  db.restore(incoming);
   db.flushSync();
   audit.record({ actor: actorOf(req), action: 'admin:snapshot_import', entity: 'system', to: { counts: db.counts() } });
-  res.json(ok({ restored: true, counts: db.counts() }));
+  res.json(ok({ restored: true, counts: db.counts(), sessions_revoked: true }));
 });
 
 // System config.
@@ -2451,6 +2488,30 @@ async function boot() {
       await db.flush();
       // eslint-disable-next-line no-console
       console.log('[boot] revoked ' + revoked + ' admin demo session(s)');
+    }
+  }
+
+  // Fix 1 (V3.0.3): sessions captured in a snapshot that was published to the
+  // public `data-snapshot` branch must be treated as compromised. Every session
+  // created at or before SNAPSHOT_LEAK_CUTOFF is revoked at boot. Default cutoff
+  // is the timestamp of the leaked export (2026-10-18T13:31:29Z); set
+  // SNAPSHOT_LEAK_CUTOFF to override. Revocation only affects sessions, never
+  // user records, so users simply sign in again.
+  const cutoff = process.env.SNAPSHOT_LEAK_CUTOFF || '2026-10-18T13:31:29.209Z';
+  {
+    const cutoffTime = new Date(cutoff).getTime();
+    let revoked = 0;
+    for (const session of db.stores.sessions.all()) {
+      const created = new Date(session.created_at || 0).getTime();
+      if (Number.isFinite(created) && created <= cutoffTime) {
+        db.stores.sessions.remove(session.id);
+        revoked += 1;
+      }
+    }
+    if (revoked) {
+      await db.flush();
+      // eslint-disable-next-line no-console
+      console.log('[boot] revoked ' + revoked + ' session(s) at or before the snapshot leak cutoff (' + cutoff + ')');
     }
   }
   if (result.seeded) {

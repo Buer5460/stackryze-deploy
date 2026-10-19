@@ -41,6 +41,7 @@ done
 
 say() { echo "[snapshot-push] $*"; }
 SNAPSHOT_PATH="data/db/aethel.json"
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # --- 1. Validate inputs ----------------------------------------------------
 if [ "${DRY_RUN}" -eq 0 ] && [ -z "${ADMIN_TOKEN}" ]; then
@@ -57,15 +58,22 @@ SNAPSHOT_FILE="${WORK_DIR}/aethel.json"
 # --- 2. Export the dataset --------------------------------------------------
 if [ "${DRY_RUN}" -eq 1 ]; then
   say "dry-run: GET ${BASE_URL}/api/admin/snapshot/export (admin token required)"
-  say "dry-run: validate the payload has no credential-shaped fields"
+  say "dry-run: apply the public whitelist (lib/snapshot-policy.js)"
+  say "dry-run: refuse to commit if a non-whitelisted collection or field appears"
   say "dry-run: write ${SNAPSHOT_PATH} on branch '${BRANCH}' and push (no force)"
   exit 0
 fi
 
-say "exporting dataset from ${BASE_URL}"
-HTTP_CODE="$(curl -sS -m 180 -o "${EXPORT_FILE}" -w '%{http_code}' \
-  "${BASE_URL}/api/admin/snapshot/export" \
-  -H "Authorization: Bearer ${ADMIN_TOKEN}")"
+say "exporting PUBLIC (whitelisted) dataset from ${BASE_URL}"
+CURL_AUTH_HEADER="Authorization: Bearer ${ADMIN_TOKEN}"
+HTTP_CODE="$(curl -sS -m 180 -o "${EXPORT_FILE}" -w "%{http_code}" -H "${CURL_AUTH_HEADER}" "${BASE_URL}/api/admin/snapshot/export")"
+# The whitelisted export is the only payload that may be published. If the
+# server ever returns the internal scope (or anything unexpected), refuse.
+SCOPE="$(node "${REPO_ROOT}/scripts/snapshot-scope.js" "${EXPORT_FILE}" 2>/dev/null || true)"
+if [ -n "${SCOPE}" ] && [ "${SCOPE}" != "public-whitelisted" ]; then
+  echo "ERROR: export scope '${SCOPE}' is not publishable — aborting." >&2
+  exit 1
+fi
 if [ "${HTTP_CODE}" != "200" ]; then
   echo "ERROR: export failed with HTTP ${HTTP_CODE}" >&2
   head -c 300 "${EXPORT_FILE}" >&2 || true
@@ -78,20 +86,13 @@ if grep -qEi '(connection_?string|DATABASE_URL|"password"|"token"|"secret")"[[:s
   exit 1
 fi
 
-# --- 4. Build the snapshot payload ----------------------------------------
-node -e "
-const fs = require('fs');
-const payload = JSON.parse(fs.readFileSync('${EXPORT_FILE}', 'utf8'));
-if (!payload.ok || !payload.data) { console.error('unexpected export shape'); process.exit(1); }
-const out = { version: payload.data.version, exported_at: payload.data.exported_at,
-              backend: payload.data.backend, counts: payload.data.counts,
-              data: payload.data.data };
-fs.mkdirSync('$(dirname "${SNAPSHOT_FILE}")', { recursive: true });
-fs.writeFileSync('${SNAPSHOT_FILE}', JSON.stringify(out, null, 2) + '\n');
-const n = Object.values(out.counts).reduce((a, b) => a + b, 0);
-console.log('[snapshot-push] snapshot holds ' + n + ' records across ' +
-            Object.keys(out.counts).length + ' collections');
-"
+# --- 4. Build the snapshot payload + enforce the whitelist -----------------
+# Defence in depth: the server already whitelists; this script independently
+# re-applies the policy and REFUSES to write anything that is not publishable.
+node "${REPO_ROOT}/scripts/snapshot-project.js" "${EXPORT_FILE}" "${SNAPSHOT_FILE}" || {
+  echo "ERROR: the snapshot failed the public whitelist — nothing was committed." >&2
+  exit 1
+}
 
 # --- 5. Commit onto the snapshot branch via a dedicated worktree ----------
 # A worktree is used so the main checkout is NEVER switched, stashed or reset:

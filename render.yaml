@@ -16,12 +16,13 @@ services:
       # the service uses the snapshot backend described below.
       - key: DATABASE_URL
         sync: false
-      # Snapshot backend (Fix 2): the dataset lives in the `data-snapshot`
-      # branch of this repository and is restored at app start (pure Node, no
-      # git), so writes survive redeploys even on hosts without a persistent
-      # disk. Set GS_SNAPSHOT_ENABLED=0 to opt out (plain local file instead).
+      # Snapshot backend (V3.0.3): OFF by default. The public `data-snapshot`
+      # branch carries only a whitelisted, non-sensitive catalogue subset and
+      # must NOT be used as the runtime database — restoring it strips fields
+      # business rules need. Real persistence requires DATABASE_URL (private
+      # PostgreSQL). Set GS_SNAPSHOT_ENABLED=1 only for demo seeding.
       - key: GS_SNAPSHOT_ENABLED
-        value: "1"
+        value: "0"
       # Directory for the JSON file backend when the snapshot backend is off.
       - key: GS_DB_DIR
         value: /var/data

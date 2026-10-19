@@ -346,7 +346,7 @@ async function main() {
       target_countries: ['SG'], target_stages: ['MASTER'], target_courses: ['Computer Science'], languages: ['ZH']
     }, STUDENT);
     assert.equal(r.status, 201, JSON.stringify(r.body));
-    assert.equal(r.body.data.recommendation.tier, 'LEVEL_2');
+    assert.equal(r.body.data.recommendation.tier, 'LEVEL_2', JSON.stringify(r.body.data.recommendation));
     assert.ok(r.body.data.recommendation.candidates.length >= 1);
     bOrgId = r.body.data.recommendation.candidates[0].b_organization_id;
   });
@@ -850,19 +850,41 @@ async function main() {
   // =========================================================================
   console.log('\n[Persistence] across a restart');
   // =========================================================================
-  await test('data survives a server restart', async () => {
+  await test('data survives a server restart (same data dir, fresh process)', async () => {
+    // Restart in a CHILD process against the same data directory so the test
+    // measures real file persistence (the current process keeps its module
+    // cache and cannot simulate a restart faithfully).
+    const { execFileSync } = require('child_process');
+    const repoRoot = path.resolve(__dirname, '..');
     const before = (await req('GET', '/api/admin/dashboard', null, ADMIN)).body.data.counts;
-    // Flush and shut down.
     await db.flush();
-    await new Promise((resolve) => server.close(resolve));
-    // Boot a fresh server against the same data dir.
-    const mod2 = require('../api-server');
-    await mod2.boot();
-    server = mod2.app.listen(0, '127.0.0.1');
-    await new Promise((resolve) => server.once('listening', resolve));
-    base = 'http://127.0.0.1:' + server.address().port;
-    const ADMIN2 = await loginAdminReal();
-    const after = (await req('GET', '/api/admin/dashboard', null, ADMIN2)).body.data.counts;
+
+    const script = [
+      'const api = require(' + JSON.stringify(path.join(repoRoot, 'api-server')) + ');',
+      'api.boot().then(() => {',
+      '  const db = require(' + JSON.stringify(path.join(repoRoot, 'lib', 'db')) + ');',
+      '  const out = { users: db.stores.users.all().length,',
+      '    applications: db.stores.applications.all().length,',
+      '    bindings: db.stores.bindings.all().length,',
+      '    commission_ledger: db.stores.commission_ledger.all().length };',
+      '  require("fs").writeFileSync(process.env.OUT_FILE, JSON.stringify(out));',
+      '  process.exit(0);',
+      '});'
+    ].join('\n');
+    const outFile = path.join(os.tmpdir(), 'restart-counts-' + Date.now() + '.json');
+    execFileSync('node', ['-e', script], {
+      env: {
+        ...process.env,
+        GS_DB_DIR: process.env.GS_DB_DIR,
+        GS_SNAPSHOT_ENABLED: '0',
+        GS_SEED_ACCOUNTS: '0',
+        OUT_FILE: outFile
+      },
+      encoding: 'utf8'
+    });
+    const after = JSON.parse(fs.readFileSync(outFile, 'utf8'));
+    fs.unlinkSync(outFile);
+
     assert.equal(after.users, before.users, 'users lost across restart');
     assert.equal(after.applications, before.applications, 'applications lost across restart');
     assert.equal(after.bindings, before.bindings, 'bindings lost across restart');

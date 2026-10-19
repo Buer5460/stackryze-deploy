@@ -69,9 +69,12 @@ async function main() {
     const r = await req('GET', '/api/admin/snapshot/export', null, ADMIN);
     assert.equal(r.status, 200);
     assert.equal(r.body.data.backend, 'json-file');
-    assert.ok(r.body.data.counts.users > 0);
-    assert.ok(Array.isArray(r.body.data.data.users));
-    assert.ok(r.body.data.data.bindings !== undefined);
+    // Public snapshot: whitelisted catalogue only (no users/sessions).
+    assert.equal(r.body.data.scope, 'public-whitelisted');
+    assert.ok(Array.isArray(r.body.data.data.institutions), 'institutions missing');
+    assert.ok(Array.isArray(r.body.data.data.suppliers), 'suppliers missing');
+    assert.equal('users' in r.body.data.data, false, 'users leaked into the public snapshot');
+    assert.equal('sessions' in r.body.data.data, false, 'sessions leaked into the public snapshot');
   });
 
   await test('G2: snapshot export requires an admin session', async () => {
@@ -82,6 +85,29 @@ async function main() {
     assert.equal(r2.status, 403, 'a B account must not export snapshots');
   });
 
+  await test('G4: snapshot import without confirmation is refused', async () => {
+    // Re-authenticate: an import clears sessions by design.
+    const fresh = (await req('POST', '/api/auth/login', { email: 'admin@demo.local', password: 'demo1234' })).body.data.token;
+    const H = { Authorization: 'Bearer ' + fresh };
+    const r = await req('POST', '/api/admin/snapshot/import', { data: {} }, H);
+    assert.equal(r.status, 400);
+    const r2 = await req('POST', '/api/admin/snapshot/import', { confirm: 'yes', data: {} }, H);
+    assert.equal(r2.status, 400);
+  });
+
+  await test('G5: public export never leaks connection strings, secrets or PII', async () => {
+    const fresh = (await req('POST', '/api/auth/login', { email: 'admin@demo.local', password: 'demo1234' })).body.data.token;
+    const r = await req('GET', '/api/admin/snapshot/export', null, { Authorization: 'Bearer ' + fresh });
+    const raw = JSON.stringify(r.body);
+    assert.equal(raw.includes('DATABASE_URL'), false);
+    assert.equal(/postgres(ql)?:\/\//.test(raw), false, 'a connection string leaked into the export');
+    // The seeded demo user password is hashed, never plaintext.
+    const users = r.body.data.data.users || [];
+    for (const u of users) {
+      if (u.password) assert.match(u.password, /^sha256:/, 'plaintext password in export');
+    }
+  });
+
   await test('G3: snapshot import restores an exported dataset', async () => {
     // Create a marker record, export, wipe, import, verify.
     const marker = DB().stores.messages.insert({
@@ -90,7 +116,9 @@ async function main() {
       body: 'snapshot-marker', created_at: new Date().toISOString()
     });
     await DB().commitNow();
-    const exported = await req('GET', '/api/admin/snapshot/export', null, ADMIN);
+    // Internal export carries business records (messages); the public export
+    // correctly excludes them, so an operator restore uses the full scope.
+    const exported = await req('GET', '/api/admin/snapshot/export/full', null, ADMIN);
     const payload = exported.body.data;
 
     // Simulate data loss: remove the marker and restart the module graph.
@@ -105,24 +133,9 @@ async function main() {
     assert.equal(back.body, 'snapshot-marker');
   });
 
-  await test('G4: snapshot import without confirmation is refused', async () => {
-    const r = await req('POST', '/api/admin/snapshot/import', { data: {} }, ADMIN);
-    assert.equal(r.status, 400);
-    const r2 = await req('POST', '/api/admin/snapshot/import', { confirm: 'yes', data: {} }, ADMIN);
-    assert.equal(r2.status, 400);
-  });
 
-  await test('G5: export never leaks connection strings or secrets', async () => {
-    const r = await req('GET', '/api/admin/snapshot/export', null, ADMIN);
-    const raw = JSON.stringify(r.body);
-    assert.equal(raw.includes('DATABASE_URL'), false);
-    assert.equal(/postgres(ql)?:\/\//.test(raw), false, 'a connection string leaked into the export');
-    // The seeded demo user password is hashed, never plaintext.
-    const users = r.body.data.data.users || [];
-    for (const u of users) {
-      if (u.password) assert.match(u.password, /^sha256:/, 'plaintext password in export');
-    }
-  });
+  // Re-seed accounts: the import above strips credentials on purpose.
+  DB(); require(path.join(REPO, 'lib', 'seed.js')).ensureAccounts();
 
   await new Promise((r) => server.close(r));
 
@@ -233,69 +246,75 @@ async function main() {
     }
   });
 
-  await test('G11: boot self-heals from the snapshot branch when the data dir is empty', async () => {
-    // Simulate a redeploy: a brand-new empty data dir. Boot must restore the
-    // dataset from the public snapshot branch by itself (no build step needed).
-    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'v301-selfheal-'));
-    const apiC = resetInstance(empty, { GS_SNAPSHOT_ENABLED: '1' });
+  await test('G11: snapshot restore is OFF by default (V3.0.3 policy)', async () => {
+    // A public snapshot holds only a whitelisted catalogue subset. Using it as
+    // the runtime database strips fields business rules need, so it is disabled
+    // unless explicitly opted in.
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'v303-off-'));
+    const apiC = resetInstance(empty, {}); // GS_SNAPSHOT_ENABLED unset => off
     await apiC.boot();
     const users = DB().stores.users.all();
-    const probe = users.filter((u) => String(u.email || '').includes('persist-'));
-    assert.ok(users.length > 5, 'boot did not restore the snapshot: ' + users.length + ' users');
-    // The snapshot branch we published in this session contains the probe user.
-    assert.ok(probe.length >= 1, 'probe user missing after self-heal');
+    // Seeded locally: accounts exist, catalogue seeded (not restored).
+    assert.ok(users.length > 0, 'no accounts after a fresh boot');
+    assert.ok(DB().stores.b_profiles.all().length >= 1, 'catalogue missing');
+    const rec = require(path.join(REPO, 'lib', 'recommendation'));
+    const out = rec.recommend({ id: 'g11', target_countries: ['SG'], target_stages: ['MASTER'], target_countries_: null, target_courses: ['Computer Science'], languages: ['ZH'] });
+    assert.equal(out.tier, 'LEVEL_2', 'recommendation degraded (snapshot restore polluted the fixture)');
   });
 
-  await test('G12: snapshot self-heal can be disabled (opt-out honoured)', async () => {
-    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'v301-nosnap-'));
-    const apiD = resetInstance(empty, { GS_SNAPSHOT_ENABLED: '0' });
+  await test('G12: opting in restores only whitelisted catalogue data (no accounts)', async () => {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'v303-on-'));
+    const apiD = resetInstance(empty, { GS_SNAPSHOT_ENABLED: '1' });
     await apiD.boot();
-    // With the snapshot backend off, boot seeds fresh demo data only.
-    const users = DB().stores.users.all();
-    assert.ok(users.every((u) => u.is_demo), 'opt-out must not restore snapshot data');
+    const db = DB();
+    // Whatever came from the public snapshot, it must never contain users or
+    // sessions, and accounts are re-created locally by ensureAccounts().
+    assert.ok(db.stores.users.all().length > 0, 'accounts must exist (locally seeded)');
+    // The snapshot itself must never carry credentials. Local seed accounts
+    // (created by ensureAccounts after boot) are expected to have hashes.
+    const policy = require(path.join(REPO, 'lib', 'snapshot-policy.js'));
+    const built = policy.buildPublicSnapshot(db.snapshot());
+    const raw = JSON.stringify(built.data);
+    assert.equal(raw.includes('sha256:'), false, 'a password hash reached the public snapshot');
+    assert.equal(raw.includes('demo_token'), false, 'a demo token reached the public snapshot');
+    assert.equal(raw.includes('"sessions"'), false, 'sessions reached the public snapshot');
   });
 
-  await test('G11: redeploy simulation restores the dataset (export → snapshot → boot)', async () => {
-    // 1) boot an instance and write a marker
-    const dirA = fs.mkdtempSync(path.join(os.tmpdir(), 'v301-redeploy-a-'));
-    const apiA = resetInstance(dirA);
+  await test('G11: a simulated redeploy restores whitelisted catalogue data (BLOCKED for business records)', async () => {
+    // V3.0.3 policy: the public snapshot is a whitelisted catalogue only.
+    // Business records (users/binding/application/commission) CANNOT be
+    // published publicly, so cross-deploy persistence for them is BLOCKED
+    // until a private DATABASE_URL is provisioned. This test verifies the
+    // part that IS safe: catalogue records survive a simulated redeploy.
+    // 1) boot an instance, confirm catalogue + accounts
+    const dirA = fs.mkdtempSync(path.join(os.tmpdir(), 'v303-redeploy-a-'));
+    const apiA = resetInstance(dirA, { GS_SNAPSHOT_ENABLED: '0' });
     await apiA.boot();
+    const institutionsA = DB().stores.institutions.all().length;
+    assert.ok(institutionsA > 0, 'catalogue seeded');
+    // 2) export the PUBLIC snapshot and write it as a new instance's store
     const serverA = apiA.app.listen(0, '127.0.0.1');
     await new Promise((r) => serverA.once('listening', r));
     const baseA = 'http://127.0.0.1:' + serverA.address().port;
-    const reqA = async (m, p, b, h) => {
-      const r = await fetch(baseA + p, {
-        method: m, headers: { 'Content-Type': 'application/json', ...(h || {}) },
-        body: (b === undefined || m === 'GET') ? undefined : JSON.stringify(b)
-      });
-      return { status: r.status, body: await r.json().catch(() => null) };
-    };
-    const adminA = (await reqA('POST', '/api/auth/login', { email: 'admin@demo.local', password: 'demo1234' })).body.data.token;
-    const HA = { Authorization: 'Bearer ' + adminA };
-    DB().stores.messages.insert({
-      id: 'MSG-' + TEST_RUN_ID + '-redeploy', thread_id: 't', from_type: 'C', from_id: 'x',
-      to_type: 'B', to_id: 'y', body: 'survives-redeploy', created_at: new Date().toISOString()
-    });
-    await DB().commitNow();
-    const exported = (await reqA('GET', '/api/admin/snapshot/export', null, HA)).body.data;
-
-    // 2) "deploy": a fresh instance with an empty data dir, seeded from the snapshot
+    const adminA = (await (async () => {
+      const r = await fetch(baseA + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'admin@demo.local', password: 'demo1234' }) });
+      return (await r.json()).data.token;
+    })());
+    const pubExport = await (async () => {
+      const r = await fetch(baseA + '/api/admin/snapshot/export', { headers: { Authorization: 'Bearer ' + adminA } });
+      return (await r.json()).data;
+    })();
     await new Promise((r) => serverA.close(r));
-    const dirB = fs.mkdtempSync(path.join(os.tmpdir(), 'v301-redeploy-b-'));
-    fs.writeFileSync(path.join(dirB, 'aethel.json'), JSON.stringify({ version: exported.version, data: exported.data }));
-    const apiB = resetInstance(dirB);
-    await apiB.boot();
-    const serverB = apiB.app.listen(0, '127.0.0.1');
-    await new Promise((r) => serverB.once('listening', r));
 
-    // 3) the marker is present in the "redeployed" instance
-    const marker = DB().stores.messages.byId('MSG-' + TEST_RUN_ID + '-redeploy');
-    assert.ok(marker, 'the marker must survive the simulated redeploy');
-    assert.equal(marker.body, 'survives-redeploy');
-    // 4) and the seed did not duplicate the demo dataset
-    const users = DB().stores.users.all().filter((u) => u.email === 'admin@demo.local');
-    assert.equal(users.length, 1, 'seed must be idempotent across a snapshot restore');
-    await new Promise((r) => serverB.close(r));
+    // 3) "deploy": fresh instance whose data dir already holds the snapshot
+    const dirB = fs.mkdtempSync(path.join(os.tmpdir(), 'v303-redeploy-b-'));
+    fs.writeFileSync(path.join(dirB, 'aethel.json'), JSON.stringify({ version: pubExport.version, data: pubExport.data }));
+    const apiB = resetInstance(dirB, { GS_SNAPSHOT_ENABLED: '0' });
+    await apiB.boot();
+    assert.ok(DB().stores.institutions.all().length > 0, 'catalogue lost across the simulated redeploy');
+    // seed must stay idempotent: no duplicated catalogue rows
+    assert.equal(DB().stores.suppliers.all().filter((x) => x.type === 'FINANCE').length, 1,
+      'catalogue duplicated after restore (seed was not idempotent)');
   });
 
   console.log('\n==================================================');
