@@ -1,6 +1,6 @@
 {
   "name": "global-study-mobile-fullstack",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "private": true,
   "description": "AETHEL EDU / GlobalStudy \u2014 FULL MVP V3. Mobile-first S2B2C global school search, study-abroad collaboration and education services platform.",
   "main": "api-server.js",

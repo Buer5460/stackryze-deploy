@@ -33,7 +33,7 @@ const snapshotPolicy = require('./lib/snapshot-policy');
 const audit = require('./lib/audit');
 const { lower, upper, asNumber, round2, id: makeId } = require('./lib/util');
 
-const VERSION = '3.0.2';
+const VERSION = '3.0.3';
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '2mb' }));
