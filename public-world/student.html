@@ -52,7 +52,7 @@ function renderShell() {
     },
     Discover: { eyebrow: zh ? '发现' : 'DISCOVER', title: zh ? '找学校与教育服务' : 'Find schools and services', lead: zh ? '按国家、学段、课程与费用搜索，支持收藏与对比。' : 'Search by country, stage, curriculum and fee.' },
     Apply: { eyebrow: zh ? '申请中心' : 'APPLICATIONS', title: zh ? 'S0–S10 申请状态机' : 'The S0–S10 application machine', lead: zh ? '每个阶段都有负责人、待办、材料与审计记录。' : 'Every stage has an owner, todos, documents and an audit trail.' },
-    Service: { eyebrow: zh ? '服务中心' : 'SERVICES', title: zh ? '住宿 / 体检 / 认证 / 签证' : 'Accommodation / Medical / Certification / Visa', lead: zh ? '绑定后即可自主选择、购买与支付。' : 'Once bound you can choose, buy and pay by yourself.' },
+    Service: { eyebrow: zh ? '服务中心' : 'SERVICES', title: zh ? '住宿 / 认证 / 签证' : 'Accommodation / Certification / Visa', lead: zh ? '绑定后即可自主选择、购买与支付。' : 'Once bound you can choose, buy and pay by yourself.' },
     Me: { eyebrow: zh ? '我的' : 'ACCOUNT', title: zh ? '档案、支付与消息' : 'Profile, payments and messages', lead: zh ? '支付走 AETHEL X Sandbox，不涉及真实资金。' : 'Payments run through the AETHEL X sandbox — no real funds.' }
   }[active.key] || {};
 
@@ -391,7 +391,7 @@ function uploadDocumentFlow(appId) {
   var zh = GS.lang === 'zh';
   GS.openDrawer(zh ? '上传材料' : 'Upload document',
     '<div class="field"><label>' + GS.esc(zh ? '材料类型' : 'Type') + '</label><select id="docType">' +
-    ['passport', 'transcript', 'degree', 'language_score', 'offer', 'visa', 'medical', 'certification', 'other']
+    ['passport', 'transcript', 'degree', 'language_score', 'offer', 'visa', 'certification', 'other']
       .map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('') +
     '</select></div>' +
     '<div class="field"><label>' + GS.esc(zh ? '文件名' : 'File name') + '</label><input id="docName" value="document.pdf"></div>' +
@@ -425,7 +425,6 @@ function renderService(main) {
   var zh = GS.lang === 'zh';
   var entries = [
     { key: 'accommodation', label: zh ? '住宿预订' : 'Accommodation' },
-    { key: 'medical', label: zh ? '体检委托' : 'Medical' },
     { key: 'certification', label: zh ? '文件认证' : 'Certification' },
     { key: 'visa', label: zh ? '签证进度' : 'Visa progress' }
   ];
@@ -440,7 +439,6 @@ function serviceDetail(key) {
   var zh = GS.lang === 'zh';
   var text = {
     accommodation: zh ? '住宿由住宿供应商提供，绑定后可通过服务机构预订。' : 'Accommodation is provided by the accommodation supplier; book through your agency once bound.',
-    medical: zh ? '体检委托保存预约、状态、完成与报告文件，不保存医疗诊断。' : 'Medical orders store appointment, status, completion and report files — never a diagnosis.',
     certification: zh ? '文件认证覆盖学历、成绩、公证与翻译认证。' : 'Certification covers degree, transcript, notarisation and translation.',
     visa: zh ? '签证步骤与结果由服务机构录入，学生只读。' : 'Visa steps and results are entered by your agency; you have read-only access.'
   }[key];

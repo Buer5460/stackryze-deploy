@@ -37,6 +37,10 @@ const VERSION = '3.0.3';
 const app = express();
 app.disable('x-powered-by');
 app.use(express.json({ limit: '2mb' }));
+const DISABLED_SUPPLIER_TYPES = new Set(
+  String(process.env.GS_DISABLED_MODULES || '').split(/[\s,]+/).map((x) => x.trim().toUpperCase()).filter(Boolean)
+);
+const SUPPLIER_ROUTE_TYPES = { '/supplier/medical': 'MEDICAL', '/supplier/finance': 'FINANCE' };
 
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -51,6 +55,21 @@ app.use((req, res, next) => {
 // ---------------------------------------------------------------------------
 const ok = (data, meta) => (meta === undefined ? { ok: true, data } : { ok: true, data, meta });
 const fail = (res, status, error, extra) => res.status(status).json({ ok: false, error, ...(extra || {}) });
+const supplierTypeDisabled = (type) => DISABLED_SUPPLIER_TYPES.has(String(type || '').toUpperCase());
+const visibleSuppliers = (list) => list.filter((supplier) => !supplierTypeDisabled(supplier.type));
+const disabledClientRoute = (route) => supplierTypeDisabled(SUPPLIER_ROUTE_TYPES[route]);
+
+function disabledSupplierForUser(user) {
+  if (!user || !user.organization_id) return false;
+  const supplier = suppliers.listSuppliers({}).find((item) => String(item.organization_id) === String(user.organization_id));
+  return Boolean(supplier && supplierTypeDisabled(supplier.type));
+}
+
+function unavailableModule(type) {
+  return (req, res, next) => supplierTypeDisabled(type)
+    ? res.status(404).json({ ok: false, error: '该服务模块暂未开放' })
+    : next();
+}
 
 // Resolve the actor once per request and attach it. Demo tokens are accepted
 // only for seeded demo users.
@@ -164,10 +183,11 @@ app.get('/api/health', (req, res) => {
     version: VERSION,
     audience: 'public',
     backend: db.backend,
-    persistence: db.backend === 'postgresql' ? 'PostgreSQL (DATABASE_URL)' : db.backend === 'json-file' ? 'JSON file store (durable across restarts)' : 'memory (test mode)',
+    persistence: db.backend === 'postgresql' ? 'PostgreSQL (DATABASE_URL)' : db.backend === 'json-file' ? 'JSON file store (local filesystem; cross-deploy durability depends on host storage)' : 'memory (test mode)',
     counts: db.counts(),
     clients: ['/', '/student', '/agent', '/dbc', '/supplier/education', '/supplier/medical',
-      '/supplier/certification', '/supplier/visa', '/supplier/accommodation', '/supplier/finance', '/ads', '/admin'],
+      '/supplier/certification', '/supplier/visa', '/supplier/accommodation', '/supplier/finance', '/ads', '/admin']
+      .filter((route) => !disabledClientRoute(route)),
     feature_flags: {
       finance_enabled: config.financeEnabled(),
       insurance_enabled: Boolean(config.get('insurance_enabled', false)),
@@ -201,7 +221,7 @@ app.get('/api/meta', (req, res) => res.json(ok({
     { route: '/supplier/finance', audience: 'S', label_zh: '教育金融（默认关闭）', label_en: 'Education finance (off)' },
     { route: '/ads', audience: 'S', label_zh: '广告中心', label_en: 'Ads centre' },
     { route: '/admin', audience: 'ADMIN', label_zh: '平台管理（需登录）', label_en: 'Admin (login required)' }
-  ],
+  ].filter((client) => !disabledClientRoute(client.route)),
   data_policy: {
     demo_data_is_labeled: config.get('demo_data_requires_label', true),
     verified_data_requires_source: config.get('verified_requires_source', true),
@@ -215,11 +235,11 @@ app.get('/api/meta', (req, res) => res.json(ok({
 app.get('/api/reference', (req, res) => {
   res.json(ok({
     stages: auth.STAGES,
-    supplier_types: Object.values(auth.SUPPLIER_TYPES),
+    supplier_types: Object.values(auth.SUPPLIER_TYPES).filter((type) => !supplierTypeDisabled(type.id)),
     reserved_supplier_types: auth.RESERVED_SUPPLIER_TYPES,
     b_levels: Object.values(auth.B_LEVELS),
     roles: Object.values(auth.ROLES).map((r) => ({ id: r.id, audience: r.audience, label_zh: r.label_zh, label_en: r.label_en, permissions: r.permissions })),
-    document_types: applications.DOCUMENT_TYPES,
+    document_types: applications.DOCUMENT_TYPES.filter((type) => !(type === 'medical' && supplierTypeDisabled('MEDICAL'))),
     payment_kinds: payments.PAYMENT_KINDS,
     commission_modes: contracts.COMMISSION_MODES
   }));
@@ -228,7 +248,7 @@ app.get('/api/reference', (req, res) => {
 // Public supplier catalogue (Rule 8/20: no private contact, no commission).
 app.get('/api/public/suppliers', (req, res) => {
   const type = req.query.type ? String(req.query.type).toUpperCase() : null;
-  let list = suppliers.listSuppliers({ type: type || undefined, public_visible: true });
+  let list = visibleSuppliers(suppliers.listSuppliers({ type: type || undefined, public_visible: true }));
   if (req.query.q) {
     const q = String(req.query.q).toLowerCase();
     list = list.filter((s) => String(s.name).toLowerCase().includes(q) || String(s.name_en || '').toLowerCase().includes(q));
@@ -239,6 +259,7 @@ app.get('/api/public/suppliers', (req, res) => {
 app.get('/api/public/suppliers/:id', (req, res) => {
   const supplier = suppliers.supplierById(req.params.id);
   if (!supplier) return fail(res, 404, '供应商不存在');
+  if (supplierTypeDisabled(supplier.type)) return fail(res, 404, '供应商不存在');
   if (!supplier.public_visible) return fail(res, 404, '供应商未公开');
   res.json(ok(stripForC(suppliers.publicView(supplier))));
 });
@@ -263,6 +284,31 @@ app.get('/api/public/schools', (req, res) => {
     fees: { tuition_min: s.tuition_min, tuition_max: s.tuition_max, currency: s.currency },
     transit: s.distance_label ? { distance_label: s.distance_label } : null
   })), { total: list.length, page, pageSize }));
+});
+
+app.get('/api/public/schools/:id', (req, res) => {
+  const legacy = require('./server');
+  const school = legacy.listSchools({}).find((item) => String(item.id).toLowerCase() === String(req.params.id).toLowerCase());
+  if (!school) return fail(res, 404, '学校不存在');
+  res.json(ok({
+    id: school.id,
+    name: { en: school.name_en || school.name_zh, zh: school.name_zh || school.name_en },
+    verification: {
+      status: school.verified_status || 'draft',
+      is_demo: Boolean(school.is_demo),
+      verified_at: school.verified_at || null,
+      source_url: school.source_url || null
+    },
+    institution_type: school.institution_type || null,
+    location: school.location,
+    languages: { primary: school.main_language || null, additional: school.additional_languages || [] },
+    stages: school.stages || [],
+    curricula: school.curricula || [],
+    fees: { tuition_min: school.tuition_min, tuition_max: school.tuition_max, currency: school.currency },
+    boarding: Boolean(school.boarding),
+    source: { source_url: school.source_url || null, source_type: school.is_demo ? 'demo' : (school.source_url ? 'external' : null) },
+    transit: school.distance_label ? { distance_label: school.distance_label } : null
+  }));
 });
 
 // Accommodation near a school — by straight-line distance only.
@@ -302,6 +348,7 @@ app.get('/api/auth/demo-accounts', (req, res) => {
   const accounts = db.stores.users.all()
     .filter((u) => u.is_demo && u.demo_token)
     .filter((u) => PUBLIC_ADMIN_DEMO() || !isAdminRole(u.role))
+    .filter((u) => !disabledSupplierForUser(u))
     .map((u) => ({
       token: u.demo_token,
       route: auth.AUDIENCE_ROUTES[auth.ROLES[u.role].audience],
@@ -323,6 +370,7 @@ app.post('/api/auth/demo-login', (req, res) => {
   if (!token) return fail(res, 400, 'token 必填');
   const user = db.stores.users.all().find((u) => u.is_demo && String(u.demo_token) === String(token));
   if (!user) return fail(res, 404, 'Demo 账号不存在');
+  if (disabledSupplierForUser(user)) return fail(res, 404, 'Demo 账号不存在');
   // Server-side admin demo gate (Fix 5): not just a hidden button.
   if (isAdminRole(user.role) && !PUBLIC_ADMIN_DEMO()) {
     return fail(res, 403, '管理员不提供公开 Demo 登录');
@@ -492,13 +540,14 @@ cRouter.post('/bindings/:id/sign', async (req, res) => {
 // gate starts after these read-only endpoints.
 cRouter.get('/suppliers', (req, res) => {
   const type = req.query.type ? String(req.query.type).toUpperCase() : null;
-  const list = suppliers.listSuppliers({ type: type || undefined, public_visible: true });
+  const list = visibleSuppliers(suppliers.listSuppliers({ type: type || undefined, public_visible: true }));
   res.json(ok(list.map((s) => stripForC(suppliers.publicView(s)))));
 });
 
 cRouter.get('/suppliers/:id', (req, res) => {
   const supplier = suppliers.supplierById(req.params.id);
   if (!supplier) return fail(res, 404, '供应商不存在');
+  if (supplierTypeDisabled(supplier.type)) return fail(res, 404, '供应商不存在');
   res.json(ok(stripForC(suppliers.publicView(supplier))));
 });
 
@@ -572,6 +621,9 @@ cRouter.get('/applications/:id/timeline', (req, res) => {
 cRouter.post('/applications/:id/documents', (req, res) => {
   const app = applications.applicationById(req.params.id);
   if (!app || String(app.c_profile_id) !== String(req.cProfile.id)) return fail(res, 404, '申请不存在');
+  if (String(req.body && req.body.type || '').toLowerCase() === 'medical' && supplierTypeDisabled('MEDICAL')) {
+    return fail(res, 403, '体检材料暂未开放');
+  }
   const result = applications.uploadDocument(app.id, req.body || {}, actorOf(req));
   if (!result.ok) return fail(res, 400, result.error);
   res.status(201).json(ok(result));
@@ -829,13 +881,14 @@ bRouter.get('/clients/:cProfileId', (req, res) => {
 // S resource centre (B-side view includes cooperation + commission rules).
 bRouter.get('/suppliers', (req, res) => {
   const type = req.query.type ? String(req.query.type).toUpperCase() : null;
-  const list = suppliers.listSuppliers({ type: type || undefined, public_visible: true });
+  const list = visibleSuppliers(suppliers.listSuppliers({ type: type || undefined, public_visible: true }));
   res.json(ok(list.map((s) => suppliers.bView(s))));
 });
 
 bRouter.get('/suppliers/:id', (req, res) => {
   const supplier = suppliers.supplierById(req.params.id);
   if (!supplier) return fail(res, 404, '供应商不存在');
+  if (supplierTypeDisabled(supplier.type)) return fail(res, 404, '供应商不存在');
   res.json(ok(suppliers.bView(supplier)));
 });
 
@@ -1452,11 +1505,11 @@ function financeRouter() {
 }
 
 app.use('/api/s/education', sRouterFor('EDUCATION'));
-app.use('/api/s/medical', medicalRouter());
+app.use('/api/s/medical', unavailableModule('MEDICAL'), medicalRouter());
 app.use('/api/s/certification', certificationRouter());
 app.use('/api/s/visa', visaRouter());
 app.use('/api/s/accommodation', accommodationRouter());
-app.use('/api/s/finance', financeRouter());
+app.use('/api/s/finance', unavailableModule('FINANCE'), financeRouter());
 
 // ===========================================================================
 // DBC END — State A only
@@ -2433,6 +2486,11 @@ function upsertVisaCase(applicationId, body, actor) {
 // Static clients + SPA fallback
 // ===========================================================================
 const publicDir = path.join(__dirname, 'public-world');
+app.use((req, res, next) => {
+  const route = req.path.replace(/\.html$/, '');
+  if (SUPPLIER_ROUTE_TYPES[route] && disabledClientRoute(route)) return res.sendStatus(404);
+  next();
+});
 app.use(express.static(publicDir, { maxAge: '5m' }));
 
 // Unknown API paths return JSON, never the SPA shell.

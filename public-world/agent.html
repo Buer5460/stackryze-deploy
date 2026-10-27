@@ -42,7 +42,7 @@ function renderShell() {
     Home: { eyebrow: zh ? '机构端 · 在线演示' : 'AGENT CLIENT · LIVE DEMO', title: zh ? '工作台' : 'Dashboard', lead: zh ? '绑定申请、申请看板、目标预警与健康度。' : 'Binding requests, the application board, target warnings and health.' },
     Clients: { eyebrow: zh ? '客户池' : 'CLIENTS', title: zh ? 'C 端客户池' : 'C client pool', lead: zh ? '来源：平台推荐、B 邀请、自然注册后绑定。' : 'Sources: platform recommendation, agency invitation, natural registration.' },
     Board: { eyebrow: zh ? 'S0–S10' : 'S0–S10', title: zh ? '申请看板' : 'Application board', lead: zh ? '看板 / 列表两种视图，支持推进阶段。' : 'Kanban and list views with stage advancement.' },
-    Resource: { eyebrow: zh ? '资源中心' : 'RESOURCE', title: zh ? 'S 端资源中心' : 'Supplier resource centre', lead: zh ? '教育机构、住宿、体检、认证、签证；贷款默认关闭。' : 'Education, accommodation, medical, certification and visa. Finance is off by default.' },
+    Resource: { eyebrow: zh ? '资源中心' : 'RESOURCE', title: zh ? 'S 端资源中心' : 'Supplier resource centre', lead: zh ? '教育机构、住宿、文件认证与签证。' : 'Education, accommodation, certification and visa.' },
     Money: { eyebrow: zh ? '结算中心' : 'MONEY', title: zh ? '佣金与结算' : 'Commission & settlement', lead: zh ? '预计佣金 → 确认 → 应收 → 已收 → 应付 → 已付 → 扣回。' : 'Projected → Confirmed → Receivable → Received → Payable → Paid → Clawed back.' }
   }[active.key] || {};
 
@@ -332,13 +332,13 @@ function renderResource(main) {
   main.innerHTML = '<section class="section">' +
     '<div class="search"><input id="sq" class="wide" placeholder="' + GS.esc(zh ? '搜索供应商' : 'Search suppliers') + '">' +
     '<select id="stype"><option value="">' + GS.esc(GS.t('all')) + '</option>' +
-    ['EDUCATION', 'MEDICAL', 'CERTIFICATION', 'VISA', 'ACCOMMODATION'].map(function (t) {
+    ['EDUCATION', 'CERTIFICATION', 'VISA', 'ACCOMMODATION'].map(function (t) {
       return '<option value="' + t + '">' + t + '</option>';
     }).join('') + '</select>' +
     '<button class="btn primary wide" onclick="runResourceSearch()">' + GS.esc(GS.t('search')) + '</button></div>' +
     '<div class="section-head"><h2>' + GS.esc(zh ? 'S 端资源' : 'Suppliers') + '</h2><span id="resourceCount">—</span></div>' +
     '<div id="resourceList" class="list">' + GS.emptyState(GS.t('loading')) + '</div>' +
-    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? 'B 端可见合作条件、协议状态与佣金规则；C 端不可见。贷款功能默认关闭。' : 'B can see cooperation terms, agreement status and commission rules. C cannot. Finance is off by default.') + '</div>' +
+    '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? 'B 端可见合作条件、协议状态与佣金规则；C 端不可见。' : 'B can see cooperation terms, agreement status and commission rules. C cannot.') + '</div>' +
     '</section>';
   runResourceSearch();
 }

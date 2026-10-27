@@ -16,7 +16,7 @@
   <section class="hero">
     <div class="eyebrow" id="eyebrow">SUPPLIER · 在线演示</div>
     <h1 id="title">请选择供应商类型</h1>
-    <p id="lead">六类供应商共用同一套 Supplier Center，按类型进入对应客户端。</p>
+    <p id="lead">四类供应商共用同一套 Supplier Center，按类型进入对应客户端。</p>
   </section>
   <main class="section">
     <div class="rows" id="typeList"></div>
@@ -29,25 +29,23 @@
 <script>
 var TYPES = [
   { route: '/supplier/education', icon: '🏫', zh: '教育机构', en: 'Education', descZh: '课程发布、招生申请、录取流程与看板。', descEn: 'Programs, admissions, the offer workflow and the board.' },
-  { route: '/supplier/medical', icon: '🩺', zh: '体检机构', en: 'Medical', descZh: '体检委托、预约、状态与报告文件。', descEn: 'Check-up orders, appointments, status and report files.' },
   { route: '/supplier/certification', icon: '📄', zh: '文件认证', en: 'Certification', descZh: '学历、成绩、公证与翻译认证。', descEn: 'Degree, transcript, notarisation and translation.' },
   { route: '/supplier/visa', icon: '🛂', zh: '签证代办', en: 'Visa Agency', descZh: '签证产品、委托、材料、预约与结果。', descEn: 'Visa products, orders, materials, appointments and results.' },
-  { route: '/supplier/accommodation', icon: '🏠', zh: '学生住宿', en: 'Accommodation', descZh: '房型、房间、床位库存、预订与入住。', descEn: 'Room types, rooms, beds, bookings and check-in.' },
-  { route: '/supplier/finance', icon: '💰', zh: '教育金融（默认关闭）', en: 'Education Finance (off)', descZh: '功能暂未开放 / Coming soon。', descEn: 'Feature not open yet / Coming soon.' }
+  { route: '/supplier/accommodation', icon: '🏠', zh: '学生住宿', en: 'Accommodation', descZh: '房型、房间、床位库存、预订与入住。', descEn: 'Room types, rooms, beds, bookings and check-in.' }
 ];
 
 var TEXT = {
   zh: {
     client: '院校 / 供应商端', eyebrow: 'SUPPLIER · 在线演示',
     title: '请选择供应商类型',
-    lead: '六类供应商共用同一套 Supplier Center，按类型进入对应客户端。',
+    lead: '四类供应商共用同一套 Supplier Center，按类型进入对应客户端。',
     note: '统一数据模型：Supplier / Organization / SupplierType / SupplierProfile / Product / Application / Agreement / CommissionRule / Settlement。不同类型通过扩展 Profile 实现，不复制六套系统。',
     open: '打开 →'
   },
   en: {
     client: 'Institution / Supplier', eyebrow: 'SUPPLIER · LIVE DEMO',
     title: 'Choose a supplier type',
-    lead: 'All six supplier types share one Supplier Center — open the matching client.',
+    lead: 'Four active supplier types share one Supplier Center — open the matching client.',
     note: 'Unified data model: Supplier / Organization / SupplierType / SupplierProfile / Product / Application / Agreement / CommissionRule / Settlement. Types differ by Profile extension, never by duplicating the system.',
     open: 'Open →'
   }
