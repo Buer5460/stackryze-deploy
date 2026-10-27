@@ -60,6 +60,8 @@ server {
 
 如果应用前有且仅有一个可信反向代理，设置 `ANALYTICS_TRUST_PROXY_HOPS=1`。多层代理按真实可信层数配置；不可直接信任浏览器传来的 `X-Forwarded-For`。不使用代理时设为 `0`。
 
+如果托管平台或受控代理会覆盖并保证可信的单值访客 IP 请求头，可设置 `ANALYTICS_CLIENT_IP_HEADER` 使用该请求头；启用后若请求头缺失或无效，系统只记录连接代理的地址，不回退到 `X-Forwarded-For`。不要把客户端可自行提交的请求头配置为可信 IP 来源。
+
 ## 启用访客统计
 
 在 `.env` 填写真实信息后再开启：
@@ -68,6 +70,7 @@ server {
 ANALYTICS_ENABLED=true
 ANALYTICS_CONTROLLER_NAME=运营主体全称
 ANALYTICS_PRIVACY_CONTACT=隐私咨询邮箱或可用客服渠道
+ANALYTICS_CLIENT_IP_HEADER=
 ANALYTICS_TRUST_PROXY_HOPS=1
 ANALYTICS_COOKIE_SECURE=true
 ```
