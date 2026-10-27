@@ -1831,9 +1831,15 @@ function requireAnalyticsPermission(req, res, next) {
   next();
 }
 
+function requireAnalyticsDeletePermission(req, res, next) {
+  const actor = actorOf(req);
+  if (!actor || !auth.hasPermission(actor.role, 'admin:analytics:delete')) return fail(res, 403, '无权删除访客统计');
+  next();
+}
+
 adminRouter.get('/analytics/summary', requireAnalyticsPermission, analytics.adminSummary);
 adminRouter.get('/analytics/events', requireAnalyticsPermission, analytics.adminEvents);
-adminRouter.delete('/analytics/visitors/:visitorId', requireAnalyticsPermission, analytics.adminDeleteVisitor);
+adminRouter.delete('/analytics/visitors/:visitorId', requireAnalyticsDeletePermission, analytics.adminDeleteVisitor);
 
 // Unified user management.
 adminRouter.get('/users', (req, res) => {
@@ -2551,6 +2557,30 @@ async function boot() {
   await db.ensureLoaded();
   analytics.pruneAnalytics();
   const result = seed.seed();
+  const analyticsAdminEmail = String(process.env.ANALYTICS_ADMIN_EMAIL || '').trim().toLowerCase();
+  const analyticsAdminPassword = String(process.env.ANALYTICS_ADMIN_PASSWORD || '');
+  if (analyticsAdminEmail || analyticsAdminPassword) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(analyticsAdminEmail) || analyticsAdminPassword.length < 20) {
+      console.error('[boot] analytics viewer bootstrap skipped: provide a valid email and a password of at least 20 characters');
+    } else {
+      const existingAnalyticsAdmin = auth.findUserByEmail(analyticsAdminEmail);
+      if (!existingAnalyticsAdmin) {
+        auth.createUser({
+          email: analyticsAdminEmail,
+          password: analyticsAdminPassword,
+          display_name: analyticsAdminEmail,
+          role: 'ADMIN_ANALYTICS',
+          language: 'zh',
+          status: 'active',
+          is_demo: false
+        });
+        await db.flush();
+        console.log('[boot] analytics viewer account provisioned');
+      } else if (String(existingAnalyticsAdmin.role || '').toUpperCase() !== 'ADMIN_ANALYTICS') {
+        console.error('[boot] analytics viewer bootstrap skipped: configured email already belongs to a different role');
+      }
+    }
+  }
   // Fix 5: revoke sessions issued earlier to admin demo accounts so old
   // public admin-demo tokens stop working after this deploy.
   if (String(process.env.PUBLIC_ADMIN_DEMO || 'false').toLowerCase() !== 'true') {

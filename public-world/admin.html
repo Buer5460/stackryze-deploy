@@ -25,6 +25,10 @@ var state = { dashboard: null, users: [], verifications: null, pool: [], ledger:
 
 function tabs() {
   var zh = GS.lang === 'zh';
+  var actor = GS.currentActor();
+  if (actor && String(actor.role || '').toUpperCase() === 'ADMIN_ANALYTICS') {
+    return [{ key: 'Analytics', icon: '▥', label: zh ? '访客统计' : 'Analytics' }];
+  }
   return [
     { key: 'Home', icon: '⌂', label: zh ? '总览' : 'Home' },
     { key: 'Users', icon: '👥', label: zh ? '用户' : 'Users' },
@@ -43,6 +47,8 @@ function tabs() {
 
 function renderShell() {
   var zh = GS.lang === 'zh';
+  var actor = GS.currentActor();
+  if (actor && String(actor.role || '').toUpperCase() === 'ADMIN_ANALYTICS') tab = 'analytics';
   var items = tabs();
   var active = items.filter(function (i) { return i.key.toLowerCase() === tab; })[0] || items[0];
   var hero = {
@@ -65,6 +71,8 @@ function renderShell() {
 }
 
 window.renderTab = function (name) {
+  var actor = GS.currentActor();
+  if (actor && String(actor.role || '').toUpperCase() === 'ADMIN_ANALYTICS') name = 'analytics';
   tab = name;
   var main = document.getElementById('main');
   if (!main) return;
@@ -110,6 +118,8 @@ function renderHome(main) {
 
 function renderAnalytics(main) {
   var zh = GS.lang === 'zh';
+  var actor = GS.currentActor();
+  var canDeleteAnalytics = Boolean(actor && String(actor.role || '').toUpperCase() !== 'ADMIN_ANALYTICS');
   var summary = state.analytics;
   var days = (document.getElementById('analyticsDays') || {}).value || '7';
   var ip = (document.getElementById('analyticsIp') || {}).value || '';
@@ -138,7 +148,7 @@ function renderAnalytics(main) {
       (summary.content.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '点击项' : 'Target') + '</th><th>' + GS.esc(zh ? '内容编号' : 'Content ID') + '</th><th>' + GS.esc(zh ? '点击' : 'Clicks') + '</th></tr></thead><tbody>' + summary.content.map(function (c) { return '<tr><td>' + GS.esc(c.target_key) + '</td><td>' + GS.esc(c.content_id || '—') + '</td><td>' + GS.esc(c.clicks) + '</td></tr>'; }).join('') + '</tbody></table></div>' : GS.emptyState(zh ? '暂无内容点击' : 'No content clicks')) +
       '<div class="section-head"><h2>' + GS.esc(zh ? '访客与 IP' : 'Visitors and IPs') + '</h2><span>' + GS.esc(summary.visitors.length) + '</span></div>' +
       (summary.visitors.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '访客编号' : 'Visitor ID') + '</th><th>IP</th><th>' + GS.esc(zh ? '最近访问' : 'Last seen') + '</th><th>' + GS.esc(zh ? '页面/点击' : 'Views/clicks') + '</th><th></th></tr></thead><tbody>' + summary.visitors.map(function (v) {
-        return '<tr><td>' + GS.esc(String(v.visitor_id).slice(0, 8)) + '</td><td>' + GS.esc(v.ip_address || '—') + '</td><td>' + GS.esc(GS.datetime(v.last_seen)) + '</td><td>' + GS.esc(v.page_views) + ' / ' + GS.esc(v.clicks) + '</td><td><button class="btn ghost" onclick="inspectAnalyticsVisitor(\'' + GS.esc(v.visitor_id) + '\')">' + GS.esc(zh ? '记录' : 'Events') + '</button> <button class="btn ghost" onclick="deleteAnalyticsVisitor(\'' + GS.esc(v.visitor_id) + '\')">' + GS.esc(zh ? '删除' : 'Delete') + '</button></td></tr>';
+        return '<tr><td>' + GS.esc(String(v.visitor_id).slice(0, 8)) + '</td><td>' + GS.esc(v.ip_address || '—') + '</td><td>' + GS.esc(GS.datetime(v.last_seen)) + '</td><td>' + GS.esc(v.page_views) + ' / ' + GS.esc(v.clicks) + '</td><td><button class="btn ghost" onclick="inspectAnalyticsVisitor(\'' + GS.esc(v.visitor_id) + '\')">' + GS.esc(zh ? '记录' : 'Events') + '</button>' + (canDeleteAnalytics ? ' <button class="btn ghost" onclick="deleteAnalyticsVisitor(\'' + GS.esc(v.visitor_id) + '\')">' + GS.esc(zh ? '删除' : 'Delete') + '</button>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>' : GS.emptyState(zh ? '暂无已同意访客' : 'No consenting visitors')) +
       '<div class="section-head"><h2>' + GS.esc(zh ? '最近事件' : 'Recent events') + '</h2><span>' + GS.esc(state.analyticsEvents.length) + '</span></div>' +
       (state.analyticsEvents.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '时间' : 'Time') + '</th><th>IP</th><th>' + GS.esc(zh ? '事件' : 'Event') + '</th><th>' + GS.esc(zh ? '页面' : 'Page') + '</th><th>' + GS.esc(zh ? '点击项' : 'Target') + '</th><th>' + GS.esc(zh ? '内容编号' : 'Content ID') + '</th></tr></thead><tbody>' + state.analyticsEvents.map(function (e) {
