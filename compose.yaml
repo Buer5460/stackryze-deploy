@@ -1,0 +1,15 @@
+services:
+  globalstudy:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      GS_DB_DIR: /data/db
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - globalstudy_data:/data
+
+volumes:
+  globalstudy_data:

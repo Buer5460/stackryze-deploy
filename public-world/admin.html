@@ -19,9 +19,9 @@
 <script src="/js/gs.js"></script>
 <script>
 var API = '/api/admin';
-var TAB_NAMES = ['Home', 'Users', 'Verify', 'Rec', 'Money', 'System'];
+var TAB_NAMES = ['Home', 'Users', 'Verify', 'Rec', 'Money', 'Analytics', 'System'];
 var tab = 'home';
-var state = { dashboard: null, users: [], verifications: null, pool: [], ledger: [], settlements: [], config: null, audit: [] };
+var state = { dashboard: null, users: [], verifications: null, pool: [], ledger: [], settlements: [], config: null, audit: [], analytics: null, analyticsEvents: [], analyticsVisitorId: '', analyticsError: '', analyticsLoading: false };
 
 function tabs() {
   var zh = GS.lang === 'zh';
@@ -31,6 +31,12 @@ function tabs() {
     { key: 'Verify', icon: '✓', label: zh ? '审核' : 'Verify' },
     { key: 'Rec', icon: '⚖️', label: zh ? '推荐' : 'Rec' },
     { key: 'Money', icon: '¥', label: zh ? '资金' : 'Money' },
+    ...(function () {
+      var actor = GS.currentActor();
+      return actor && ['ADMIN_SUPER', 'ADMIN_OPERATION'].indexOf(String(actor.role || '').toUpperCase()) >= 0
+        ? [{ key: 'Analytics', icon: '▥', label: zh ? '访客统计' : 'Analytics' }]
+        : [];
+    }()),
     { key: 'System', icon: '⚙️', label: zh ? '系统' : 'System' }
   ];
 }
@@ -45,6 +51,7 @@ function renderShell() {
     Verify: { eyebrow: zh ? '认证审核' : 'VERIFICATION', title: zh ? '认证与 KYC/KYB' : 'Verification & KYC/KYB', lead: zh ? 'B / S / DBC 统一审核队列。' : 'A single queue for B / S / DBC.' },
     Rec: { eyebrow: zh ? '推荐引擎' : 'RECOMMENDATION', title: zh ? '推荐池与权重' : 'Pool & weights', lead: zh ? 'Level 1/2 准入、权重配置、公平轮换与推荐日志。' : 'Level 1/2 admission, weights, fair rotation and recommendation logs.' },
     Money: { eyebrow: zh ? '资金' : 'MONEY', title: zh ? '支付与结算' : 'Payments & settlement', lead: zh ? 'AETHEL X 编排、佣金台账与结算单。' : 'AETHEL X orchestration, commission ledger and settlements.' },
+    Analytics: { eyebrow: zh ? '访客统计 · 仅授权运营管理员可见' : 'VISITOR ANALYTICS · RESTRICTED', title: zh ? '访问与内容点击' : 'Visits & content clicks', lead: zh ? '只展示已同意统计的访客；IP 与随机访客编号用于运营分析。' : 'Shows consenting visitors only; IP and random visitor IDs support operations analysis.' },
     System: { eyebrow: zh ? '系统' : 'SYSTEM', title: zh ? '系统配置' : 'System config', lead: zh ? '全部策略后台可配置，不写死在代码里。' : 'Every policy is configurable in the backend, never hard-coded.' }
   }[active.key] || {};
 
@@ -67,6 +74,7 @@ window.renderTab = function (name) {
     else if (name === 'verify') renderVerify(main);
     else if (name === 'rec') renderRec(main);
     else if (name === 'money') renderMoney(main);
+    else if (name === 'analytics') renderAnalytics(main);
     else renderSystem(main);
   } catch (e) { main.innerHTML = GS.errorState(e.message); }
 };
@@ -98,6 +106,79 @@ function renderHome(main) {
         }).join('') + '</tbody></table></div>'
       : GS.emptyState(zh ? '暂无日志' : 'No entries')) +
     '</section>';
+}
+
+function renderAnalytics(main) {
+  var zh = GS.lang === 'zh';
+  var summary = state.analytics;
+  var days = (document.getElementById('analyticsDays') || {}).value || '7';
+  var ip = (document.getElementById('analyticsIp') || {}).value || '';
+  var pageFilter = (document.getElementById('analyticsPage') || {}).value || '';
+  var pageOptions = summary && summary.pages ? summary.pages : [];
+  main.innerHTML = '<section class="section">' +
+    '<div class="notice">' + GS.esc(zh ? '统计仅在访客主动同意后开始；明细保留 30 天。撤回同意会删除该访客关联的统计记录。' : 'Tracking starts only after visitors opt in. Details are kept for 30 days; withdrawal deletes the visitor’s linked analytics records.') + '</div>' +
+    '<div class="search" style="margin-top:10px"><select id="analyticsDays" onchange="loadAnalytics()"><option value="7"' + (days === '7' ? ' selected' : '') + '>7 ' + GS.esc(zh ? '天' : 'days') + '</option><option value="30"' + (days === '30' ? ' selected' : '') + '>30 ' + GS.esc(zh ? '天' : 'days') + '</option></select>' +
+    '<input id="analyticsIp" value="' + GS.esc(ip) + '" placeholder="' + GS.esc(zh ? '按 IP 筛选' : 'Filter by IP') + '">' +
+    '<select id="analyticsPage"><option value="">' + GS.esc(zh ? '全部页面' : 'All pages') + '</option>' + pageOptions.map(function (p) { return '<option value="' + GS.esc(p.page) + '"' + (pageFilter === p.page ? ' selected' : '') + '>' + GS.esc(p.page) + '</option>'; }).join('') + '</select>' +
+    '<button class="btn primary" onclick="loadAnalytics()">' + GS.esc(GS.t('search')) + '</button></div>' +
+    (!summary ? '<div class="notice" style="margin-top:10px">' + GS.esc(state.analyticsError || (zh ? '正在加载访客统计…' : 'Loading visitor analytics…')) + '</div>' : (!summary.enabled
+      ? '<div class="notice" style="margin-top:10px">' + GS.esc(zh ? '访客统计尚未启用。部署方需填写运营主体和隐私联系渠道，并显式开启 ANALYTICS_ENABLED。' : 'Analytics is not enabled. Configure the controller and privacy contact, then set ANALYTICS_ENABLED.') + '</div>'
+      : '<div class="section-head"><h2>' + GS.esc(zh ? '核心指标' : 'Key metrics') + '</h2><span>' + GS.esc(summary.days) + GS.esc(zh ? ' 天' : ' days') + '</span></div>' + GS.metrics([
+        [zh ? '访客数' : 'Visitors', summary.totals.visitors],
+        [zh ? '页面访问' : 'Page views', summary.totals.page_views],
+        [zh ? '内容点击' : 'Content clicks', summary.totals.clicks],
+        [zh ? '搜索提交' : 'Searches', summary.totals.searches],
+        [zh ? '表单提交' : 'Form submits', summary.totals.form_submissions]
+      ]) +
+      '<div class="section-head"><h2>' + GS.esc(zh ? '热门页面' : 'Top pages') + '</h2></div>' +
+      (summary.pages.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '页面' : 'Page') + '</th><th>' + GS.esc(zh ? '访问' : 'Views') + '</th><th>' + GS.esc(zh ? '访客' : 'Visitors') + '</th></tr></thead><tbody>' + summary.pages.map(function (p) { return '<tr><td>' + GS.esc(p.page) + '</td><td>' + GS.esc(p.views) + '</td><td>' + GS.esc(p.visitors) + '</td></tr>'; }).join('') + '</tbody></table></div>' : GS.emptyState(zh ? '暂无页面访问' : 'No page views')) +
+      '<div class="section-head"><h2>' + GS.esc(zh ? '访问来源' : 'Traffic sources') + '</h2></div>' +
+      (summary.sources.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '来源 / 媒介 / 活动' : 'Source / medium / campaign') + '</th><th>' + GS.esc(zh ? '访问' : 'Visits') + '</th><th>' + GS.esc(zh ? '访客' : 'Visitors') + '</th></tr></thead><tbody>' + summary.sources.map(function (s) { return '<tr><td>' + GS.esc(s.source) + '</td><td>' + GS.esc(s.visits) + '</td><td>' + GS.esc(s.visitors) + '</td></tr>'; }).join('') + '</tbody></table></div>' : GS.emptyState(zh ? '暂无来源数据' : 'No source data')) +
+      '<div class="section-head"><h2>' + GS.esc(zh ? '热门点击内容' : 'Top clicked content') + '</h2></div>' +
+      (summary.content.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '点击项' : 'Target') + '</th><th>' + GS.esc(zh ? '内容编号' : 'Content ID') + '</th><th>' + GS.esc(zh ? '点击' : 'Clicks') + '</th></tr></thead><tbody>' + summary.content.map(function (c) { return '<tr><td>' + GS.esc(c.target_key) + '</td><td>' + GS.esc(c.content_id || '—') + '</td><td>' + GS.esc(c.clicks) + '</td></tr>'; }).join('') + '</tbody></table></div>' : GS.emptyState(zh ? '暂无内容点击' : 'No content clicks')) +
+      '<div class="section-head"><h2>' + GS.esc(zh ? '访客与 IP' : 'Visitors and IPs') + '</h2><span>' + GS.esc(summary.visitors.length) + '</span></div>' +
+      (summary.visitors.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '访客编号' : 'Visitor ID') + '</th><th>IP</th><th>' + GS.esc(zh ? '最近访问' : 'Last seen') + '</th><th>' + GS.esc(zh ? '页面/点击' : 'Views/clicks') + '</th><th></th></tr></thead><tbody>' + summary.visitors.map(function (v) {
+        return '<tr><td>' + GS.esc(String(v.visitor_id).slice(0, 8)) + '</td><td>' + GS.esc(v.ip_address || '—') + '</td><td>' + GS.esc(GS.datetime(v.last_seen)) + '</td><td>' + GS.esc(v.page_views) + ' / ' + GS.esc(v.clicks) + '</td><td><button class="btn ghost" onclick="inspectAnalyticsVisitor(\'' + GS.esc(v.visitor_id) + '\')">' + GS.esc(zh ? '记录' : 'Events') + '</button> <button class="btn ghost" onclick="deleteAnalyticsVisitor(\'' + GS.esc(v.visitor_id) + '\')">' + GS.esc(zh ? '删除' : 'Delete') + '</button></td></tr>';
+      }).join('') + '</tbody></table></div>' : GS.emptyState(zh ? '暂无已同意访客' : 'No consenting visitors')) +
+      '<div class="section-head"><h2>' + GS.esc(zh ? '最近事件' : 'Recent events') + '</h2><span>' + GS.esc(state.analyticsEvents.length) + '</span></div>' +
+      (state.analyticsEvents.length ? '<div class="table-wrap"><table class="data"><thead><tr><th>' + GS.esc(zh ? '时间' : 'Time') + '</th><th>IP</th><th>' + GS.esc(zh ? '事件' : 'Event') + '</th><th>' + GS.esc(zh ? '页面' : 'Page') + '</th><th>' + GS.esc(zh ? '点击项' : 'Target') + '</th><th>' + GS.esc(zh ? '内容编号' : 'Content ID') + '</th></tr></thead><tbody>' + state.analyticsEvents.map(function (e) {
+        return '<tr><td>' + GS.esc(GS.datetime(e.created_at)) + '</td><td>' + GS.esc(e.ip_address || '—') + '</td><td>' + GS.esc(e.event) + '</td><td>' + GS.esc(e.page) + '</td><td>' + GS.esc(e.target_key || '—') + '</td><td>' + GS.esc(e.content_id || '—') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : GS.emptyState(zh ? '暂无事件记录' : 'No events')))) +
+    '</section>';
+  if (!summary && !state.analyticsLoading && !state.analyticsError) loadAnalytics();
+}
+
+async function loadAnalytics() {
+  if (state.analyticsLoading) return;
+  state.analyticsLoading = true;
+  var days = (document.getElementById('analyticsDays') || {}).value || '7';
+  var ip = (document.getElementById('analyticsIp') || {}).value || '';
+  var page = (document.getElementById('analyticsPage') || {}).value || '';
+  var visitor = state.analyticsVisitorId || '';
+  try {
+    var query = '?days=' + encodeURIComponent(days);
+    var eventsQuery = query + '&limit=100' + (ip ? '&ip=' + encodeURIComponent(ip) : '') + (page ? '&page=' + encodeURIComponent(page) : '') + (visitor ? '&visitor_id=' + encodeURIComponent(visitor) : '');
+    var results = await Promise.all([GS.get(API + '/analytics/summary' + query), GS.get(API + '/analytics/events' + eventsQuery)]);
+    state.analytics = results[0].data;
+    state.analyticsEvents = results[1].data || [];
+    state.analyticsError = '';
+  } catch (e) { state.analyticsError = e.message; }
+  state.analyticsLoading = false;
+  if (tab === 'analytics') renderAnalytics(document.getElementById('main'));
+}
+
+function inspectAnalyticsVisitor(visitorId) {
+  state.analyticsVisitorId = visitorId;
+  loadAnalytics();
+}
+
+async function deleteAnalyticsVisitor(visitorId) {
+  if (!window.confirm(GS.lang === 'zh' ? '删除该访客关联的统计记录？' : 'Delete this visitor’s analytics records?')) return;
+  try {
+    await GS.del(API + '/analytics/visitors/' + encodeURIComponent(visitorId));
+    state.analyticsVisitorId = '';
+    await loadAnalytics();
+  } catch (e) { alert(e.message); }
 }
 
 function renderUsers(main) {

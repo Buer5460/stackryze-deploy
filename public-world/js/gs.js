@@ -420,7 +420,7 @@
         return true;
       })
       .map(function (a) {
-      return '<button class="btn primary wide" data-demo="' + esc(a.token) + '">' +
+      return '<button class="btn primary wide" data-demo="' + esc(a.token) + '" data-track-type="cta" data-track-key="demo_login">' +
         esc(t('loginDemo')) + ' · ' + esc(a.display_name || a.token) + '</button>';
     }).join('');
     return '<section class="section">' +
@@ -519,6 +519,181 @@
   }
 
   // -------------------------------------------------------------------------
+  // Optional first-party analytics. No identifier or event is sent until the
+  // visitor explicitly opts in.
+  // -------------------------------------------------------------------------
+  var ANALYTICS_CHOICE = 'gs-analytics-choice';
+  var ANALYTICS_PAGES = {
+    '/': '/', '/index.html': '/', '/student': '/student', '/student.html': '/student',
+    '/agent': '/agent', '/agent.html': '/agent', '/dbc': '/dbc', '/dbc.html': '/dbc',
+    '/ads': '/ads', '/ads.html': '/ads', '/institution': '/institution', '/institution.html': '/institution',
+    '/supplier/education': '/supplier/education', '/supplier/education.html': '/supplier/education',
+    '/supplier/certification': '/supplier/certification', '/supplier/certification.html': '/supplier/certification',
+    '/supplier/visa': '/supplier/visa', '/supplier/visa.html': '/supplier/visa',
+    '/supplier/accommodation': '/supplier/accommodation', '/supplier/accommodation.html': '/supplier/accommodation'
+  };
+  var TARGET_TYPES_FOR_CLIENT = { link: true, button: true, card: true, form: true, search: true, feature: true };
+  var analyticsEnabled = false;
+  var analyticsStatus = null;
+
+  function analyticsPage() {
+    var path = location.pathname.replace(/\/+$/, '') || '/';
+    return ANALYTICS_PAGES[path] || '';
+  }
+
+  function analyticsKey(value) {
+    var key = String(value || '').trim().toLowerCase();
+    return /^[a-z0-9][a-z0-9._:-]{0,79}$/.test(key) ? key : '';
+  }
+
+  function analyticsCampaign() {
+    var result = {};
+    try {
+      var query = new URLSearchParams(location.search);
+      ['source', 'medium', 'campaign', 'content'].forEach(function (key) {
+        var value = String(query.get('utm_' + key) || '').trim().toLowerCase();
+        if (/^[a-z0-9][a-z0-9._-]{0,63}$/.test(value)) result[key] = value;
+      });
+    } catch (_) { /* ignore malformed query strings */ }
+    return result;
+  }
+
+  function sendAnalyticsEvent(name, details) {
+    if (!analyticsEnabled || !analyticsPage()) return;
+    details = details || {};
+    var event = { event: name, page: analyticsPage() };
+    if (details.target_type) event.target_type = details.target_type;
+    if (analyticsKey(details.target_key)) event.target_key = analyticsKey(details.target_key);
+    if (/^[A-Z0-9_-]{3,80}$/.test(String(details.content_id || ''))) event.content_id = String(details.content_id);
+    if (details.campaign) event.campaign = details.campaign;
+    else if (name === 'page_view') event.campaign = analyticsCampaign();
+    fetch('/api/analytics/events', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin', keepalive: true, body: JSON.stringify(event)
+    }).catch(function () { /* analytics must not interrupt the app */ });
+  }
+
+  function buildAnalyticsPanel(showOpen) {
+    var prior = document.getElementById('gsPrivacyPanel');
+    if (prior) prior.remove();
+    var oldSettings = document.getElementById('gsPrivacySettings');
+    if (oldSettings) oldSettings.remove();
+    var settings = document.createElement('button');
+    settings.id = 'gsPrivacySettings';
+    settings.type = 'button';
+    settings.className = 'gs-privacy-settings';
+    settings.textContent = '统计设置';
+    settings.addEventListener('click', function () { buildAnalyticsPanel(false); });
+    document.body.appendChild(settings);
+    if (showOpen) return;
+
+    var panel = document.createElement('aside');
+    panel.id = 'gsPrivacyPanel';
+    panel.className = 'gs-privacy-panel';
+    var heading = document.createElement('strong');
+    heading.textContent = '访客数据统计';
+    var copy = document.createElement('p');
+    copy.textContent = '仅在你同意后，访客统计才记录页面、点击项、IP 地址、随机访客编号及格式受限的营销来源标签，保存 30 天。拒绝不影响使用；可随时撤回并删除统计记录。账号登录和业务安全记录由平台功能另行处理。';
+    var details = document.createElement('p');
+    details.className = 'gs-privacy-meta';
+    details.textContent = '运营主体：' + (analyticsStatus.controller_name || '部署方待配置') + ' · 隐私联系：' + (analyticsStatus.privacy_contact || '部署方待配置');
+    var policy = document.createElement('a');
+    policy.href = '/privacy';
+    policy.textContent = '查看统计说明';
+    var actions = document.createElement('div');
+    actions.className = 'gs-privacy-actions';
+    var allow = document.createElement('button');
+    allow.type = 'button';
+    allow.className = 'btn primary';
+    allow.textContent = '同意统计';
+    allow.addEventListener('click', function () {
+      fetch('/api/analytics/consent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ consent: true })
+      }).then(function (response) {
+        if (!response.ok) throw new Error('统计设置暂不可用');
+        analyticsEnabled = true;
+        localStorage.setItem(ANALYTICS_CHOICE, 'accepted');
+        panel.remove();
+        sendAnalyticsEvent('page_view');
+      }).catch(function () { copy.textContent = '暂时无法保存你的选择，请稍后重试。'; });
+    });
+    var decline = document.createElement('button');
+    decline.type = 'button';
+    decline.className = 'btn ghost';
+    decline.textContent = localStorage.getItem(ANALYTICS_CHOICE) === 'accepted' ? '撤回并删除记录' : '仅必要功能';
+    decline.addEventListener('click', function () {
+      fetch('/api/analytics/consent', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+        body: JSON.stringify({ consent: false })
+      }).catch(function () {}).finally(function () {
+        analyticsEnabled = false;
+        localStorage.setItem(ANALYTICS_CHOICE, 'declined');
+        panel.remove();
+      });
+    });
+    actions.appendChild(allow);
+    actions.appendChild(decline);
+    panel.appendChild(heading);
+    panel.appendChild(copy);
+    panel.appendChild(details);
+    panel.appendChild(policy);
+    panel.appendChild(actions);
+    document.body.appendChild(panel);
+  }
+
+  function captureAnalyticsClick(target) {
+    if (!analyticsEnabled || !analyticsPage() || !target || !target.closest) return;
+    var control = target.closest('[data-track-key],a[href],button,[role="button"],input[type="submit"]');
+    if (!control || control.closest('#gsPrivacyPanel,#gsPrivacySettings,[data-no-track]')) return;
+    var kind = String(control.getAttribute('data-track-type') || '').toLowerCase();
+    var key = analyticsKey(control.getAttribute('data-track-key') || control.getAttribute('data-action') || control.id);
+    var type = kind === 'cta' ? 'button' : (kind || (control.tagName === 'A' ? 'link' : 'button'));
+    if (!TARGET_TYPES_FOR_CLIENT[type]) type = 'button';
+    var content = control.getAttribute('data-content-id');
+    var parentContent = control.closest('[data-content-id]');
+    if (!content && parentContent) content = parentContent.getAttribute('data-content-id');
+    if (!key && control.tagName === 'A') {
+      try {
+        var url = new URL(control.href, location.href);
+        key = url.origin === location.origin
+          ? 'link_' + url.pathname.replace(/[^a-z0-9]+/gi, '_').replace(/^_+|_+$/g, '').toLowerCase().slice(0, 64)
+          : 'external_link';
+      } catch (_) { key = 'link'; }
+    }
+    if (!key && control.matches('input[type="submit"]')) key = 'form_submit';
+    if (!key) return;
+    sendAnalyticsEvent(kind === 'cta' ? 'cta_clicked' : 'content_clicked', {
+      target_type: type, target_key: key, content_id: content
+    });
+  }
+
+  function startAnalytics() {
+    if ((document.body && document.body.getAttribute('data-audience') === 'ADMIN') || !analyticsPage()) return;
+    fetch('/api/analytics/status', { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (response) { return response.json(); })
+      .then(function (response) {
+        analyticsStatus = response.data || {};
+        if (!analyticsStatus.enabled) return;
+        if (analyticsStatus.consented) {
+          analyticsEnabled = true;
+          localStorage.setItem(ANALYTICS_CHOICE, 'accepted');
+          buildAnalyticsPanel(true);
+          sendAnalyticsEvent('page_view');
+        } else {
+          if (localStorage.getItem(ANALYTICS_CHOICE) === 'accepted') localStorage.removeItem(ANALYTICS_CHOICE);
+          buildAnalyticsPanel(localStorage.getItem(ANALYTICS_CHOICE) === 'declined');
+        }
+      }).catch(function () { /* tracking status is optional */ });
+    document.addEventListener('click', function (event) { captureAnalyticsClick(event.target); }, true);
+    document.addEventListener('submit', function (event) {
+      var form = event.target;
+      var key = analyticsKey(form.getAttribute('data-track-key') || form.id);
+      if (key) sendAnalyticsEvent('form_submitted', { target_type: 'form', target_key: key });
+    }, true);
+  }
+
+  // -------------------------------------------------------------------------
   // Exports
   // -------------------------------------------------------------------------
   window.GS = {
@@ -537,13 +712,15 @@
     loginPanel: loginPanel, bindLogin: bindLogin, logout: logout,
     clearSession: clearSession,
     footer: footer, shell: shell,
-    applyLangToDom: applyLangToDom
+    applyLangToDom: applyLangToDom,
+    track: sendAnalyticsEvent
   };
 
   document.addEventListener('DOMContentLoaded', function () {
     var btn = document.getElementById('langBtn');
     if (btn) btn.onclick = toggleLang;
     applyLangToDom();
+    startAnalytics();
     if (typeof window.onReady === 'function') window.onReady();
   });
 })();

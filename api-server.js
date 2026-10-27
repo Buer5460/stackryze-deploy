@@ -31,6 +31,7 @@ const payments = require('./lib/payments');
 const seed = require('./lib/seed');
 const snapshotPolicy = require('./lib/snapshot-policy');
 const audit = require('./lib/audit');
+const analytics = require('./lib/analytics');
 const { lower, upper, asNumber, round2, id: makeId } = require('./lib/util');
 
 const VERSION = '3.0.3';
@@ -422,6 +423,9 @@ app.post('/api/auth/login', (req, res) => {
     String(u.email || '').toLowerCase() === String(identifier).toLowerCase() ||
     String(u.phone || '') === String(identifier));
   if (!user || !auth.verifyPassword(user, body.password)) return fail(res, 401, '账号或密码错误');
+  if (user.is_demo && isAdminRole(user.role) && !PUBLIC_ADMIN_DEMO()) {
+    return fail(res, 403, '管理员演示账号不开放登录');
+  }
   const session = auth.createSession(user.id, { ip: req.ip });
   res.json(ok({ token: session.token, user: auth.userPublic(user) }));
 });
@@ -1821,6 +1825,16 @@ adminRouter.get('/dashboard', (req, res) => {
   }));
 });
 
+function requireAnalyticsPermission(req, res, next) {
+  const actor = actorOf(req);
+  if (!actor || !auth.hasPermission(actor.role, 'admin:analytics')) return fail(res, 403, '无权查看访客统计');
+  next();
+}
+
+adminRouter.get('/analytics/summary', requireAnalyticsPermission, analytics.adminSummary);
+adminRouter.get('/analytics/events', requireAnalyticsPermission, analytics.adminEvents);
+adminRouter.delete('/analytics/visitors/:visitorId', requireAnalyticsPermission, analytics.adminDeleteVisitor);
+
 // Unified user management.
 adminRouter.get('/users', (req, res) => {
   let list = db.stores.users.all();
@@ -2137,6 +2151,12 @@ adminRouter.get('/snapshot/export', (req, res) => {
 // payload must NEVER be committed to a public repository — the maintenance
 // script refuses to publish it (see scripts/snapshot-push.sh).
 adminRouter.get('/snapshot/export/full', (req, res) => {
+  const data = db.snapshot();
+  const actor = actorOf(req);
+  if (!actor || !auth.hasPermission(actor.role, 'admin:analytics')) {
+    delete data.analytics_events;
+    delete data.analytics_consents;
+  }
   res.json(ok({
     version: VERSION,
     exported_at: new Date().toISOString(),
@@ -2144,7 +2164,7 @@ adminRouter.get('/snapshot/export/full', (req, res) => {
     scope: 'internal-only',
     warning: 'Contains sessions, credentials and PII — never commit to a public repo.',
     counts: db.counts(),
-    data: db.snapshot()
+    data
   }));
 });
 
@@ -2184,6 +2204,7 @@ adminRouter.put('/config', (req, res) => {
 adminRouter.post('/config/reset', (req, res) => res.json(ok(config.resetToDefaults({ by: actorOf(req) ? actorOf(req).id : 'admin' }))));
 
 app.use('/api/admin', adminRouter);
+app.use('/api/analytics', analytics.publicRouter);
 
 // ===========================================================================
 // Shared view builders
@@ -2503,6 +2524,7 @@ const CLIENT_FILES = {
   '/dbc': 'dbc.html',
   '/ads': 'ads.html',
   '/admin': 'admin.html',
+  '/privacy': 'privacy.html',
   '/institution': 'institution.html',
   '/supplier/education': 'supplier/education.html',
   '/supplier/medical': 'supplier/medical.html',
@@ -2527,6 +2549,7 @@ app.use((err, req, res, next) => {
 // ---------------------------------------------------------------------------
 async function boot() {
   await db.ensureLoaded();
+  analytics.pruneAnalytics();
   const result = seed.seed();
   // Fix 5: revoke sessions issued earlier to admin demo accounts so old
   // public admin-demo tokens stop working after this deploy.

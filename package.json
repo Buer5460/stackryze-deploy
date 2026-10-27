@@ -6,6 +6,7 @@
   "main": "api-server.js",
   "scripts": {
     "start": "node api-server.js",
+    "admin:create": "node scripts/create-admin.js",
     "start:legacy": "node server.js",
     "start:public-legacy": "node server-public.js",
     "test": "node tests/full-mvp-core.test.js && node tests/full-mvp-api.test.js && node tests/v3.0.1-stabilization.test.js && node tests/v3.0.1-snapshot.test.js && node tests/smoke.test.js && node tests/v1.test.js && node tests/v1.0.1.test.js && node tests/v1.1.test.js && node tests/public-mvp.test.js",

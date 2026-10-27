@@ -1,5 +1,7 @@
 # GlobalStudy Mobile MVP
 
+自有服务器部署和访客统计说明：[`docs/SELF_HOST_DEPLOY.md`](docs/SELF_HOST_DEPLOY.md)、[`docs/ANALYTICS_TRACKING_PLAN.md`](docs/ANALYTICS_TRACKING_PLAN.md)。
+
 全球学校搜索与教育服务交易平台的手机 H5 + Node.js/Express MVP。
 
 ## 当前定位

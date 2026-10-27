@@ -98,7 +98,7 @@ function renderHome(main) {
       ? GS.sectionHead(zh ? '我的服务机构' : 'My agency', '') + '<div id="myB"></div>'
       : GS.sectionHead(zh ? '下一步' : 'Next step', '') +
         '<div class="banner info">' + GS.esc(zh ? '提交留学需求，系统会按 Level 2 优先规则推荐 3–5 家服务机构。' : 'Submit a requirement and the platform recommends 3–5 agencies with Level 2 priority.') + '</div>' +
-        '<button class="btn primary wide" onclick="submitRequirementFlow()">' + GS.esc(zh ? '提交需求并获取推荐' : 'Submit a requirement') + '</button>') +
+        '<button class="btn primary wide" data-track-type="cta" data-track-key="student_requirement_start" onclick="submitRequirementFlow()">' + GS.esc(zh ? '提交需求并获取推荐' : 'Submit a requirement') + '</button>') +
     GS.sectionHead(zh ? '每日简报' : 'Daily brief', '') + '<div id="briefBox">' + GS.esc(GS.t('loading')) + '</div>' +
     '</section>';
   if (bound) loadMyB();
@@ -111,17 +111,17 @@ function renderDiscover(main) {
   var labels = { schools: zh ? '学校' : 'Schools', suppliers: zh ? '教育服务' : 'Services', accommodation: zh ? '住宿' : 'Accommodation' };
   main.innerHTML = '<section class="section">' +
     '<div class="subtabs">' + Object.keys(labels).map(function (k) {
-      return '<button id="sub-' + k + '" onclick="setDiscover(\'' + k + '\')">' + labels[k] + '</button>';
+      return '<button id="sub-' + k + '" data-track-key="discover_' + k + '" onclick="setDiscover(\'' + k + '\', true)">' + labels[k] + '</button>';
     }).join('') + '</div>' +
     '<div class="search"><input id="q" class="wide" placeholder="' + GS.esc(zh ? '学校、地区或课程体系' : 'School, area or curriculum') + '">' +
     '<select id="country"></select><select id="stage"></select>' +
-    '<button class="btn primary wide" onclick="runDiscoverSearch()">' + GS.esc(GS.t('search')) + '</button></div>' +
+    '<button class="btn primary wide" data-track-type="search" data-track-key="student_discover_search" onclick="runDiscoverSearch(true)">' + GS.esc(GS.t('search')) + '</button></div>' +
     '<div class="section-head"><h2 id="discoverTitle">' + labels.schools + '</h2><span id="discoverCount">—</span></div>' +
     '<div id="discoverList" class="list">' + GS.emptyState(GS.t('loading')) + '</div></section>';
-  setDiscover('schools');
+  setDiscover('schools', false);
 }
 
-function setDiscover(mode) {
+function setDiscover(mode, recordSearch) {
   discoverMode = mode;
   var zh = GS.lang === 'zh';
   var labels = { schools: zh ? '学校' : 'Schools', suppliers: zh ? '教育服务' : 'Services', accommodation: zh ? '住宿' : 'Accommodation' };
@@ -131,10 +131,10 @@ function setDiscover(mode) {
   });
   var title = document.getElementById('discoverTitle');
   if (title) title.textContent = labels[mode];
-  runDiscoverSearch();
+  runDiscoverSearch(Boolean(recordSearch));
 }
 
-async function runDiscoverSearch() {
+async function runDiscoverSearch(recordSearch) {
   var zh = GS.lang === 'zh';
   var box = document.getElementById('discoverList');
   if (!box) return;
@@ -162,6 +162,7 @@ async function runDiscoverSearch() {
     }
     var c = document.getElementById('discoverCount');
     if (c) c.textContent = count + ' ' + (zh ? '条' : 'items');
+    if (recordSearch) GS.track('search_submitted', { target_type: 'search', target_key: 'student_discover_search' });
   } catch (e) { box.innerHTML = GS.errorState(e.message); }
 }
 
@@ -173,8 +174,8 @@ function schoolCard(s) {
     (s.verification && s.verification.is_demo ? '<span class="status demo">' + GS.esc(zh ? '演示' : 'DEMO') + '</span>' : '<span class="status good">' + GS.esc(zh ? '已核验' : 'VERIFIED') + '</span>') + '</div>' +
     '<div class="split"><div><small>' + GS.esc(zh ? '年学费' : 'Tuition / year') + '</small><b>' + GS.esc(GS.money(s.fees && s.fees.tuition_min, s.fees && s.fees.currency)) + '</b></div>' +
     '<div><small>' + GS.esc(zh ? '最近交通' : 'Nearest transit') + '</small><b>' + GS.esc((s.transit && s.transit.distance_label) || '—') + '</b></div></div>' +
-    '<div class="actions"><button class="btn ghost" onclick="schoolDetail(\'' + GS.esc(s.id) + '\')">' + GS.esc(GS.t('details')) + '</button>' +
-    '<button class="btn primary" onclick="applyToSchool(\'' + GS.esc(s.id) + '\')">' + GS.esc(zh ? '申请' : 'Apply') + '</button></div>');
+    '<div class="actions"><button class="btn ghost" data-track-key="school_detail" data-content-id="' + GS.esc(s.id) + '" onclick="schoolDetail(\'' + GS.esc(s.id) + '\')">' + GS.esc(GS.t('details')) + '</button>' +
+    '<button class="btn primary" data-track-type="cta" data-track-key="school_apply" data-content-id="' + GS.esc(s.id) + '" onclick="applyToSchool(\'' + GS.esc(s.id) + '\')">' + GS.esc(zh ? '申请' : 'Apply') + '</button></div>');
 }
 
 function supplierCard(s) {
@@ -183,8 +184,8 @@ function supplierCard(s) {
     '<div class="muted">' + GS.esc(s.type || '') + ' · ' + GS.esc((s.profile && s.profile.service_countries || []).join(' / ')) + '</div></div>' +
     (s.verification && s.verification.is_demo ? '<span class="status demo">' + GS.esc(zh ? '演示' : 'DEMO') + '</span>' : '<span class="status good">' + GS.esc(zh ? '已核验' : 'VERIFIED') + '</span>') + '</div>' +
     (s.profile ? '<div class="muted" style="margin-top:6px">' + GS.esc(GS.label(s.profile.description || s.profile.description_en)) + '</div>' : '') +
-    '<div class="actions"><button class="btn ghost" onclick="supplierDetail(\'' + GS.esc(s.id) + '\')">' + GS.esc(GS.t('details')) + '</button>' +
-    '<button class="btn primary" onclick="orderService(\'' + GS.esc(s.id) + '\')">' + GS.esc(zh ? '选购服务' : 'Order service') + '</button></div>');
+    '<div class="actions"><button class="btn ghost" data-track-key="supplier_detail" data-content-id="' + GS.esc(s.id) + '" onclick="supplierDetail(\'' + GS.esc(s.id) + '\')">' + GS.esc(GS.t('details')) + '</button>' +
+    '<button class="btn primary" data-track-type="cta" data-track-key="service_order" data-content-id="' + GS.esc(s.id) + '" onclick="orderService(\'' + GS.esc(s.id) + '\')">' + GS.esc(zh ? '选购服务' : 'Order service') + '</button></div>');
 }
 
 function accommodationCard(a) {
@@ -193,7 +194,7 @@ function accommodationCard(a) {
     '<div class="muted">' + GS.esc(a.room_type || '') + ' · ' + GS.esc(zh ? '可用床位 ' : 'Available beds ') + GS.esc(Math.max(0, (a.beds_total || 0) - (a.beds_occupied || 0))) + '</div></div>' +
     '<span class="status blue">' + GS.esc(GS.money(a.price, a.currency)) + '</span></div>' +
     (a.distance_label ? '<div class="split"><div><small>' + GS.esc(zh ? '直线距离' : 'Straight-line distance') + '</small><b>' + GS.esc(a.distance_label) + '</b></div></div>' : '') +
-    '<div class="actions"><button class="btn primary" onclick="bookRoom(\'' + GS.esc(a.id) + '\')">' + GS.esc(zh ? '预订' : 'Book') + '</button></div>');
+    '<div class="actions"><button class="btn primary" data-track-type="cta" data-track-key="accommodation_book" data-content-id="' + GS.esc(a.id) + '" onclick="bookRoom(\'' + GS.esc(a.id) + '\')">' + GS.esc(zh ? '预订' : 'Book') + '</button></div>');
 }
 
 function schoolDetail(id) {
@@ -274,6 +275,7 @@ function submitRequirement() {
     budget_max: Number(document.getElementById('reqBudget').value) || null
   }).then(function (r) {
     GS.closeDrawer();
+    GS.track('form_submitted', { target_type: 'form', target_key: 'student_requirement' });
     showRecommendations(r.data.recommendation);
     refresh();
   }).catch(function (e) { alert(e.message); });

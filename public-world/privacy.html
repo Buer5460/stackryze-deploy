@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>访客统计说明 — GlobalStudy</title>
+<link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="phone">
+  <header class="header"><a class="brand" href="/"><div class="logo">G</div><div><b>GlobalStudy</b><small>访客统计说明</small></div></a></header>
+  <section class="hero"><div class="eyebrow">PRIVACY</div><h1>访客统计说明</h1><p>此页面说明本网站可选的第一方运营统计。</p></section>
+  <main class="section">
+    <div class="card">
+      <h3>统计处理者</h3><p id="controllerName" class="muted">读取中…</p>
+      <h3 style="margin-top:14px">联系渠道</h3><p id="privacyContact" class="muted">读取中…</p>
+      <h3 style="margin-top:14px">记录内容与目的</h3>
+      <p class="muted">仅在你主动同意后，统计模块才会记录页面访问、受控的内容点击、IP 地址、随机访客编号及格式受限的营销来源标签，用于了解页面访问和内容使用情况。不会将统计记录与平台账号关联；统计模块不收集姓名、电话、邮箱、表单输入内容、搜索词或完整 URL。服务器和托管服务可能另行生成网络安全连接日志。</p>
+      <h3 style="margin-top:14px">保留期限与选择</h3>
+      <p class="muted">统计明细默认保存 30 天，之后自动删除。拒绝统计不影响网站使用；同意后可在页面左下角打开“统计设置”，撤回同意并删除关联统计记录。</p>
+      <h3 style="margin-top:14px">其他平台记录</h3>
+      <p class="muted">本说明只涉及访客统计。平台登录、业务办理和服务器托管可能另行处理账号及安全运行所需信息，应以相应服务告知和运营主体的完整隐私政策为准。</p>
+      <div id="analyticsState" class="notice" style="margin-top:12px">读取统计状态…</div>
+      <div class="form-actions"><a class="btn ghost" href="/">返回网站</a><button class="btn primary" id="privacySettings">统计设置</button></div>
+    </div>
+  </main>
+</div>
+<script>
+fetch('/api/analytics/status', { cache: 'no-store' }).then(function (response) { return response.json(); }).then(function (response) {
+  var data = response.data || {};
+  document.getElementById('controllerName').textContent = data.controller_name || '部署方尚未配置';
+  document.getElementById('privacyContact').textContent = data.privacy_contact || '部署方尚未配置';
+  document.getElementById('analyticsState').textContent = data.enabled
+    ? '统计功能已启用；只有在你同意后才会开始记录。'
+    : '当前站点尚未启用访客统计。';
+}).catch(function () {
+  document.getElementById('analyticsState').textContent = '暂时无法读取统计状态。';
+});
+document.getElementById('privacySettings').addEventListener('click', function () { location.href = '/student'; });
+</script>
+</body>
+</html>

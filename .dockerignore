@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+node_modules
+data/db
+reports
+*.bak
+*.patched
+*.png
+*.zip
+CLIENT_*.md
+DSH_*.md
+V3.0.3_*.md
