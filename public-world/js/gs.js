@@ -470,7 +470,8 @@
   // -------------------------------------------------------------------------
   function footer() {
     return '<footer class="footer">' + esc(t('appName')) + ' · ' + esc(t('footer')) +
-      '<span class="footer-powered">' + esc(t('poweredBy')) + '</span></footer>';
+      '<span class="footer-powered">' + esc(t('poweredBy')) + '</span>' +
+      '<a class="gs-privacy-link" href="/privacy">' + esc(lang === 'zh' ? '访客统计说明' : 'Privacy & analytics') + '</a></footer>';
   }
 
   // -------------------------------------------------------------------------

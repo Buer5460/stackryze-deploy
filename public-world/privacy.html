@@ -18,11 +18,11 @@
       <h3 style="margin-top:14px">记录内容与目的</h3>
       <p class="muted">仅在你主动同意后，统计模块才会记录页面访问、受控的内容点击、IP 地址、随机访客编号及格式受限的营销来源标签，用于了解页面访问和内容使用情况。不会将统计记录与平台账号关联；统计模块不收集姓名、电话、邮箱、表单输入内容、搜索词或完整 URL。服务器和托管服务可能另行生成网络安全连接日志。</p>
       <h3 style="margin-top:14px">保留期限与选择</h3>
-      <p class="muted">统计明细默认保存 30 天，之后自动删除。拒绝统计不影响网站使用；同意后可在页面左下角打开“统计设置”，撤回同意并删除关联统计记录。</p>
+      <p class="muted">统计明细默认保存 30 天，之后自动删除。拒绝统计不影响网站使用；你可以在本页修改选择，撤回同意会删除关联统计记录。</p>
       <h3 style="margin-top:14px">其他平台记录</h3>
       <p class="muted">本说明只涉及访客统计。平台登录、业务办理和服务器托管可能另行处理账号及安全运行所需信息，应以相应服务告知和运营主体的完整隐私政策为准。</p>
       <div id="analyticsState" class="notice" style="margin-top:12px">读取统计状态…</div>
-      <div class="form-actions"><a class="btn ghost" href="/">返回网站</a><button class="btn primary" id="privacySettings">统计设置</button></div>
+      <div class="form-actions"><a class="btn ghost" href="/">返回网站</a><button class="btn primary" id="enableAnalytics">同意统计</button><button class="btn ghost" id="disableAnalytics">仅必要功能 / 撤回并删除</button></div>
     </div>
   </main>
 </div>
@@ -32,12 +32,30 @@ fetch('/api/analytics/status', { cache: 'no-store' }).then(function (response) {
   document.getElementById('controllerName').textContent = data.controller_name || '部署方尚未配置';
   document.getElementById('privacyContact').textContent = data.privacy_contact || '部署方尚未配置';
   document.getElementById('analyticsState').textContent = data.enabled
-    ? '统计功能已启用；只有在你同意后才会开始记录。'
+    ? (data.consented ? '当前选择：已同意统计。' : '当前选择：仅必要功能；统计尚未开始。')
     : '当前站点尚未启用访客统计。';
+  document.getElementById('enableAnalytics').disabled = !data.enabled;
 }).catch(function () {
   document.getElementById('analyticsState').textContent = '暂时无法读取统计状态。';
 });
-document.getElementById('privacySettings').addEventListener('click', function () { location.href = '/student'; });
+function saveAnalyticsChoice(consent) {
+  fetch('/api/analytics/consent', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin',
+    body: JSON.stringify({ consent: consent })
+  }).then(function (response) {
+    return response.json().then(function (data) {
+      if (!response.ok) throw new Error(data.error || '暂时无法保存统计选择');
+      localStorage.setItem('gs-analytics-choice', consent ? 'accepted' : 'declined');
+      document.getElementById('analyticsState').textContent = consent
+        ? '已同意统计；返回网站后开始记录。'
+        : '已设为仅必要功能；如之前同意，关联统计记录已删除。';
+    });
+  }).catch(function (error) {
+    document.getElementById('analyticsState').textContent = error.message;
+  });
+}
+document.getElementById('enableAnalytics').addEventListener('click', function () { saveAnalyticsChoice(true); });
+document.getElementById('disableAnalytics').addEventListener('click', function () { saveAnalyticsChoice(false); });
 </script>
 </body>
 </html>
