@@ -683,7 +683,7 @@
           sendAnalyticsEvent('page_view');
         } else {
           if (localStorage.getItem(ANALYTICS_CHOICE) === 'accepted') localStorage.removeItem(ANALYTICS_CHOICE);
-          buildAnalyticsPanel(localStorage.getItem(ANALYTICS_CHOICE) === 'declined');
+          buildAnalyticsPanel(true);
         }
       }).catch(function () { /* tracking status is optional */ });
     document.addEventListener('click', function (event) { captureAnalyticsClick(event.target); }, true);
